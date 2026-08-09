@@ -1,44 +1,37 @@
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
+export default async (request, context) => {
+  if (request.method !== 'POST') {
+    return Response.json(
+      { error: 'Method not allowed' },
+      { status: 405 },
+    );
   }
 
   let lead;
   try {
-    lead = JSON.parse(event.body || '{}');
+    lead = await request.json();
   } catch {
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Request body must be valid JSON' }),
-    };
+    return Response.json(
+      { error: 'Request body must be valid JSON' },
+      { status: 400 },
+    );
   }
 
   const requiredFields = ['name', 'phone', 'issue', 'location', 'timing'];
   const missingFields = requiredFields.filter(
-    (field) => typeof lead[field] !== 'string' || !lead[field].trim(),
+    (field) => typeof lead?.[field] !== 'string' || !lead[field].trim(),
   );
 
   if (missingFields.length > 0) {
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    return Response.json(
+      {
         error: 'Missing required lead fields',
         fields: missingFields,
-      }),
-    };
+      },
+      { status: 400 },
+    );
   }
 
-  console.info('ComfortAir lead received', lead);
+  console.log('ComfortAir lead received', lead);
 
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ success: true }),
-  };
+  return Response.json({ success: true }, { status: 200 });
 };
