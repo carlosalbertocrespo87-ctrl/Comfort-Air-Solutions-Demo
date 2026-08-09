@@ -140,14 +140,13 @@ function Contact({ onChat }: { onChat: () => void }) {
 
 type ChatStep = 'problem' | 'location' | 'timing' | 'details' | 'done';
 function extractContactDetails(value: string) {
-  const phoneMatch = value.match(
+  const [namePart, ...phoneParts] = value.split(',');
+  const phoneInput = phoneParts.join(',').trim();
+  const phoneMatch = phoneInput.match(
     /(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/,
   );
-  const phone = phoneMatch?.[0].trim() ?? '';
-  const name = value
-    .replace(phoneMatch?.[0] ?? '', '')
-    .replace(/[,;|]+/g, ' ')
-    .trim();
+  const phone = phoneMatch?.[0].trim() ?? phoneInput;
+  const name = namePart.trim();
 
   return { name: name || value.trim(), phone };
 }
