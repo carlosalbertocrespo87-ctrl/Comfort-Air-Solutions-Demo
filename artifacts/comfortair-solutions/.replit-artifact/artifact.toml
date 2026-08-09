@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ComfortAir Solutions"
+description = "A premium local HVAC service website for ComfortAir Solutions, serving Atlanta and nearby communities with repair, maintenance, and installation services plus a scripted lead-capture assistant."
+version = "1.0.0"
+id = "artifacts/comfortair-solutions"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23956
+
+[services.development]
+run = "pnpm --filter @workspace/comfortair-solutions run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/comfortair-solutions", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/comfortair-solutions/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23956"
+BASE_PATH = "/"
