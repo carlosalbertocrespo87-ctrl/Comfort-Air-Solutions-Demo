@@ -33,5 +33,62 @@ export default async (request, context) => {
 
   console.log('ComfortAir lead received', lead);
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const destinationEmail = process.env.LEAD_EMAIL;
+
+  if (!resendApiKey || !destinationEmail) {
+    console.error('ComfortAir lead email failed: email configuration is missing');
+    return Response.json(
+      { error: 'Unable to process lead' },
+      { status: 500 },
+    );
+  }
+
+  let emailResponse;
+  try {
+    emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'ComfortAir Demo <onboarding@resend.dev>',
+        to: [destinationEmail],
+        subject: `New HVAC Lead - ${lead.name}`,
+        text: [
+          'New ComfortAir Lead',
+          `Customer: ${lead.name}`,
+          `Phone: ${lead.phone}`,
+          `Issue: ${lead.issue}`,
+          `Location: ${lead.location}`,
+          `Requested timing: ${lead.timing}`,
+        ].join('\n'),
+      }),
+    });
+  } catch (error) {
+    console.error(
+      'ComfortAir lead email failed',
+      error instanceof Error ? error.message : 'Unknown error',
+    );
+    return Response.json(
+      { error: 'Unable to process lead' },
+      { status: 500 },
+    );
+  }
+
+  if (!emailResponse.ok) {
+    console.error('ComfortAir lead email failed', {
+      status: emailResponse.status,
+      statusText: emailResponse.statusText,
+    });
+    return Response.json(
+      { error: 'Unable to process lead' },
+      { status: 500 },
+    );
+  }
+
+  console.log('ComfortAir lead email sent');
+
   return Response.json({ success: true }, { status: 200 });
 };
