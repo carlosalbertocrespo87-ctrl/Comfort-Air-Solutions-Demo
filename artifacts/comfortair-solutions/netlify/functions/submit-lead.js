@@ -123,8 +123,7 @@ const safeLanguage = escapeHtml(lead.language);
                     <td colspan="2" style="padding:0 0 28px;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Requested service</div>
                       <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeTiming}</div>
-                      <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Requested service</div>
-<div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeTiming}</div>
+                      
 
 <div style="margin-top:16px;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Language</div>
 <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeLanguage}</div>
