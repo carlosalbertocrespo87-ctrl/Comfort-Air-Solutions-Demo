@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -219,42 +219,98 @@ function extractContactDetails(value: string) {
 function ChatWidget({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [step, setStep] = useState<ChatStep>('problem');
   const [lead, setLead] = useState({ problem: '', location: '', timing: '', name: '', phone: '' });
-  const [pendingLead, setPendingLead] = useState<{
-    name: string;
-    phone: string;
-    issue: string;
-    location: string;
-    timing: string;
-  } | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const processingRef = useRef(false);
+  const lastResponseRef = useRef<{ key: string; at: number } | null>(null);
   const submittedLeadKey = useRef<string | null>(null);
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState([{ from: 'bot', text: 'Hi there — I’m ComfortAir’s virtual assistant. I can collect a few details for our team. I won’t estimate pricing or promise a technician time, but I can make your next step easier.' }]);
   const prompts = useMemo(() => ({ problem: 'What is happening with your heating or air conditioning?', location: 'What city or ZIP code is the home in?', timing: 'When would you ideally like help? (For example: today, this week, or flexible.)', details: 'Last step: what is your name and best phone number?' }), []);
   useEffect(() => { if (open) setTimeout(() => document.getElementById('chat-input')?.focus(), 100); }, [open]);
-  useEffect(() => {
-    if (!pendingLead) return;
-    const leadKey = JSON.stringify(pendingLead);
+  if (!open) return null;
+
+  const submitFinalizedLead = (finalizedLead: {
+    name: string;
+    phone: string;
+    issue: string;
+    location: string;
+    timing: string;
+  }) => {
+    const leadKey = JSON.stringify(finalizedLead);
     if (submittedLeadKey.current === leadKey) return;
     submittedLeadKey.current = leadKey;
+    console.log('Submitting ComfortAir lead');
     void fetch('/.netlify/functions/submit-lead', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pendingLead),
-    }).catch(() => undefined);
-  }, [pendingLead]);
-  if (!open) return null;
-  const submit = (value: string) => {
-    if (!value.trim()) return;
+      body: JSON.stringify(finalizedLead),
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Lead submission failed with status ${response.status}`);
+        console.log('ComfortAir lead submission successful');
+      })
+      .catch(error => {
+        console.error('ComfortAir lead submission failed', error);
+      });
+  };
+
+  const handleUserResponse = (
+    rawValue: string,
+    event: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    const value = rawValue.trim();
+    if (!value || processingRef.current || step === 'done') return;
+
     const current = step;
+    const responseKey = `${current}:${value}`;
+    const now = Date.now();
+    if (lastResponseRef.current?.key === responseKey && now - lastResponseRef.current.at < 1000) return;
+    processingRef.current = true;
+    lastResponseRef.current = { key: responseKey, at: now };
+    setProcessing(true);
     setMessages(m => [...m, { from: 'user', text: value.trim() }]);
     setDraft('');
-    if (current === 'problem') { setLead(l => ({ ...l, problem: value })); setStep('location'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: prompts.location }]); }
-    if (current === 'location') { setLead(l => ({ ...l, location: value })); setStep('timing'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: prompts.timing }]); }
-    if (current === 'timing') { setLead(l => ({ ...l, timing: value })); setStep('details'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: prompts.details }]); }
-    if (current === 'details') { const { name, phone } = extractContactDetails(value); const completedLead = { name, phone, issue: lead.problem, location: lead.location, timing: lead.timing }; setPendingLead(completedLead); setLead(l => ({ ...l, name, phone })); setStep('done'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: `Thanks, ${name}. Here’s what I’ll pass to the ComfortAir team: ${lead.problem || 'HVAC service'} in ${lead.location || 'your area'}, ideally ${lead.timing || 'soon'}. Phone: ${phone || 'Not provided'}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.` }]); }
+
+    if (current === 'problem') {
+      setLead(l => ({ ...l, problem: value }));
+      setStep('location');
+      setMessages(m => [...m, { from: 'bot', text: prompts.location }]);
+    }
+    if (current === 'location') {
+      setLead(l => ({ ...l, location: value }));
+      setStep('timing');
+      setMessages(m => [...m, { from: 'bot', text: prompts.timing }]);
+    }
+    if (current === 'timing') {
+      setLead(l => ({ ...l, timing: value }));
+      setStep('details');
+      setMessages(m => [...m, { from: 'bot', text: prompts.details }]);
+    }
+    if (current === 'details') {
+      const { name, phone } = extractContactDetails(value);
+      const finalizedLead = {
+        name,
+        phone,
+        issue: lead.problem,
+        location: lead.location,
+        timing: lead.timing,
+      };
+      setLead(l => ({ ...l, name, phone }));
+      setStep('done');
+      setMessages(m => [...m, { from: 'bot', text: `Thanks, ${name}. Here’s what I’ll pass to the ComfortAir team: ${lead.problem || 'HVAC service'} in ${lead.location || 'your area'}, ideally ${lead.timing || 'soon'}. Phone: ${phone || 'Not provided'}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.` }]);
+      if (Object.values(finalizedLead).every(Boolean)) submitFinalizedLead(finalizedLead);
+    }
+
+    if (current !== 'details') {
+      window.setTimeout(() => {
+        processingRef.current = false;
+        setProcessing(false);
+      }, 350);
+    }
   };
   const quick = step === 'problem' ? ['AC blowing warm air', 'No heat', 'Strange noise'] : step === 'timing' ? ['Today', 'This week', 'I’m flexible'] : [];
-  return <div className="fixed bottom-5 right-5 z-40 w-[min(calc(100vw-2rem),390px)] overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] shadow-2xl shadow-[hsl(207_38%_16%/.22)]" data-testid="widget-chat"><div className="flex items-center justify-between bg-[hsl(var(--primary))] px-5 py-4 text-[hsl(var(--background))]"><div className="flex items-center gap-3"><div className="relative grid size-10 place-items-center rounded-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"><Sparkles size={18} /><span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-[hsl(var(--primary))] bg-emerald-400" /></div><div><p className="font-bold">ComfortAir AI Assistant</p><p className="font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.55)]">Here to point you in the right direction</p></div></div><button onClick={onClose} data-testid="button-chat-close" className="rounded-full p-1.5 text-[hsl(var(--background)/.65)] hover:bg-[hsl(var(--background)/.12)] hover:text-[hsl(var(--background))]"><X size={18} /></button></div><div className="max-h-[340px] min-h-[250px] space-y-3 overflow-y-auto p-4">{messages.map((message, i) => <div key={`${message.text}-${i}`} data-testid={`chat-message-${i}`} className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.from === 'user' ? 'ml-auto rounded-br-sm bg-[hsl(var(--primary))] text-[hsl(var(--background))]' : 'rounded-bl-sm bg-[hsl(var(--secondary))] text-[hsl(var(--foreground))]'}`}>{message.text}</div>)}{step !== 'done' && quick.length > 0 && <div className="flex flex-wrap gap-2 pt-1">{quick.map(item => <button key={item} onClick={() => submit(item)} data-testid={`button-chat-quick-${item.toLowerCase().replaceAll(' ', '-')}`} className="rounded-full border border-[hsl(var(--primary)/.35)] px-3 py-1.5 text-xs font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--background))]">{item}</button>)}</div>}</div>{step !== 'done' ? <form onSubmit={(e) => { e.preventDefault(); submit(draft); }} className="flex gap-2 border-t border-[hsl(var(--border))] p-3"><input id="chat-input" value={draft} onChange={e => setDraft(e.target.value)} data-testid="input-chat-message" className="min-w-0 flex-1 rounded-xl border border-[hsl(var(--border))] bg-transparent px-3 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))]" placeholder={step === 'details' ? 'Name, phone number' : 'Type your answer...'} /><button type="submit" data-testid="button-chat-send" className="grid size-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(20_87%_51%)]"><Send size={16} /></button></form> : <div className="border-t border-[hsl(var(--border))] px-4 py-3 text-center text-xs text-[hsl(var(--muted-foreground))]">You can close this window — your summary is ready for the team.</div>}</div>;
+  return <div className="fixed bottom-5 right-5 z-40 w-[min(calc(100vw-2rem),390px)] overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] shadow-2xl shadow-[hsl(207_38%_16%/.22)]" data-testid="widget-chat"><div className="flex items-center justify-between bg-[hsl(var(--primary))] px-5 py-4 text-[hsl(var(--background))]"><div className="flex items-center gap-3"><div className="relative grid size-10 place-items-center rounded-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"><Sparkles size={18} /><span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-[hsl(var(--primary))] bg-emerald-400" /></div><div><p className="font-bold">ComfortAir AI Assistant</p><p className="font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.55)]">Here to point you in the right direction</p></div></div><button onClick={onClose} data-testid="button-chat-close" className="rounded-full p-1.5 text-[hsl(var(--background)/.65)] hover:bg-[hsl(var(--background)/.12)] hover:text-[hsl(var(--background))]"><X size={18} /></button></div><div className="max-h-[340px] min-h-[250px] space-y-3 overflow-y-auto p-4">{messages.map((message, i) => <div key={`${message.text}-${i}`} data-testid={`chat-message-${i}`} className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.from === 'user' ? 'ml-auto rounded-br-sm bg-[hsl(var(--primary))] text-[hsl(var(--background))]' : 'rounded-bl-sm bg-[hsl(var(--secondary))] text-[hsl(var(--foreground))]'}`}>{message.text}</div>)}{step !== 'done' && quick.length > 0 && <div className="flex flex-wrap gap-2 pt-1">{quick.map(item => <button type="button" key={item} onClick={(event) => handleUserResponse(item, event)} disabled={processing} data-testid={`button-chat-quick-${item.toLowerCase().replaceAll(' ', '-')}`} className="rounded-full border border-[hsl(var(--primary)/.35)] px-3 py-1.5 text-xs font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--background))]">{item}</button>)}</div>}</div>{step !== 'done' ? <form onSubmit={(event) => handleUserResponse(draft, event)} className="flex gap-2 border-t border-[hsl(var(--border))] p-3"><input id="chat-input" value={draft} onChange={e => setDraft(e.target.value)} disabled={processing} data-testid="input-chat-message" className="min-w-0 flex-1 rounded-xl border border-[hsl(var(--border))] bg-transparent px-3 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))]" placeholder={step === 'details' ? 'Name, phone number' : 'Type your answer...'} /><button type="submit" disabled={processing} data-testid="button-chat-send" className="grid size-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(20_87%_51%)]"><Send size={16} /></button></form> : <div className="border-t border-[hsl(var(--border))] px-4 py-3 text-center text-xs text-[hsl(var(--muted-foreground))]">You can close this window — your summary is ready for the team.</div>}</div>;
 }
 
 function Footer() {
