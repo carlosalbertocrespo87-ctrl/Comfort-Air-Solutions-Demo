@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -14,12 +14,77 @@ import {
 
 const queryClient = new QueryClient();
 
-const services = [
-  { id: 'ac', icon: Snowflake, title: 'AC Repair', copy: 'Quiet, capable fixes for the Atlanta heat. We find the root cause and explain it plainly.', detail: 'From strange sounds to a system that will not start, our technicians arrive prepared for the most common repairs.' },
-  { id: 'heat', icon: Flame, title: 'Heating Repair', copy: 'Warmth restored without the guesswork, rushed upsells, or cold-room shuffle.', detail: 'Furnaces, heat pumps, and thermostats — handled by technicians who know how Atlanta homes actually heat.' },
-  { id: 'maint', icon: Gauge, title: 'HVAC Maintenance', copy: 'A small seasonal check can prevent a very large, very inconvenient surprise.', detail: 'Our tune-ups protect efficiency, extend equipment life, and catch wear before it becomes a weekend emergency.' },
-  { id: 'install', icon: Wrench, title: 'New System Installation', copy: 'Right-sized comfort systems, thoughtfully installed for the way your home lives.', detail: 'We make the options clear, then install the system with care for your home, air quality, and long-term comfort.' },
-];
+type Language = 'en' | 'es';
+
+const translations = {
+  en: {
+    nav: { services: 'Services', approach: 'Our approach', area: 'Service area', reviews: 'Reviews' },
+    headerChat: 'Chat with our AI assistant',
+    hero: {
+      eyebrow: "Atlanta's local comfort team",
+      title1: 'Fast, Reliable',
+      title2: 'HVAC Service',
+      title3: 'in Atlanta',
+      subhead: 'Air conditioning and heating repair, maintenance, and installation.',
+      request: 'Request Service',
+      chat: 'Chat With Our AI Assistant',
+      trust: ['Licensed & insured', 'Upfront communication', 'Local technicians'],
+      peaceLabel: 'Peace of mind',
+      peaceText: 'The work is not done until your home feels right.',
+      quote: '“The team you call<br />when comfort matters.”',
+      imageAlt: 'ComfortAir technician inspecting an HVAC system',
+    },
+    services: {
+      eyebrow: 'What we do',
+      title1: 'Comfort,',
+      title2: 'handled.',
+      intro: 'From the first call to the final check, you get clear communication, careful work, and a home that feels better than we found it.',
+      selected: 'Selected service',
+      learn: 'Learn more',
+      items: [
+        { id: 'ac', title: 'AC Repair', copy: 'Quiet, capable fixes for the Atlanta heat. We find the root cause and explain it plainly.', detail: 'From strange sounds to a system that will not start, our technicians arrive prepared for the most common repairs.' },
+        { id: 'heat', title: 'Heating Repair', copy: 'Warmth restored without the guesswork, rushed upsells, or cold-room shuffle.', detail: 'Furnaces, heat pumps, and thermostats — handled by technicians who know how Atlanta homes actually heat.' },
+        { id: 'maint', title: 'HVAC Maintenance', copy: 'A small seasonal check can prevent a very large, very inconvenient surprise.', detail: 'Our tune-ups protect efficiency, extend equipment life, and catch wear before it becomes a weekend emergency.' },
+        { id: 'install', title: 'New System Installation', copy: 'Right-sized comfort systems, thoughtfully installed for the way your home lives.', detail: 'We make the options clear, then install the system with care for your home, air quality, and long-term comfort.' },
+      ],
+    },
+    es: {
+      eyebrow: 'El equipo local de confort de Atlanta',
+      title1: 'Servicio de HVAC',
+      title2: 'rápido y confiable',
+      title3: 'en Atlanta',
+      subhead: 'Reparación, mantenimiento e instalación de aire acondicionado y calefacción.',
+      request: 'Solicitar servicio',
+      chat: 'Chatea con nuestro asistente de IA',
+      trust: ['Con licencia y asegurados', 'Comunicación clara', 'Técnicos locales'],
+      peaceLabel: 'Tranquilidad',
+      peaceText: 'El trabajo no termina hasta que tu hogar se sienta bien.',
+      quote: '“El equipo al que llamas<br />cuando el confort importa.”',
+      imageAlt: 'Técnico de ComfortAir inspeccionando un sistema de HVAC',
+      nav: { services: 'Servicios', approach: 'Nuestro enfoque', area: 'Área de servicio', reviews: 'Reseñas' },
+      headerChat: 'Chatea con nuestro asistente de IA',
+      services: {
+        eyebrow: 'Lo que hacemos',
+        title1: 'Confort,',
+        title2: 'resuelto.',
+        intro: 'Desde la primera llamada hasta la revisión final, recibes comunicación clara, trabajo cuidadoso y un hogar que se siente mejor que cuando llegamos.',
+        selected: 'Servicio seleccionado',
+        learn: 'Más información',
+        items: [
+          { id: 'ac', title: 'Reparación de aire acondicionado', copy: 'Soluciones precisas para el calor de Atlanta. Encontramos la causa y te la explicamos claramente.', detail: 'Desde ruidos extraños hasta un sistema que no enciende, nuestros técnicos llegan preparados para las reparaciones más comunes.' },
+          { id: 'heat', title: 'Reparación de calefacción', copy: 'Recupera el calor sin adivinanzas, ventas apresuradas ni habitaciones frías.', detail: 'Hornos, bombas de calor y termostatos — atendidos por técnicos que conocen cómo se calientan los hogares de Atlanta.' },
+          { id: 'maint', title: 'Mantenimiento de HVAC', copy: 'Una revisión de temporada puede evitar una sorpresa grande y muy inoportuna.', detail: 'Nuestros ajustes protegen la eficiencia, alargan la vida del equipo y detectan el desgaste antes de que se convierta en una emergencia.' },
+          { id: 'install', title: 'Instalación de sistemas nuevos', copy: 'Sistemas del tamaño correcto, instalados con cuidado para la vida de tu hogar.', detail: 'Te explicamos las opciones con claridad y hacemos la instalación cuidando tu hogar, la calidad del aire y tu confort a largo plazo.' },
+        ],
+      },
+    },
+  },
+} as const;
+
+const services = translations.en.services.items.map((service, index) => ({
+  ...service,
+  icon: [Snowflake, Flame, Gauge, Wrench][index],
+}));
 
 const testimonials = [
   { quote: 'Our upstairs was finally comfortable again by dinner. The technician found the issue quickly and took time to show me what he was doing.', name: 'Marianne R.', location: 'Decatur, GA', initials: 'MR' },
@@ -154,10 +219,29 @@ function extractContactDetails(value: string) {
 function ChatWidget({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [step, setStep] = useState<ChatStep>('problem');
   const [lead, setLead] = useState({ problem: '', location: '', timing: '', name: '', phone: '' });
+  const [pendingLead, setPendingLead] = useState<{
+    name: string;
+    phone: string;
+    issue: string;
+    location: string;
+    timing: string;
+  } | null>(null);
+  const submittedLeadKey = useRef<string | null>(null);
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState([{ from: 'bot', text: 'Hi there — I’m ComfortAir’s virtual assistant. I can collect a few details for our team. I won’t estimate pricing or promise a technician time, but I can make your next step easier.' }]);
   const prompts = useMemo(() => ({ problem: 'What is happening with your heating or air conditioning?', location: 'What city or ZIP code is the home in?', timing: 'When would you ideally like help? (For example: today, this week, or flexible.)', details: 'Last step: what is your name and best phone number?' }), []);
   useEffect(() => { if (open) setTimeout(() => document.getElementById('chat-input')?.focus(), 100); }, [open]);
+  useEffect(() => {
+    if (!pendingLead) return;
+    const leadKey = JSON.stringify(pendingLead);
+    if (submittedLeadKey.current === leadKey) return;
+    submittedLeadKey.current = leadKey;
+    void fetch('/.netlify/functions/submit-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pendingLead),
+    }).catch(() => undefined);
+  }, [pendingLead]);
   if (!open) return null;
   const submit = (value: string) => {
     if (!value.trim()) return;
@@ -167,7 +251,7 @@ function ChatWidget({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (current === 'problem') { setLead(l => ({ ...l, problem: value })); setStep('location'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: prompts.location }]); }
     if (current === 'location') { setLead(l => ({ ...l, location: value })); setStep('timing'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: prompts.timing }]); }
     if (current === 'timing') { setLead(l => ({ ...l, timing: value })); setStep('details'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: prompts.details }]); }
-    if (current === 'details') { const { name, phone } = extractContactDetails(value); const completedLead = { name, phone, issue: lead.problem, location: lead.location, timing: lead.timing }; void fetch('/.netlify/functions/submit-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(completedLead) }).catch(() => undefined); setLead(l => ({ ...l, name, phone })); setStep('done'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: `Thanks, ${name}. Here’s what I’ll pass to the ComfortAir team: ${lead.problem || 'HVAC service'} in ${lead.location || 'your area'}, ideally ${lead.timing || 'soon'}. Phone: ${phone || 'Not provided'}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.` }]); }
+    if (current === 'details') { const { name, phone } = extractContactDetails(value); const completedLead = { name, phone, issue: lead.problem, location: lead.location, timing: lead.timing }; setPendingLead(completedLead); setLead(l => ({ ...l, name, phone })); setStep('done'); setMessages(m => [...m, { from: 'user', text: value.trim() }, { from: 'bot', text: `Thanks, ${name}. Here’s what I’ll pass to the ComfortAir team: ${lead.problem || 'HVAC service'} in ${lead.location || 'your area'}, ideally ${lead.timing || 'soon'}. Phone: ${phone || 'Not provided'}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.` }]); }
   };
   const quick = step === 'problem' ? ['AC blowing warm air', 'No heat', 'Strange noise'] : step === 'timing' ? ['Today', 'This week', 'I’m flexible'] : [];
   return <div className="fixed bottom-5 right-5 z-40 w-[min(calc(100vw-2rem),390px)] overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] shadow-2xl shadow-[hsl(207_38%_16%/.22)]" data-testid="widget-chat"><div className="flex items-center justify-between bg-[hsl(var(--primary))] px-5 py-4 text-[hsl(var(--background))]"><div className="flex items-center gap-3"><div className="relative grid size-10 place-items-center rounded-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"><Sparkles size={18} /><span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-[hsl(var(--primary))] bg-emerald-400" /></div><div><p className="font-bold">ComfortAir AI Assistant</p><p className="font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.55)]">Here to point you in the right direction</p></div></div><button onClick={onClose} data-testid="button-chat-close" className="rounded-full p-1.5 text-[hsl(var(--background)/.65)] hover:bg-[hsl(var(--background)/.12)] hover:text-[hsl(var(--background))]"><X size={18} /></button></div><div className="max-h-[340px] min-h-[250px] space-y-3 overflow-y-auto p-4">{messages.map((message, i) => <div key={`${message.text}-${i}`} data-testid={`chat-message-${i}`} className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.from === 'user' ? 'ml-auto rounded-br-sm bg-[hsl(var(--primary))] text-[hsl(var(--background))]' : 'rounded-bl-sm bg-[hsl(var(--secondary))] text-[hsl(var(--foreground))]'}`}>{message.text}</div>)}{step !== 'done' && quick.length > 0 && <div className="flex flex-wrap gap-2 pt-1">{quick.map(item => <button key={item} onClick={() => submit(item)} data-testid={`button-chat-quick-${item.toLowerCase().replaceAll(' ', '-')}`} className="rounded-full border border-[hsl(var(--primary)/.35)] px-3 py-1.5 text-xs font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--background))]">{item}</button>)}</div>}</div>{step !== 'done' ? <form onSubmit={(e) => { e.preventDefault(); submit(draft); }} className="flex gap-2 border-t border-[hsl(var(--border))] p-3"><input id="chat-input" value={draft} onChange={e => setDraft(e.target.value)} data-testid="input-chat-message" className="min-w-0 flex-1 rounded-xl border border-[hsl(var(--border))] bg-transparent px-3 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))]" placeholder={step === 'details' ? 'Name, phone number' : 'Type your answer...'} /><button type="submit" data-testid="button-chat-send" className="grid size-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(20_87%_51%)]"><Send size={16} /></button></form> : <div className="border-t border-[hsl(var(--border))] px-4 py-3 text-center text-xs text-[hsl(var(--muted-foreground))]">You can close this window — your summary is ready for the team.</div>}</div>;
