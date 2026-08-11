@@ -75,6 +75,7 @@ const translations = {
     contact: {
       eyebrow: "Let's get comfortable",
       title1: 'Your home called.',
+      title2: '',
       copy: 'Tell us a little about what is going on. We will follow up with next steps — no pressure, no robotic runaround.',
       phone: '(470) 555-0124',
       hours: 'Mon–Sat · 7:00am–7:00pm',
@@ -357,15 +358,29 @@ function Contact({ onChat, lang }: { onChat: () => void; lang: Language }) {
 
 type ChatStep = 'problem' | 'location' | 'timing' | 'details' | 'done';
 function extractContactDetails(value: string) {
-  const [namePart, ...phoneParts] = value.split(',');
-  const phoneInput = phoneParts.join(',').trim();
-  const phoneMatch = phoneInput.match(
-    /(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/,
-  );
-  const phone = phoneMatch?.[0].trim() ?? phoneInput;
-  const name = namePart.trim();
+  const trimmed = value.trim();
 
-  return { name: name || value.trim(), phone };
+  const phoneMatch = trimmed.match(
+    /(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/
+  );
+
+  const phone = phoneMatch?.[0]?.trim() ?? '';
+
+  let name = phoneMatch
+    ? trimmed.replace(phoneMatch[0], '').trim()
+    : trimmed;
+
+  name = name
+    .replace(/^[\s,;:-]+|[\s,;:-]+$/g, '')
+    .replace(/^(my name is|i am|i'm|mi nombre es|me llamo)\s+/i, '')
+    .replace(
+      /\s+(and\s+)?(my\s+)?(phone|phone number|teléfono|telefono|número|numero)\s*(is|es)?\s*$/i,
+      ''
+    )
+    .replace(/[\s,;:-]+$/g, '')
+    .trim();
+
+  return { name: name || trimmed, phone };
 }
 
 function ChatWidget({ open, onClose, lang }: { open: boolean; onClose: () => void; lang: Language }) {
@@ -377,7 +392,7 @@ function ChatWidget({ open, onClose, lang }: { open: boolean; onClose: () => voi
   const submittedLeadKey = useRef<string | null>(null);
   const [draft, setDraft] = useState('');
   const chat = translations[lang].chat;
-  const [messages, setMessages] = useState([{ from: 'bot', text: chat.greeting }]);
+  const [messages, setMessages] = useState<Array<{ from: 'bot' | 'user'; text: string }>>([{ from: 'bot', text: chat.greeting }]);
   const prompts = useMemo(() => ({ problem: chat.promptProblem, location: chat.promptLocation, timing: chat.promptTiming, details: chat.promptDetails }), [chat]);
   useEffect(() => { if (open) setTimeout(() => document.getElementById('chat-input')?.focus(), 100); }, [open]);
   if (!open) return null;
