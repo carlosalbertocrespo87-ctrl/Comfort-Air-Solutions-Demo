@@ -416,6 +416,7 @@ function ChatWidget({ open, onClose, lang, demoEmail }: { open: boolean; onClose
     location: string;
     timing: string;
     language: Language;
+    demoEmail?: string;
   }) => {
     const leadKey = JSON.stringify(finalizedLead);
     if (submittedLeadKey.current === leadKey) return;
@@ -487,7 +488,8 @@ function ChatWidget({ open, onClose, lang, demoEmail }: { open: boolean; onClose
         .replace('{timing}', lead.timing || (lang === 'es' ? 'pronto' : 'soon'))
         .replace('{phone}', phone || (lang === 'es' ? 'No proporcionado' : 'Not provided'));
       setMessages(m => [...m, { from: 'bot', text: summary }]);
-      if (Object.values(finalizedLead).every(Boolean)) submitFinalizedLead(finalizedLead);
+      const payload = demoEmail && demoEmail.trim() ? { ...finalizedLead, demoEmail: demoEmail.trim() } : finalizedLead;
+      if (Object.values(finalizedLead).every(Boolean)) submitFinalizedLead(payload);
     }
 
     if (current !== 'details') {

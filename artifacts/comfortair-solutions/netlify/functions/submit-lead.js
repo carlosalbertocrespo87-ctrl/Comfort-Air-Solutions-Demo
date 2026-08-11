@@ -102,6 +102,7 @@ const safeLanguage = escapeHtml(lead.language);
                   <tr>
                     <td style="padding:0 0 20px;width:50%;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Customer</div>
+            const demoEmail = typeof lead?.demoEmail === 'string' ? lead.demoEmail.trim() : null;
                       <div style="margin-top:6px;font-size:18px;font-weight:bold;color:#183b45;">${customerName}</div>
                     </td>
                     <td style="padding:0 0 20px;width:50%;vertical-align:top;">
@@ -150,6 +151,9 @@ const safeLanguage = escapeHtml(lead.language);
     );
   }
 
+            const recipients = [destinationEmail];
+            const isDemoEmailValid = demoEmail && /^\S+@\S+\.\S+$/.test(demoEmail);
+            if (isDemoEmailValid && demoEmail.toLowerCase() !== destinationEmail.toLowerCase()) recipients.push(demoEmail);
   if (!emailResponse.ok) {
     console.error('ComfortAir lead email failed', {
       status: emailResponse.status,
@@ -160,7 +164,7 @@ const safeLanguage = escapeHtml(lead.language);
       { status: 500 },
     );
   }
-
+                  to: recipients,
   console.log('ComfortAir lead email sent');
 
   return Response.json({ success: true }, { status: 200 });
