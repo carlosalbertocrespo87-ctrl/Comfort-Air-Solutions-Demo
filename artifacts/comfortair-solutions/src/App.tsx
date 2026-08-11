@@ -119,6 +119,12 @@ const translations = {
       finalSummary: 'Thanks, {name}. Here’s what I’ll pass to the ComfortAir team: {issue} in {location}, ideally {timing}. Phone: {phone}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.',
       doneNote: 'You can close this window — your summary is ready for the team.',
     },
+    demo: {
+      label: 'Try the Demo',
+      placeholder: 'Your email',
+      button: 'Start Demo',
+      error: 'Enter a valid email',
+    },
   },
   es: {
     nav: { services: 'Servicios', approach: 'Nuestro enfoque', area: 'Área de servicio', reviews: 'Reseñas' },
@@ -221,6 +227,12 @@ const translations = {
       placeholderDetails: 'Nombre, número de teléfono',
       finalSummary: 'Gracias, {name}. Esto es lo que enviaré al equipo de ComfortAir: {issue} en {location}, idealmente {timing}. Teléfono: {phone}. Un miembro del equipo revisará esto durante el horario comercial; este chat no confirma precios ni hora de cita.',
       doneNote: 'Puedes cerrar esta ventana — tu resumen está listo para el equipo.',
+    },
+        demo: {
+      label: 'Prueba la demo',
+      placeholder: 'Tu correo electrónico',
+      button: 'Probar demo',
+      error: 'Introduce un correo válido',
     },
   },
 } as const;
@@ -383,7 +395,7 @@ function extractContactDetails(value: string) {
   return { name: name || trimmed, phone };
 }
 
-function ChatWidget({ open, onClose, lang }: { open: boolean; onClose: () => void; lang: Language }) {
+function ChatWidget({ open, onClose, lang, demoEmail }: { open: boolean; onClose: () => void; lang: Language; demoEmail?: string }) {
   const [step, setStep] = useState<ChatStep>('problem');
   const [lead, setLead] = useState({ problem: '', location: '', timing: '', name: '', phone: '' });
   const [processing, setProcessing] = useState(false);
@@ -497,8 +509,42 @@ function Footer({ lang }: { lang: Language }) {
 function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [lang, setLang] = useState<Language>('en');
+  const [demoEmail, setDemoEmail] = useState<string>('');
+  const [demoError, setDemoError] = useState<string | null>(null);
   const request = () => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-  return <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]"><Header onChat={() => setChatOpen(true)} lang={lang} setLang={setLang} /><main><Hero onChat={() => setChatOpen(true)} onRequest={request} lang={lang} /><Services lang={lang} /><WhyChooseUs lang={lang} /><Area lang={lang} /><Reviews lang={lang} /><Contact onChat={() => setChatOpen(true)} lang={lang} /></main><Footer lang={lang} /><button onClick={() => setChatOpen(true)} data-testid="button-chat-open" aria-label={translations[lang].headerChat} className={`fixed bottom-5 right-5 z-30 flex items-center gap-3 rounded-full bg-[hsl(var(--accent))] px-4 py-3 font-bold text-[hsl(var(--accent-foreground))] shadow-xl shadow-[hsl(20_87%_30%/.2)] transition-all hover:-translate-y-1 ${chatOpen ? 'pointer-events-none scale-0 opacity-0' : 'scale-100 opacity-100'}`}><span className="grid size-8 place-items-center rounded-full bg-[hsl(var(--accent-foreground)/.12)]"><MessageCircle size={18} /></span><span className="hidden text-sm sm:block">{translations[lang].headerChat}</span></button><ChatWidget open={chatOpen} onClose={() => setChatOpen(false)} lang={lang} /></div>;
+
+  const startDemo = () => {
+    const re = /^\S+@\S+\.\S+$/;
+    if (!re.test(demoEmail.trim())) {
+      setDemoError(translations[lang].demo?.error ?? (lang === 'es' ? 'Introduce un correo válido' : 'Please enter a valid email'));
+      return;
+    }
+    setDemoError(null);
+    setChatOpen(true);
+  };
+
+  return <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
+    <Header onChat={() => setChatOpen(true)} lang={lang} setLang={setLang} />
+    <main>
+      <Hero onChat={() => setChatOpen(true)} onRequest={request} lang={lang} />
+      <Services lang={lang} />
+      <WhyChooseUs lang={lang} />
+      <Area lang={lang} />
+      <Reviews lang={lang} />
+      <Contact onChat={() => setChatOpen(true)} lang={lang} />
+    </main>
+    <Footer lang={lang} />
+
+    <div className="fixed bottom-20 right-5 z-30 flex items-center gap-2">
+      <input value={demoEmail} onChange={(e) => setDemoEmail(e.target.value)} placeholder={translations[lang].demo.placeholder} data-testid="input-demo-email" className="rounded-full px-3 py-2 text-sm shadow-sm" />
+      <button onClick={startDemo} data-testid="button-demo-start" className="rounded-full bg-[hsl(var(--accent))] px-4 py-2 text-sm font-bold text-[hsl(var(--accent-foreground))]">{translations[lang].demo.button}</button>
+    </div>
+    {demoError && <div className="fixed bottom-16 right-5 z-40 text-xs text-red-500">{demoError}</div>}
+
+    <button onClick={() => setChatOpen(true)} data-testid="button-chat-open" aria-label={translations[lang].headerChat} className={`fixed bottom-5 right-5 z-30 flex items-center gap-3 rounded-full bg-[hsl(var(--accent))] px-4 py-3 font-bold text-[hsl(var(--accent-foreground))] shadow-xl shadow-[hsl(20_87%_30%/.2)] transition-all hover:-translate-y-1 ${chatOpen ? 'pointer-events-none scale-0 opacity-0' : 'scale-100 opacity-100'}`}><span className="grid size-8 place-items-center rounded-full bg-[hsl(var(--accent-foreground)/.12)]"><MessageCircle size={18} /></span><span className="hidden text-sm sm:block">{translations[lang].headerChat}</span></button>
+
+    <ChatWidget open={chatOpen} onClose={() => setChatOpen(false)} lang={lang} demoEmail={demoEmail} />
+  </div>;
 }
 function Router() { return <ErrorBoundary resetKey={useLocation()[0]}><Switch><Route path="/" component={Home} /><Route component={NotFound} /></Switch></ErrorBoundary>; }
 function App() { return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>; }
