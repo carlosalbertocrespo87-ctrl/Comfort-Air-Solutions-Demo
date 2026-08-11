@@ -17,6 +17,7 @@ export default async (request, context) => {
   }
 
   const { name, phone, issue, location, timing, language } = lead;
+  const demoEmail = typeof lead?.demoEmail === 'string' ? lead.demoEmail.trim() : null;
   const requiredFields = ['name', 'phone', 'issue', 'location', 'timing', 'language'];
   const missingFields = requiredFields.filter(
     (field) => typeof lead?.[field] !== 'string' || !lead[field].trim(),
@@ -59,11 +60,14 @@ export default async (request, context) => {
     );
 
   const customerName = escapeHtml(lead.name);
-const safePhone = escapeHtml(lead.phone);
-const safeIssue = escapeHtml(lead.issue);
-const safeLocation = escapeHtml(lead.location);
-const safeTiming = escapeHtml(lead.timing);
-const safeLanguage = escapeHtml(lead.language);
+  const safePhone = escapeHtml(lead.phone);
+  const safeIssue = escapeHtml(lead.issue);
+  const safeLocation = escapeHtml(lead.location);
+  const safeTiming = escapeHtml(lead.timing);
+  const safeLanguage = escapeHtml(lead.language);
+  const recipients = [destinationEmail];
+  const isDemoEmailValid = demoEmail && /^\S+@\S+\.\S+$/.test(demoEmail);
+  if (isDemoEmailValid && demoEmail.toLowerCase() !== destinationEmail.toLowerCase()) recipients.push(demoEmail);
   let emailResponse;
   try {
     emailResponse = await fetch('https://api.resend.com/emails', {
@@ -74,7 +78,7 @@ const safeLanguage = escapeHtml(lead.language);
       },
       body: JSON.stringify({
         from: 'ComfortAir Demo <onboarding@resend.dev>',
-        to: [destinationEmail],
+        to: recipients,
         subject: `🔥 NEW HVAC LEAD - ${lead.name} - ${lead.location}`,
         text: [
           'COMFORTAIR SOLUTIONS',
@@ -102,7 +106,6 @@ const safeLanguage = escapeHtml(lead.language);
                   <tr>
                     <td style="padding:0 0 20px;width:50%;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Customer</div>
-            const demoEmail = typeof lead?.demoEmail === 'string' ? lead.demoEmail.trim() : null;
                       <div style="margin-top:6px;font-size:18px;font-weight:bold;color:#183b45;">${customerName}</div>
                     </td>
                     <td style="padding:0 0 20px;width:50%;vertical-align:top;">
@@ -150,10 +153,6 @@ const safeLanguage = escapeHtml(lead.language);
       { status: 500 },
     );
   }
-
-            const recipients = [destinationEmail];
-            const isDemoEmailValid = demoEmail && /^\S+@\S+\.\S+$/.test(demoEmail);
-            if (isDemoEmailValid && demoEmail.toLowerCase() !== destinationEmail.toLowerCase()) recipients.push(demoEmail);
   if (!emailResponse.ok) {
     console.error('ComfortAir lead email failed', {
       status: emailResponse.status,
@@ -164,7 +163,6 @@ const safeLanguage = escapeHtml(lead.language);
       { status: 500 },
     );
   }
-                  to: recipients,
   console.log('ComfortAir lead email sent');
 
   return Response.json({ success: true }, { status: 200 });
