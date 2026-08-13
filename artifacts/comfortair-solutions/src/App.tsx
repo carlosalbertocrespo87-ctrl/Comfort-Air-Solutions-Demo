@@ -1,4 +1,4 @@
-import { type FormEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type FormEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -20,27 +20,18 @@ const translations = {
   en: {
     nav: { services: 'Services', approach: 'Our approach', area: 'Service area', reviews: 'Reviews' },
     headerChat: 'Chat with our AI assistant',
+    languageLabel: 'Language',
     hero: {
-      eyebrow: "Atlanta's local comfort team",
-      title1: 'Fast, Reliable',
-      title2: 'HVAC Service',
-      title3: 'in Atlanta',
-      subhead: 'Air conditioning and heating repair, maintenance, and installation.',
-      request: 'Request Service',
-      chat: 'Chat With Our AI Assistant',
-      trust: ['Licensed & insured', 'Upfront communication', 'Local technicians'],
-      peaceLabel: 'Peace of mind',
-      peaceText: 'The work is not done until your home feels right.',
-      quote: '“The team you call<br />when comfort matters.”',
-      imageAlt: 'ComfortAir technician inspecting an HVAC system',
+      eyebrow: "Atlanta's local comfort team", title1: 'Fast, Reliable', title2: 'HVAC Service', title3: 'in Atlanta',
+      subhead: 'Air conditioning and heating repair, maintenance, and installation.', request: 'Request Service',
+      chat: 'Chat With Our AI Assistant', trust: ['Licensed & insured', 'Upfront communication', 'Local technicians'],
+      peaceLabel: 'Peace of mind', peaceText: 'The work is not done until your home feels right.',
+      quote1: '“The team you call', quote2: 'when comfort matters.”', imageAlt: 'ComfortAir technician inspecting an HVAC system',
     },
     services: {
-      eyebrow: 'What we do',
-      title1: 'Comfort,',
-      title2: 'handled.',
+      eyebrow: 'What we do', title1: 'Comfort,', title2: 'handled.',
       intro: 'From the first call to the final check, you get clear communication, careful work, and a home that feels better than we found it.',
-      selected: 'Selected service',
-      learn: 'Learn more',
+      selected: 'Selected service', learn: 'Learn more',
       items: [
         { id: 'ac', title: 'AC Repair', copy: 'Quiet, capable fixes for the Atlanta heat. We find the root cause and explain it plainly.', detail: 'From strange sounds to a system that will not start, our technicians arrive prepared for the most common repairs.' },
         { id: 'heat', title: 'Heating Repair', copy: 'Warmth restored without the guesswork, rushed upsells, or cold-room shuffle.', detail: 'Furnaces, heat pumps, and thermostats — handled by technicians who know how Atlanta homes actually heat.' },
@@ -48,49 +39,128 @@ const translations = {
         { id: 'install', title: 'New System Installation', copy: 'Right-sized comfort systems, thoughtfully installed for the way your home lives.', detail: 'We make the options clear, then install the system with care for your home, air quality, and long-term comfort.' },
       ],
     },
-    es: {
-      eyebrow: 'El equipo local de confort de Atlanta',
-      title1: 'Servicio de HVAC',
-      title2: 'rápido y confiable',
-      title3: 'en Atlanta',
-      subhead: 'Reparación, mantenimiento e instalación de aire acondicionado y calefacción.',
-      request: 'Solicitar servicio',
-      chat: 'Chatea con nuestro asistente de IA',
-      trust: ['Con licencia y asegurados', 'Comunicación clara', 'Técnicos locales'],
-      peaceLabel: 'Tranquilidad',
-      peaceText: 'El trabajo no termina hasta que tu hogar se sienta bien.',
-      quote: '“El equipo al que llamas<br />cuando el confort importa.”',
-      imageAlt: 'Técnico de ComfortAir inspeccionando un sistema de HVAC',
-      nav: { services: 'Servicios', approach: 'Nuestro enfoque', area: 'Área de servicio', reviews: 'Reseñas' },
-      headerChat: 'Chatea con nuestro asistente de IA',
-      services: {
-        eyebrow: 'Lo que hacemos',
-        title1: 'Confort,',
-        title2: 'resuelto.',
-        intro: 'Desde la primera llamada hasta la revisión final, recibes comunicación clara, trabajo cuidadoso y un hogar que se siente mejor que cuando llegamos.',
-        selected: 'Servicio seleccionado',
-        learn: 'Más información',
-        items: [
-          { id: 'ac', title: 'Reparación de aire acondicionado', copy: 'Soluciones precisas para el calor de Atlanta. Encontramos la causa y te la explicamos claramente.', detail: 'Desde ruidos extraños hasta un sistema que no enciende, nuestros técnicos llegan preparados para las reparaciones más comunes.' },
-          { id: 'heat', title: 'Reparación de calefacción', copy: 'Recupera el calor sin adivinanzas, ventas apresuradas ni habitaciones frías.', detail: 'Hornos, bombas de calor y termostatos — atendidos por técnicos que conocen cómo se calientan los hogares de Atlanta.' },
-          { id: 'maint', title: 'Mantenimiento de HVAC', copy: 'Una revisión de temporada puede evitar una sorpresa grande y muy inoportuna.', detail: 'Nuestros ajustes protegen la eficiencia, alargan la vida del equipo y detectan el desgaste antes de que se convierta en una emergencia.' },
-          { id: 'install', title: 'Instalación de sistemas nuevos', copy: 'Sistemas del tamaño correcto, instalados con cuidado para la vida de tu hogar.', detail: 'Te explicamos las opciones con claridad y hacemos la instalación cuidando tu hogar, la calidad del aire y tu confort a largo plazo.' },
-        ],
+    why: {
+      eyebrow: 'Why ComfortAir', title1: 'Good work', title2: 'feels different.',
+      body: 'You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.',
+      imageAlt: 'Technician checking air conditioning equipment', since: 'Serving Atlanta since',
+      items: [['We show up prepared', 'The right tools, parts, and context to make the first visit count.'], ['We explain the why', 'Plain language. Honest options. No pressure to decide on the spot.'], ['We leave it better', 'Careful shoe covers, clean work areas, and respect for your home.'], ['We think long-term', 'Solutions designed for comfort today and fewer surprises tomorrow.']],
+    },
+    area: {
+      eyebrow: 'Close to home', title1: 'Neighbors', title2: 'helping', title3: 'neighbors.',
+      body: 'We are proud to serve the neighborhoods that make metro Atlanta feel like home. If you are nearby and not on the list, give us a call — we are happy to talk.',
+      live: 'local service area', cities: ['Atlanta', 'Decatur', 'Marietta', 'Roswell', 'Smyrna', 'Sandy Springs', 'Brookhaven', 'Alpharetta', 'East Cobb', 'Dunwoody', 'Vinings', 'Tucker'],
+    },
+    reviews: {
+      eyebrow: 'Kind words', title1: 'Comfortable', title2: 'company.',
+      items: [
+        { quote: 'Our upstairs was finally comfortable again by dinner. The technician found the issue quickly and took time to show me what he was doing.', name: 'Marianne R.', location: 'Decatur, GA', initials: 'MR' },
+        { quote: 'No pressure, no mystery invoice — just a thoughtful diagnosis and a clean repair. ComfortAir is now our first call.', name: 'Daniel K.', location: 'East Cobb, GA', initials: 'DK' },
+        { quote: 'The installation team treated our home like it was their own. Quiet, tidy, and our energy bill noticed the difference.', name: 'Priya S.', location: 'Brookhaven, GA', initials: 'PS' },
+      ],
+    },
+    contact: {
+      eyebrow: "Let's get comfortable", title1: 'Your home', title2: 'called.',
+      body: 'Tell us a little about what is going on. We will follow up with next steps — no pressure, no robotic runaround.',
+      hours: 'Mon–Sat · 7:00am–7:00pm', chat: 'Prefer to chat? Meet our AI assistant', successTitle: 'We got it.',
+      successBody: 'Thanks for reaching out. A ComfortAir team member will review your note and follow up during business hours.',
+      reset: 'Send another request', formTitle: 'Request service', formIntro: 'A few details helps us make the first conversation useful.',
+      name: 'Name', namePlaceholder: 'Your name', phone: 'Phone', phonePlaceholder: '(470) 555-0124',
+      help: 'What can we help with?', helpPlaceholder: 'Tell us what your system is doing (or not doing)...',
+      consent: 'I agree to be contacted about this request. No marketing lists, no pressure.', submit: 'Send request',
+    },
+    footer: {
+      description: 'A local HVAC team for the homes, neighborhoods, and weather we know best.', explore: 'Explore',
+      why: 'Our approach', customerReviews: 'Customer reviews', serviceArea: 'Service area',
+      cities: ['Atlanta & Midtown', 'Decatur & East Cobb', 'Marietta & Roswell', 'North Metro Atlanta'],
+      talk: 'Talk to us', hours: 'Mon–Sat · 7:00am–7:00pm', licensed: 'Licensed & insured in Georgia',
+      copyright: '© 2025 ComfortAir Solutions', tagline: 'Built for better home days.',
+    },
+    chat: {
+      title: 'ComfortAir AI Assistant', subtitle: 'Here to point you in the right direction',
+      intro: 'Hi there — I’m ComfortAir’s virtual assistant. I can collect a few details for our team. I won’t estimate pricing or promise a technician time, but I can make your next step easier.',
+      prompts: {
+        problem: 'What is happening with your heating or air conditioning?', location: 'What city or ZIP code is the home in?',
+        timing: 'When would you ideally like help? (For example: today, this week, or flexible.)', details: 'Last step: what is your name and best phone number?',
       },
+      quickProblem: ['AC blowing warm air', 'No heat', 'Strange noise'], quickTiming: ['Today', 'This week', 'I’m flexible'],
+      detailsPlaceholder: 'Name, phone number', answerPlaceholder: 'Type your answer...',
+      summary: 'Thanks, {name}. Here’s what I’ll pass to the ComfortAir team: {issue} in {location}, ideally {timing}. Phone: {phone}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.',
+      closeNote: 'You can close this window — your summary is ready for the team.',
+    },
+  },
+  es: {
+    nav: { services: 'Servicios', approach: 'Nuestro enfoque', area: 'Área de servicio', reviews: 'Reseñas' },
+    headerChat: 'Chatea con nuestro asistente de IA', languageLabel: 'Idioma',
+    hero: {
+      eyebrow: 'El equipo local de confort de Atlanta', title1: 'Servicio de HVAC', title2: 'rápido y confiable', title3: 'en Atlanta',
+      subhead: 'Reparación, mantenimiento e instalación de aire acondicionado y calefacción.', request: 'Solicitar servicio',
+      chat: 'Hablar con nuestro asistente de IA', trust: ['Con licencia y asegurados', 'Comunicación clara', 'Técnicos locales'],
+      peaceLabel: 'Tranquilidad', peaceText: 'El trabajo no termina hasta que tu hogar se sienta bien.',
+      quote1: '“El equipo al que llamas', quote2: 'cuando el confort importa.”', imageAlt: 'Técnico de ComfortAir inspeccionando un sistema de HVAC',
+    },
+    services: {
+      eyebrow: 'Lo que hacemos', title1: 'Confort,', title2: 'resuelto.',
+      intro: 'Desde la primera llamada hasta la revisión final, recibes comunicación clara, trabajo cuidadoso y un hogar que se siente mejor que cuando llegamos.',
+      selected: 'Servicio seleccionado', learn: 'Más información',
+      items: [
+        { id: 'ac', title: 'Reparación de aire acondicionado', copy: 'Soluciones precisas para el calor de Atlanta. Encontramos la causa y te la explicamos claramente.', detail: 'Desde ruidos extraños hasta un sistema que no enciende, nuestros técnicos llegan preparados para las reparaciones más comunes.' },
+        { id: 'heat', title: 'Reparación de calefacción', copy: 'Recupera el calor sin adivinanzas, ventas apresuradas ni habitaciones frías.', detail: 'Hornos, bombas de calor y termostatos — atendidos por técnicos que conocen cómo se calientan los hogares de Atlanta.' },
+        { id: 'maint', title: 'Mantenimiento de HVAC', copy: 'Una revisión de temporada puede evitar una sorpresa grande y muy inoportuna.', detail: 'Nuestros ajustes protegen la eficiencia, alargan la vida del equipo y detectan el desgaste antes de que se convierta en una emergencia.' },
+        { id: 'install', title: 'Instalación de sistemas nuevos', copy: 'Sistemas del tamaño correcto, instalados con cuidado para la vida de tu hogar.', detail: 'Te explicamos las opciones con claridad y hacemos la instalación cuidando tu hogar, la calidad del aire y tu confort a largo plazo.' },
+      ],
+    },
+    why: {
+      eyebrow: 'Por qué ComfortAir', title1: 'El buen trabajo', title2: 'se nota.',
+      body: 'Nunca deberías necesitar un título de ingeniería para entender tu propio hogar. Combinamos excelencia técnica con un servicio humano que hace que un día estresante sea más llevadero.',
+      imageAlt: 'Técnico revisando un equipo de aire acondicionado', since: 'Sirviendo a Atlanta desde',
+      items: [['Llegamos preparados', 'Las herramientas, piezas y contexto adecuados para aprovechar la primera visita.'], ['Explicamos el porqué', 'Lenguaje claro. Opciones honestas. Sin presión para decidir en el momento.'], ['Lo dejamos mejor', 'Cubrimos los zapatos, dejamos limpia el área de trabajo y respetamos tu hogar.'], ['Pensamos a largo plazo', 'Soluciones diseñadas para el confort de hoy y menos sorpresas mañana.']],
+    },
+    area: {
+      eyebrow: 'Cerca de tu hogar', title1: 'Vecinos', title2: 'ayudando a', title3: 'vecinos.',
+      body: 'Nos enorgullece servir a los vecindarios que hacen que el área metropolitana de Atlanta se sienta como hogar. Si estás cerca y no apareces en la lista, llámanos — con gusto hablamos contigo.',
+      live: 'área de servicio local', cities: ['Atlanta', 'Decatur', 'Marietta', 'Roswell', 'Smyrna', 'Sandy Springs', 'Brookhaven', 'Alpharetta', 'East Cobb', 'Dunwoody', 'Vinings', 'Tucker'],
+    },
+    reviews: {
+      eyebrow: 'Lo que dicen nuestros clientes', title1: 'Una compañía', title2: 'confortable.',
+      items: [
+        { quote: 'Para la cena, la planta de arriba por fin estaba cómoda. El técnico encontró el problema rápidamente y se tomó el tiempo de mostrarme lo que hacía.', name: 'Marianne R.', location: 'Decatur, GA', initials: 'MR' },
+        { quote: 'Sin presión ni facturas misteriosas — solo un diagnóstico cuidadoso y una reparación limpia. ComfortAir es nuestra primera llamada.', name: 'Daniel K.', location: 'East Cobb, GA', initials: 'DK' },
+        { quote: 'El equipo de instalación trató nuestra casa como si fuera la suya. Fueron silenciosos, ordenados y nuestra factura de energía notó la diferencia.', name: 'Priya S.', location: 'Brookhaven, GA', initials: 'PS' },
+      ],
+    },
+    contact: {
+      eyebrow: 'Hagamos tu hogar más cómodo', title1: 'Tu hogar', title2: 'te llamó.',
+      body: 'Cuéntanos un poco sobre lo que está pasando. Te contactaremos con los próximos pasos — sin presión ni vueltas robóticas.',
+      hours: 'Lun–Sáb · 7:00am–7:00pm', chat: '¿Prefieres chatear? Conoce a nuestro asistente de IA', successTitle: 'Lo recibimos.',
+      successBody: 'Gracias por escribirnos. Un miembro del equipo de ComfortAir revisará tu mensaje y te contactará durante el horario laboral.',
+      reset: 'Enviar otra solicitud', formTitle: 'Solicitar servicio', formIntro: 'Unos cuantos detalles nos ayudan a hacer útil la primera conversación.',
+      name: 'Nombre', namePlaceholder: 'Tu nombre', phone: 'Teléfono', phonePlaceholder: '(470) 555-0124',
+      help: '¿En qué podemos ayudarte?', helpPlaceholder: 'Cuéntanos qué está haciendo (o dejando de hacer) tu sistema...',
+      consent: 'Acepto que me contacten sobre esta solicitud. Sin listas de marketing ni presión.', submit: 'Enviar solicitud',
+    },
+    footer: {
+      description: 'Un equipo local de HVAC para los hogares, vecindarios y clima que conocemos mejor.', explore: 'Explora',
+      why: 'Nuestro enfoque', customerReviews: 'Reseñas de clientes', serviceArea: 'Área de servicio',
+      cities: ['Atlanta y Midtown', 'Decatur y East Cobb', 'Marietta y Roswell', 'Metro Atlanta norte'],
+      talk: 'Hablemos', hours: 'Lun–Sáb · 7:00am–7:00pm', licensed: 'Con licencia y asegurados en Georgia',
+      copyright: '© 2025 ComfortAir Solutions', tagline: 'Para días mejores en casa.',
+    },
+    chat: {
+      title: 'Asistente de IA de ComfortAir', subtitle: 'Aquí para orientarte',
+      intro: 'Hola — soy el asistente virtual de ComfortAir. Puedo recopilar algunos datos para nuestro equipo. No calcularé precios ni prometeré una hora para el técnico, pero puedo facilitar tu próximo paso.',
+      prompts: {
+        problem: '¿Qué está pasando con tu calefacción o aire acondicionado?', location: '¿En qué ciudad o código postal está la casa?',
+        timing: '¿Cuándo te gustaría recibir ayuda? (Por ejemplo: hoy, esta semana o cuando tengas flexibilidad.)', details: 'Último paso: ¿cuál es tu nombre y el mejor número de teléfono?',
+      },
+      quickProblem: ['El aire acondicionado sopla aire caliente', 'No hay calefacción', 'Ruido extraño'], quickTiming: ['Hoy', 'Esta semana', 'Tengo flexibilidad'],
+      detailsPlaceholder: 'Nombre, número de teléfono', answerPlaceholder: 'Escribe tu respuesta...',
+      summary: 'Gracias, {name}. Esto es lo que compartiré con el equipo de ComfortAir: {issue} en {location}, idealmente {timing}. Teléfono: {phone}. Un miembro del equipo revisará la información durante el horario laboral — este chat no confirma precios ni una hora de cita.',
+      closeNote: 'Puedes cerrar esta ventana — tu resumen está listo para el equipo.',
     },
   },
 } as const;
 
-const services = translations.en.services.items.map((service, index) => ({
-  ...service,
-  icon: [Snowflake, Flame, Gauge, Wrench][index],
-}));
-
-const testimonials = [
-  { quote: 'Our upstairs was finally comfortable again by dinner. The technician found the issue quickly and took time to show me what he was doing.', name: 'Marianne R.', location: 'Decatur, GA', initials: 'MR' },
-  { quote: 'No pressure, no mystery invoice — just a thoughtful diagnosis and a clean repair. ComfortAir is now our first call.', name: 'Daniel K.', location: 'East Cobb, GA', initials: 'DK' },
-  { quote: 'The installation team treated our home like it was their own. Quiet, tidy, and our energy bill noticed the difference.', name: 'Priya S.', location: 'Brookhaven, GA', initials: 'PS' },
-];
+const serviceIcons = [Snowflake, Flame, Gauge, Wrench];
 
 function Logo({ light = false }: { light?: boolean }) {
   return (
@@ -115,41 +185,50 @@ function Button({ children, variant = 'primary', onClick, testId, type = 'button
   return <button type={type} onClick={onClick} data-testid={testId} className={`group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--primary))] ${styles}`}>{children}<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></button>;
 }
 
-function Header({ onChat }: { onChat: () => void }) {
+function Header({ onChat, language, onLanguageChange }: { onChat: () => void; language: Language; onLanguageChange: (language: Language) => void }) {
   const [open, setOpen] = useState(false);
-  const links = [['Services', '#services'], ['Our approach', '#why'], ['Service area', '#area'], ['Reviews', '#reviews']];
+  const t = translations[language];
+  const links = [[t.nav.services, '#services'], [t.nav.approach, '#why'], [t.nav.area, '#area'], [t.nav.reviews, '#reviews']];
+  const languageSelector = <div className="flex items-center gap-1 text-xs font-bold" aria-label={t.languageLabel}>
+    <button type="button" onClick={() => onLanguageChange('en')} aria-pressed={language === 'en'} className={language === 'en' ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--background)/.55)]'}>EN</button>
+    <span className="text-[hsl(var(--background)/.35)]">|</span>
+    <button type="button" onClick={() => onLanguageChange('es')} aria-pressed={language === 'es'} className={language === 'es' ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--background)/.55)]'}>ES</button>
+  </div>;
   return <header className="absolute inset-x-0 top-0 z-30">
     <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-10">
       <Logo light />
       <nav className="hidden items-center gap-8 md:flex">
         {links.map(([label, href]) => <a key={href} href={href} data-testid={`link-nav-${label.toLowerCase().replace(' ', '-')}`} className="text-sm font-semibold text-[hsl(var(--background)/.75)] transition-colors hover:text-[hsl(var(--accent))]">{label}</a>)}
+        {languageSelector}
         <a href="tel:4705550124" data-testid="link-header-phone" className="flex items-center gap-2 border-l border-[hsl(var(--background)/.2)] pl-7 text-sm font-bold text-[hsl(var(--background))]"><Phone size={15} /> (470) 555-0124</a>
       </nav>
       <button onClick={() => setOpen(!open)} data-testid="button-mobile-menu" className="rounded-lg p-2 text-[hsl(var(--background))] md:hidden">{open ? <X /> : <Menu />}</button>
     </div>
     {open && <div className="mx-4 rounded-2xl border border-[hsl(var(--background)/.15)] bg-[hsl(var(--primary)/.97)] p-4 shadow-xl md:hidden">
       {links.map(([label, href]) => <a key={href} href={href} onClick={() => setOpen(false)} data-testid={`link-mobile-${label.toLowerCase().replace(' ', '-')}`} className="block border-b border-[hsl(var(--background)/.1)] px-3 py-3 text-sm font-bold text-[hsl(var(--background))]">{label}</a>)}
-      <button onClick={() => { setOpen(false); onChat(); }} data-testid="button-mobile-chat" className="mt-3 flex w-full items-center justify-between rounded-xl bg-[hsl(var(--accent))] px-4 py-3 text-sm font-bold text-[hsl(var(--accent-foreground))]">Chat with our AI assistant <MessageCircle size={17} /></button>
+      <div className="flex items-center justify-between px-3 pt-4 text-[hsl(var(--background))]"><span className="text-xs font-bold">{t.languageLabel}</span>{languageSelector}</div>
+      <button onClick={() => { setOpen(false); onChat(); }} data-testid="button-mobile-chat" className="mt-3 flex w-full items-center justify-between rounded-xl bg-[hsl(var(--accent))] px-4 py-3 text-sm font-bold text-[hsl(var(--accent-foreground))]">{t.headerChat} <MessageCircle size={17} /></button>
     </div>}
   </header>;
 }
 
-function Hero({ onChat, onRequest }: { onChat: () => void; onRequest: () => void }) {
+function Hero({ onChat, onRequest, language }: { onChat: () => void; onRequest: () => void; language: Language }) {
+  const t = translations[language].hero;
   return <section id="top" className="relative min-h-[760px] overflow-hidden bg-[hsl(var(--primary))] pt-28 text-[hsl(var(--background))]">
     <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'linear-gradient(115deg, hsl(193 62% 25% / .95) 0%, transparent 60%), url("https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=2200&q=85")', backgroundPosition: 'center', backgroundSize: 'cover' }} />
     <div className="absolute -right-36 top-44 size-[480px] rounded-full border border-[hsl(var(--accent)/.28)] lg:size-[650px]" />
     <div className="absolute -right-20 top-60 size-[320px] rounded-full border border-[hsl(var(--accent)/.2)] lg:size-[500px]" />
     <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 lg:grid-cols-[1fr_410px] lg:px-10 lg:pb-28">
       <div className="max-w-3xl pt-16 lg:pt-24">
-        <div className="reveal mb-7 flex items-center gap-3 font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent))]"><span className="h-px w-9 bg-[hsl(var(--accent))]" /> Atlanta's local comfort team</div>
-        <h1 className="reveal reveal-delay-1 max-w-3xl font-display text-[clamp(4rem,8vw,7.2rem)] leading-[.84] tracking-[-.045em]">Fast, Reliable<br /><em className="text-[hsl(var(--accent))]">HVAC Service</em><br /><span className="text-[hsl(var(--background)/.83)]">in Atlanta</span></h1>
-        <p className="reveal reveal-delay-2 mt-8 max-w-md text-lg leading-relaxed text-[hsl(var(--background)/.75)]">Air conditioning and heating repair, maintenance, and installation.</p>
-        <div className="reveal reveal-delay-3 mt-9 flex flex-wrap gap-3"><Button onClick={onRequest} testId="button-hero-request">Request Service</Button><Button onClick={onChat} variant="outline" testId="button-hero-chat">Chat With Our AI Assistant</Button></div>
-        <div className="reveal reveal-delay-3 mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-[hsl(var(--background)/.68)]"><span className="flex items-center gap-2"><CircleCheck size={15} className="text-[hsl(var(--accent))]" /> Licensed & insured</span><span className="flex items-center gap-2"><CircleCheck size={15} className="text-[hsl(var(--accent))]" /> Upfront communication</span><span className="flex items-center gap-2"><CircleCheck size={15} className="text-[hsl(var(--accent))]" /> Local technicians</span></div>
+        <div className="reveal mb-7 flex items-center gap-3 font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent))]"><span className="h-px w-9 bg-[hsl(var(--accent))]" /> {t.eyebrow}</div>
+        <h1 className="reveal reveal-delay-1 max-w-3xl font-display text-[clamp(4rem,8vw,7.2rem)] leading-[.84] tracking-[-.045em]">{t.title1}<br /><em className="text-[hsl(var(--accent))]">{t.title2}</em><br /><span className="text-[hsl(var(--background)/.83)]">{t.title3}</span></h1>
+        <p className="reveal reveal-delay-2 mt-8 max-w-md text-lg leading-relaxed text-[hsl(var(--background)/.75)]">{t.subhead}</p>
+        <div className="reveal reveal-delay-3 mt-9 flex flex-wrap gap-3"><Button onClick={onRequest} testId="button-hero-request">{t.request}</Button><Button onClick={onChat} variant="outline" testId="button-hero-chat">{t.chat}</Button></div>
+        <div className="reveal reveal-delay-3 mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-[hsl(var(--background)/.68)]">{t.trust.map(item => <span key={item} className="flex items-center gap-2"><CircleCheck size={15} className="text-[hsl(var(--accent))]" /> {item}</span>)}</div>
       </div>
       <div className="reveal reveal-delay-2 relative hidden lg:block">
-        <div className="float-slow absolute -left-20 top-7 z-10 w-48 rounded-2xl border border-[hsl(var(--background)/.17)] bg-[hsl(var(--background)/.1)] p-4 backdrop-blur-md"><div className="mb-3 flex items-center gap-2 text-[hsl(var(--accent))]"><ShieldCheck size={18} /><span className="font-mono-ui text-[9px] uppercase tracking-wider">Peace of mind</span></div><p className="text-sm font-semibold leading-snug">The work is not done until your home feels right.</p></div>
-        <div className="relative ml-auto w-[350px] rounded-[2.4rem] bg-[hsl(var(--accent))] p-2 shadow-2xl shadow-[hsl(207_38%_8%/.3)]"><img src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=85" alt="ComfortAir technician inspecting an HVAC system" className="h-[490px] w-full rounded-[2rem] object-cover object-center mix-blend-multiply opacity-75" /><div className="absolute inset-2 rounded-[2rem] bg-gradient-to-t from-[hsl(var(--primary)/.8)] via-transparent to-transparent" /><div className="absolute bottom-8 left-8 right-8"><div className="mb-2 flex gap-1 text-[hsl(var(--accent))]">{[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}</div><p className="font-display text-2xl leading-none">“The team you call<br />when comfort matters.”</p></div></div>
+         <div className="float-slow absolute -left-20 top-7 z-10 w-48 rounded-2xl border border-[hsl(var(--background)/.17)] bg-[hsl(var(--background)/.1)] p-4 backdrop-blur-md"><div className="mb-3 flex items-center gap-2 text-[hsl(var(--accent))]"><ShieldCheck size={18} /><span className="font-mono-ui text-[9px] uppercase tracking-wider">{t.peaceLabel}</span></div><p className="text-sm font-semibold leading-snug">{t.peaceText}</p></div>
+         <div className="relative ml-auto w-[350px] rounded-[2.4rem] bg-[hsl(var(--accent))] p-2 shadow-2xl shadow-[hsl(207_38%_8%/.3)]"><img src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=85" alt={t.imageAlt} className="h-[490px] w-full rounded-[2rem] object-cover object-center mix-blend-multiply opacity-75" /><div className="absolute inset-2 rounded-[2rem] bg-gradient-to-t from-[hsl(var(--primary)/.8)] via-transparent to-transparent" /><div className="absolute bottom-8 left-8 right-8"><div className="mb-2 flex gap-1 text-[hsl(var(--accent))]">{[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}</div><p className="font-display text-2xl leading-none">{t.quote1}<br />{t.quote2}</p></div></div>
       </div>
     </div>
     <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[hsl(var(--background))] to-transparent" />
