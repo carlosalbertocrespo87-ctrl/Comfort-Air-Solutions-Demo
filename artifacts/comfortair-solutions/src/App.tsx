@@ -241,9 +241,9 @@ const translations = {
 
       quickProblem: ["AC blowing warm air", "No heat", "Strange noise"],
       quickTiming: ["Today", "This week", "I’m flexible"],
-      detailsPlaceholder: "Name, phone number",
+      placeholderDetails: "Name, phone number",
       answerPlaceholder: "Type your answer...",
-      summary:
+      finalSummary:
         "Thanks, {name}. Here’s what I’ll pass to the ComfortAir team: {issue} in {location}, ideally {timing}. Phone: {phone}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.",
       closeNote:
         "You can close this window — your summary is ready for the team.",
