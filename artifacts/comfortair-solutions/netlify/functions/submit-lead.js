@@ -16,7 +16,9 @@ export default async (request, context) => {
     );
   }
 
-  const requiredFields = ['name', 'phone', 'issue', 'location', 'timing'];
+  const { name, phone, issue, location, timing, language } = lead;
+  const demoEmail = typeof lead?.demoEmail === 'string' ? lead.demoEmail.trim() : null;
+  const requiredFields = ['name', 'phone', 'issue', 'location', 'timing', 'language'];
   const missingFields = requiredFields.filter(
     (field) => typeof lead?.[field] !== 'string' || !lead[field].trim(),
   );
@@ -58,11 +60,14 @@ export default async (request, context) => {
     );
 
   const customerName = escapeHtml(lead.name);
-  const phone = escapeHtml(lead.phone);
-  const issue = escapeHtml(lead.issue);
-  const location = escapeHtml(lead.location);
-  const timing = escapeHtml(lead.timing);
-
+  const safePhone = escapeHtml(lead.phone);
+  const safeIssue = escapeHtml(lead.issue);
+  const safeLocation = escapeHtml(lead.location);
+  const safeTiming = escapeHtml(lead.timing);
+  const safeLanguage = escapeHtml(lead.language);
+  const recipients = [destinationEmail];
+  const isDemoEmailValid = demoEmail && /^\S+@\S+\.\S+$/.test(demoEmail);
+  if (isDemoEmailValid && demoEmail.toLowerCase() !== destinationEmail.toLowerCase()) recipients.push(demoEmail);
   let emailResponse;
   try {
     emailResponse = await fetch('https://api.resend.com/emails', {
@@ -73,7 +78,7 @@ export default async (request, context) => {
       },
       body: JSON.stringify({
         from: 'ComfortAir Demo <onboarding@resend.dev>',
-        to: [destinationEmail],
+        to: recipients,
         subject: `🔥 NEW HVAC LEAD - ${lead.name} - ${lead.location}`,
         text: [
           'COMFORTAIR SOLUTIONS',
@@ -84,6 +89,7 @@ export default async (request, context) => {
           `Issue: ${lead.issue}`,
           `Location: ${lead.location}`,
           `Requested service: ${lead.timing}`,
+          `Language: ${lead.language}`,
           '',
           'This customer requested service through the ComfortAir AI Assistant. Contact them as soon as possible.',
           'Appointment and pricing have NOT been confirmed by the AI assistant.',
@@ -104,27 +110,31 @@ export default async (request, context) => {
                     </td>
                     <td style="padding:0 0 20px;width:50%;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Phone</div>
-                      <div style="margin-top:6px;font-size:18px;font-weight:bold;color:#183b45;">${phone}</div>
+                      <div style="margin-top:6px;font-size:18px;font-weight:bold;color:#183b45;">${safePhone}</div>
                     </td>
                   </tr>
                   <tr>
                     <td style="padding:0 0 20px;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Problem</div>
-                      <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${issue}</div>
+                      <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeIssue}</div>
                     </td>
                     <td style="padding:0 0 20px;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Location</div>
-                      <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${location}</div>
+                      <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeLocation}</div>
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2" style="padding:0 0 28px;vertical-align:top;">
                       <div style="font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Requested service</div>
-                      <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${timing}</div>
+                      <div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeTiming}</div>
+                      
+
+<div style="margin-top:16px;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#71818a;">Language</div>
+<div style="margin-top:6px;font-size:16px;line-height:1.5;color:#183b45;">${safeLanguage}</div>
                     </td>
                   </tr>
                 </table>
-                <a href="tel:${phone}" style="display:block;border-radius:999px;background:#f47735;padding:16px 24px;text-align:center;font-size:16px;font-weight:bold;text-decoration:none;color:#183b45;">CALL CUSTOMER</a>
+                <a href="tel:${safePhone}" style="display:block;border-radius:999px;background:#f47735;padding:16px 24px;text-align:center;font-size:16px;font-weight:bold;text-decoration:none;color:#183b45;">CALL CUSTOMER</a>
                 <p style="margin:28px 0 0;font-size:14px;line-height:1.6;color:#53666e;">This customer requested service through the ComfortAir AI Assistant. Contact them as soon as possible.</p>
                 <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#71818a;">Appointment and pricing have NOT been confirmed by the AI assistant.</p>
               </div>
@@ -143,7 +153,6 @@ export default async (request, context) => {
       { status: 500 },
     );
   }
-
   if (!emailResponse.ok) {
     console.error('ComfortAir lead email failed', {
       status: emailResponse.status,
@@ -154,7 +163,6 @@ export default async (request, context) => {
       { status: 500 },
     );
   }
-
   console.log('ComfortAir lead email sent');
 
   return Response.json({ success: true }, { status: 200 });
