@@ -715,7 +715,7 @@ function Hero({
           </div>
           <div className="relative ml-auto w-[350px] rounded-[2.4rem] bg-[hsl(var(--accent))] p-2 shadow-2xl shadow-[hsl(207_38%_8%/.3)]">
             <img
-              src="https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=800&q=85"
+              src="/images/technician.jpg"
               alt={t.imageAlt}
               className="h-[490px] w-full rounded-[2rem] object-cover object-center mix-blend-multiply opacity-75"
             />
@@ -823,7 +823,7 @@ function WhyChooseUs({ lang }: { lang: Language }) {
           <div className="absolute -left-8 -top-8 size-48 rounded-full border border-[hsl(var(--accent)/.5)]" />
           <div className="relative aspect-[.9] overflow-hidden rounded-[2rem] bg-[hsl(var(--primary))]">
             <img
-              src="https://images.unsplash.com/photo-1631545806609-9e9e7f0e3f80?auto=format&fit=crop&w=1000&q=85"
+              src="/images/technician.jpg"
               alt="Technician checking air conditioning equipment"
               className="h-full w-full object-cover mix-blend-luminosity opacity-70"
             />
@@ -1322,6 +1322,9 @@ function ChatWidget({
           : finalizedLead;
       if (Object.values(finalizedLead).every(Boolean))
         submitFinalizedLead(payload);
+
+      processingRef.current = false;
+      setProcessing(false);
     }
 
     if (current !== "details") {
