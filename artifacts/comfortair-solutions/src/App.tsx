@@ -3,6 +3,7 @@ import {
   type MouseEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -116,7 +117,7 @@ const translations = {
       body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",
       imageAlt: "Technician checking air conditioning equipment",
       since: "Serving Atlanta since",
-      items: [
+      features: [
         [
           "We show up prepared",
           "The right tools, parts, and context to make the first visit count.",
@@ -212,10 +213,9 @@ const translations = {
       description:
         "A local HVAC team for the homes, neighborhoods, and weather we know best.",
       explore: "Explore",
-      why: "Our approach",
-      customerReviews: "Customer reviews",
+      exploreLinks: ["Services", "Our approach", "Customer reviews"],
       serviceArea: "Service area",
-      cities: [
+      serviceAreaItems: [
         "Atlanta & Midtown",
         "Decatur & East Cobb",
         "Marietta & Roswell",
@@ -228,17 +228,17 @@ const translations = {
       tagline: "Built for better home days.",
     },
     chat: {
-      title: "ComfortAir AI Assistant",
-      subtitle: "Here to point you in the right direction",
-      intro:
+      assistantTitle: "ComfortAir AI Assistant",
+      assistantSubtitle: "Here to point you in the right direction",
+      greeting:
         "Hi there — I’m ComfortAir’s virtual assistant. I can collect a few details for our team. I won’t estimate pricing or promise a technician time, but I can make your next step easier.",
-      prompts: {
-        problem: "What is happening with your heating or air conditioning?",
-        location: "What city or ZIP code is the home in?",
-        timing:
-          "When would you ideally like help? (For example: today, this week, or flexible.)",
-        details: "Last step: what is your name and best phone number?",
-      },
+
+      promptProblem: "What is happening with your heating or air conditioning?",
+      promptLocation: "What city or ZIP code is the home in?",
+      promptTiming:
+        "When would you ideally like help? (For example: today, this week, or flexible.)",
+      promptDetails: "Last step: what is your name and best phone number?",
+
       quickProblem: ["AC blowing warm air", "No heat", "Strange noise"],
       quickTiming: ["Today", "This week", "I’m flexible"],
       detailsPlaceholder: "Name, phone number",
@@ -247,6 +247,12 @@ const translations = {
         "Thanks, {name}. Here’s what I’ll pass to the ComfortAir team: {issue} in {location}, ideally {timing}. Phone: {phone}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.",
       closeNote:
         "You can close this window — your summary is ready for the team.",
+    },
+    demo: {
+      label: "Try the demo",
+      placeholder: "Your email address",
+      button: "Try demo",
+      error: "Enter a valid email",
     },
   },
   es: {
@@ -287,7 +293,38 @@ const translations = {
         "Desde la primera llamada hasta la revisión final, recibes comunicación clara, trabajo cuidadoso y un hogar que se siente mejor que cuando llegamos.",
       selected: "Servicio seleccionado",
       learn: "Más información",
-
+      items: [
+        {
+          id: "ac",
+          title: "Reparación de aire acondicionado",
+          copy: "Soluciones confiables para el calor de Atlanta. Encontramos la causa del problema y te la explicamos claramente.",
+          detail:
+            "Desde ruidos extraños hasta un sistema que no enciende, nuestros técnicos llegan preparados para las reparaciones más comunes.",
+        },
+        {
+          id: "heat",
+          title: "Reparación de calefacción",
+          copy: "Recupera el calor de tu hogar sin complicaciones, presión ni explicaciones confusas.",
+          detail:
+            "Trabajamos con hornos, bombas de calor y termostatos, buscando una solución clara y confiable.",
+        },
+        {
+          id: "maint",
+          title: "Mantenimiento HVAC",
+          copy: "Una revisión preventiva puede evitar una avería grande e inesperada.",
+          detail:
+            "Nuestro mantenimiento ayuda a mejorar la eficiencia, prolongar la vida del equipo y detectar desgaste antes de una emergencia.",
+        },
+        {
+          id: "install",
+          title: "Instalación de sistemas nuevos",
+          copy: "Sistemas de climatización adecuados para tu hogar e instalados cuidadosamente.",
+          detail:
+            "Te explicamos las opciones y realizamos la instalación pensando en el confort, la calidad del aire y el rendimiento a largo plazo.",
+        },
+      ],
+    },
+    why: {
       eyebrow: "Por qué ComfortAir",
       title1: "El buen trabajo",
       title2: "se siente distinto.",
@@ -1506,12 +1543,16 @@ function Home() {
 
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
-      <Header onChat={() => setChatOpen(true)} lang={lang} setLang={setLang} />
+      <Header
+        onChat={() => setChatOpen(true)}
+        language={lang}
+        onLanguageChange={setLang}
+      />
       <main>
         <Hero
           onChat={() => setChatOpen(true)}
           onRequest={request}
-          lang={lang}
+          language={lang}
         />
         <Services lang={lang} />
         <WhyChooseUs lang={lang} />
