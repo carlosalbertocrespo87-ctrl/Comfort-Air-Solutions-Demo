@@ -199,11 +199,17 @@ Never save:
 - API keys
 - full sensitive ID numbers
 
-## 12. MASTER HVAC PROSPECT TEMPLATE — NEXT
-Create:
+## 12. MASTER HVAC PROSPECT TEMPLATE — CREATED
+Location:
 artifacts/hvac-prospect-template
 
-This template should be based on the FINAL tested Wade architecture but contain NO Wade-specific data.
+Status:
+- CREATED from the final tested Wade architecture.
+- All Wade and ComfortAir references removed.
+- Reusable prospectConfig added for company name, email domain, phone, service area, and year.
+- Build tested successfully.
+- Saved in Git and pushed to GitHub.
+- Commit: 67a43ca — Add reusable HVAC prospect master template.
 
 It must include:
 - reusable EN/ES assistant
@@ -228,8 +234,8 @@ Goal:
 For future HVAC prospects, customize instead of rebuilding from scratch.
 
 ## 13. Immediate Next Order
-1. Freeze/document final Wade version.
-2. Create clean HVAC prospect master template.
+1. DONE — Freeze/document final Wade version.
+2. DONE — Create clean HVAC prospect master template.
 3. Save Worker source without secrets.
 4. Wait for iPostal1 approval.
 5. Confirm approved business postal address formatting.
