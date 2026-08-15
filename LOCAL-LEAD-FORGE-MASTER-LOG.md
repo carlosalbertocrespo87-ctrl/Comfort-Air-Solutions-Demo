@@ -257,3 +257,9 @@ Do not add advanced features unless they directly help:
 - Git tag pushed successfully to GitHub.
 - This version is the reusable baseline for future HVAC prospect demos.
 - Do not modify the tag; create a new version/tag for future master-template upgrades.
+
+## CLIENT #1 ONBOARDING
+- Onboarding checklist created and backed up.
+- File: CLIENT-1-ONBOARDING-CHECKLIST.md
+- Commit: 6aed1d6 — Add client one onboarding checklist.
+- Covers client approval, commercial terms, payment, setup information, website integration, testing, launch, and first-week checks.
