@@ -250,7 +250,7 @@ const translations = {
     },
     demo: {
       label: "Try the demo",
-      placeholder: "Your email address",
+      placeholder: "name@wadeheating.com",
       button: "Try demo",
       error: "Enter a valid email",
     },
@@ -428,7 +428,7 @@ const translations = {
     },
     demo: {
       label: "Prueba la demo",
-      placeholder: "Tu correo electrónico",
+      placeholder: "nombre@wadeheating.com",
       button: "Probar demo",
       error: "Introduce un correo válido",
     },
@@ -1555,16 +1555,34 @@ function Home() {
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
 
   const startDemo = () => {
+    const email = demoEmail.trim().toLowerCase();
     const re = /^\S+@\S+\.\S+$/;
-    if (!re.test(demoEmail.trim())) {
+    const allowedTestEmails = [
+      "info@localleadforge.com",
+      "localleadforgeagency@gmail.com",
+    ];
+
+    if (!re.test(email)) {
       setDemoError(
-        translations[lang].demo?.error ??
-          (lang === "es"
-            ? "Introduce un correo válido"
-            : "Please enter a valid email"),
+        lang === "es"
+          ? "Introduce un correo válido."
+          : "Please enter a valid email.",
       );
       return;
     }
+
+    if (
+      !email.endsWith("@wadeheating.com") &&
+      !allowedTestEmails.includes(email)
+    ) {
+      setDemoError(
+        lang === "es"
+          ? "Para esta demo, utiliza un correo @wadeheating.com."
+          : "For this demo, please use a @wadeheating.com email address.",
+      );
+      return;
+    }
+
     setDemoError(null);
     setChatOpen(true);
   };
@@ -1573,8 +1591,8 @@ function Home() {
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
       <div className="bg-black px-4 py-2 text-center text-xs font-medium text-white">
         {lang === "es"
-          ? "Demo no oficial creado por Local Lead Forge para Wade Heating & Air Conditioning. Introduce tu correo para recibir personalmente el lead de demostración."
-          : "Unofficial demo created by Local Lead Forge for Wade Heating & Air Conditioning. Enter your email to receive the demo lead directly in your inbox."}
+          ? "Demo no oficial creado por Local Lead Forge para Wade Heating & Air Conditioning. Introduce tu correo de Wade (@wadeheating.com) para recibir personalmente el lead de demostración."
+          : "Unofficial demo created by Local Lead Forge for Wade Heating & Air Conditioning. Enter your Wade email (@wadeheating.com) to receive the demo lead directly in your inbox."}
       </div>
       <Header
         onChat={() => setChatOpen(true)}
