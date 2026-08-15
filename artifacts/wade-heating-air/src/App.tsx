@@ -559,13 +559,12 @@ function Header({
             </a>
           ))}
           {languageSelector}
-          <a
-            href="tel:4704127106"
-            data-testid="link-header-phone"
+          <span
+            data-testid="text-header-phone"
             className="flex items-center gap-2 border-l border-[hsl(var(--background)/.2)] pl-7 text-sm font-bold text-[hsl(var(--background))]"
           >
             <Phone size={15} /> (470) 412-7106
-          </a>
+          </span>
         </nav>
         <button
           onClick={() => setOpen(!open)}
@@ -880,13 +879,12 @@ function Area({ lang }: { lang: Language }) {
           <p className="mt-7 max-w-md leading-relaxed text-[hsl(var(--background)/.68)]">
             {area.copy}
           </p>
-          <a
-            href="tel:4704127106"
-            data-testid="link-area-phone"
-            className="mt-8 inline-flex items-center gap-2 font-bold text-[hsl(var(--accent))] hover:underline"
+          <span
+            data-testid="text-area-phone"
+            className="mt-8 inline-flex items-center gap-2 font-bold text-[hsl(var(--accent))]"
           >
             <Phone size={17} /> {area.phone}
-          </a>
+          </span>
         </div>
         <div className="relative min-h-[300px] overflow-hidden rounded-3xl border border-[hsl(var(--background)/.12)] bg-[hsl(var(--primary)/.45)] p-8">
           <div
@@ -1367,13 +1365,12 @@ function Footer({ lang }: { lang: Language }) {
             <p className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-[hsl(var(--accent))]">
               {footer.talk}
             </p>
-            <a
-              href="tel:4704127106"
-              data-testid="link-footer-phone"
-              className="mt-5 block text-lg font-bold hover:text-[hsl(var(--accent))]"
+            <span
+              data-testid="text-footer-phone"
+              className="mt-5 block text-lg font-bold"
             >
               {footer.phone}
-            </a>
+            </span>
             <p className="mt-2 text-sm text-[hsl(var(--background)/.6)]">
               {footer.hours}
             </p>
