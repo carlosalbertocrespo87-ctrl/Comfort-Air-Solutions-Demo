@@ -32,7 +32,6 @@ import {
   ShieldCheck,
   Snowflake,
   Sparkles,
-  Star,
   Wrench,
   X,
 } from "lucide-react";
@@ -67,8 +66,6 @@ const translations = {
       ],
       peaceLabel: "Peace of mind",
       peaceText: "The work is not done until your home feels right.",
-      quote1: "“The team you call",
-      quote2: "when comfort matters.”",
       imageAlt: "Wade Heating & Air technician inspecting an HVAC system",
     },
     services: {
@@ -281,8 +278,6 @@ const translations = {
       ],
       peaceLabel: "Tranquilidad",
       peaceText: "El trabajo no termina hasta que tu hogar se sienta bien.",
-      quote1: "“El equipo al que llamas",
-      quote2: "cuando el confort importa.”",
       imageAlt: "Técnico de Wade Heating & Air inspeccionando un sistema de HVAC",
     },
     services: {
@@ -436,30 +431,6 @@ const translations = {
 };
 
 const serviceIcons = [Snowflake, Flame, Gauge, Wrench] as const;
-
-const testimonials = [
-  {
-    quote:
-      "Our upstairs was finally comfortable again by dinner. The technician found the issue quickly and took time to show me what he was doing.",
-    name: "Marianne R.",
-    location: "Decatur, GA",
-    initials: "MR",
-  },
-  {
-    quote:
-      "No pressure, no mystery invoice — just a thoughtful diagnosis and a clean repair. Wade Heating & Air is now our first call.",
-    name: "Daniel K.",
-    location: "East Cobb, GA",
-    initials: "DK",
-  },
-  {
-    quote:
-      "The installation team treated our home like it was their own. Quiet, tidy, and our energy bill noticed the difference.",
-    name: "Priya S.",
-    location: "Brookhaven, GA",
-    initials: "PS",
-  },
-];
 
 function Logo({ light = false }: { light?: boolean }) {
   return (
@@ -720,15 +691,13 @@ function Hero({
             />
             <div className="absolute inset-2 rounded-[2rem] bg-gradient-to-t from-[hsl(var(--primary)/.8)] via-transparent to-transparent" />
             <div className="absolute bottom-8 left-8 right-8">
-              <div className="mb-2 flex gap-1 text-[hsl(var(--accent))]">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} size={14} fill="currentColor" />
-                ))}
-              </div>
-              <p className="font-display text-2xl leading-none">
-                {t.quote1}
-                <br />
-                {t.quote2}
+              <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.18em] text-[hsl(var(--accent))]">
+                {language === "es" ? "Concepto de demo" : "Demo concept"}
+              </p>
+              <p className="mt-2 font-display text-2xl leading-none">
+                {language === "es"
+                  ? "Captura de leads asistida por IA"
+                  : "AI-assisted lead capture"}
               </p>
             </div>
           </div>
@@ -950,70 +919,6 @@ function Area({ lang }: { lang: Language }) {
             <span className="size-2 animate-pulse rounded-full bg-[hsl(var(--accent-foreground))]" />{" "}
             local service area
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Reviews({ lang }: { lang: Language }) {
-  const [active, setActive] = useState(0);
-  const review = testimonials[active];
-  const reviewsText = translations[lang].reviews;
-  return (
-    <section
-      id="reviews"
-      className="bg-[hsl(var(--background))] px-5 py-24 lg:px-10 lg:py-32"
-    >
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground))]">
-              {reviewsText.eyebrow}
-            </p>
-            <h2 className="mt-4 font-display text-5xl leading-[.9] text-[hsl(var(--foreground))] lg:text-7xl">
-              {reviewsText.title1}
-              <br />
-              <em className="text-[hsl(var(--primary))]">
-                {reviewsText.title2}
-              </em>
-            </h2>
-          </div>
-          <div className="flex gap-2">
-            {testimonials.map((item, i) => (
-              <button
-                key={item.name}
-                onClick={() => setActive(i)}
-                data-testid={`button-review-${i}`}
-                className={`size-11 rounded-full border text-xs font-bold transition-colors ${active === i ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-[hsl(var(--background))]" : "border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--accent))]"}`}
-              >
-                0{i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="mt-14 grid gap-8 border-t border-[hsl(var(--border))] pt-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
-          <div className="flex items-center gap-4">
-            <div className="grid size-14 place-items-center rounded-full bg-[hsl(var(--accent))] font-display text-xl text-[hsl(var(--accent-foreground))]">
-              {review.initials}
-            </div>
-            <div>
-              <p className="font-bold text-[hsl(var(--foreground))]">
-                {review.name}
-              </p>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                {review.location}
-              </p>
-            </div>
-            <div className="ml-4 flex gap-1 text-[hsl(var(--accent))]">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} size={13} fill="currentColor" />
-              ))}
-            </div>
-          </div>
-          <blockquote className="font-display text-4xl leading-[.98] tracking-tight text-[hsl(var(--foreground))] lg:text-6xl">
-            “{review.quote}”
-          </blockquote>
         </div>
       </div>
     </section>
@@ -1549,7 +1454,6 @@ function Home() {
         <Services lang={lang} />
         <WhyChooseUs lang={lang} />
         <Area lang={lang} />
-        {/* Reviews hidden until verified Wade testimonials are added */}
         <Contact onChat={() => setChatOpen(true)} lang={lang} />
       </main>
       <Footer lang={lang} />
