@@ -58,7 +58,7 @@ const translations = {
       title3: "across Georgia's West Metro Area",
       subhead:
         "Air conditioning and heating repair, maintenance, and installation.",
-      request: "Request Service",
+      request: "Try the Demo",
       chat: "Chat With Our AI Assistant",
       trust: [
         "Licensed & insured",
@@ -195,7 +195,7 @@ const translations = {
       chat: "Prefer to chat? Meet our AI assistant",
       successTitle: "We got it.",
       successBody:
-        "Thanks for reaching out. A Wade Heating & Air team member will review your note and follow up during business hours.",
+        "Demo completed. No real service request has been submitted to Wade Heating & Air.",
       reset: "Send another request",
       formTitle: "Request service",
       formIntro: "A few details helps us make the first conversation useful.",
@@ -207,7 +207,7 @@ const translations = {
       helpPlaceholder: "Tell us what your system is doing (or not doing)...",
       consent:
         "I agree to be contacted about this request. No marketing lists, no pressure.",
-      submit: "Send request",
+      submit: "Start demo",
     },
     footer: {
       description:
@@ -272,7 +272,7 @@ const translations = {
       title3: "en el oeste metropolitano de Georgia",
       subhead:
         "Reparación, mantenimiento e instalación de aire acondicionado y calefacción.",
-      request: "Solicitar servicio",
+      request: "Probar la Demo",
       chat: "Hablar con nuestro asistente de IA",
       trust: [
         "Con licencia y asegurados",
@@ -374,9 +374,9 @@ const translations = {
       chat: "¿Prefieres chatear? Conoce a nuestro asistente de IA",
       successTitle: "Lo recibimos.",
       successCopy:
-        "Gracias por contactarnos. Un miembro del equipo Wade Heating & Air revisará tu nota y hará seguimiento en horario comercial.",
+        "Demo completada. No se ha enviado ninguna solicitud real de servicio a Wade Heating & Air.",
       sentAgain: "Enviar otra solicitud",
-      formTitle: "Solicitar servicio",
+      formTitle: "Demostración de captura de leads",
       formCopy:
         "Unos pocos detalles ayudan a que la primera conversación sea útil.",
       nameLabel: "Nombre",
@@ -384,7 +384,7 @@ const translations = {
       helpLabel: "¿En qué podemos ayudarte?",
       consentCopy:
         "Acepto ser contactado sobre esta solicitud. Sin listas de marketing, sin presión.",
-      submit: "Enviar solicitud",
+      submit: "Iniciar demo",
     },
     footer: {
       description:
@@ -1021,8 +1021,8 @@ function Reviews({ lang }: { lang: Language }) {
 }
 
 function Contact({ onChat, lang }: { onChat: () => void; lang: Language }) {
-  const [sent, setSent] = useState(false);
   const contact = translations[lang].contact;
+
   return (
     <section
       id="contact"
@@ -1033,26 +1033,25 @@ function Contact({ onChat, lang }: { onChat: () => void; lang: Language }) {
           <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground)/.7)]">
             {contact.eyebrow}
           </p>
+
           <h2 className="mt-4 font-display text-6xl leading-[.87] tracking-tight text-[hsl(var(--accent-foreground))] lg:text-8xl">
             {contact.title1}
             <br />
             {contact.title2}
           </h2>
-          <p className="mt-7 max-w-sm text-base leading-relaxed text-[hsl(var(--accent-foreground)/.72)]">
-            {contact.copy}
+
+          <p className="mt-7 max-w-md text-base leading-relaxed text-[hsl(var(--accent-foreground)/.72)]">
+            {lang === "es"
+              ? "Esta sección forma parte de una demostración no oficial de Local Lead Forge y no envía solicitudes reales de servicio a Wade Heating & Air."
+              : "This section is part of an unofficial Local Lead Forge demo and does not send real service requests to Wade Heating & Air."}
           </p>
+
           <div className="mt-9 flex flex-col gap-4">
-            <a
-              href="tel:4704127106"
-              data-testid="link-contact-phone"
-              className="flex items-center gap-3 text-xl font-bold text-[hsl(var(--accent-foreground))]"
-            >
-              <Phone size={21} /> {contact.phone}
-            </a>
             <span className="flex items-center gap-3 text-sm font-semibold text-[hsl(var(--accent-foreground)/.7)]">
               <Clock3 size={18} /> {contact.hours}
             </span>
           </div>
+
           <button
             onClick={onChat}
             data-testid="button-contact-chat"
@@ -1061,91 +1060,33 @@ function Contact({ onChat, lang }: { onChat: () => void; lang: Language }) {
             {contact.chat} <MessageCircle size={16} />
           </button>
         </div>
-        <div className="rounded-[2rem] bg-[hsl(var(--background))] p-6 shadow-xl lg:p-9">
-          {sent ? (
-            <div className="flex min-h-[390px] flex-col items-center justify-center text-center">
-              <div className="grid size-16 place-items-center rounded-full bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
-                <Check size={28} />
-              </div>
-              <h3 className="mt-6 font-display text-4xl text-[hsl(var(--foreground))]">
-                {contact.successTitle}
-              </h3>
-              <p className="mt-3 max-w-sm text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
-                {contact.successCopy}
-              </p>
-              <button
-                onClick={() => setSent(false)}
-                data-testid="button-contact-reset"
-                className="mt-7 text-sm font-bold text-[hsl(var(--primary))] underline underline-offset-4"
-              >
-                {contact.sentAgain}
-              </button>
-            </div>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true);
-              }}
-            >
-              <h3 className="font-display text-4xl text-[hsl(var(--foreground))]">
-                {contact.formTitle}
-              </h3>
-              <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
-                {contact.formCopy}
-              </p>
-              <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                <label className="text-xs font-bold text-[hsl(var(--foreground))]">
-                  {contact.nameLabel}
-                  <input
-                    required
-                    data-testid="input-contact-name"
-                    className="mt-2 w-full rounded-xl border border-[hsl(var(--border))] bg-transparent px-4 py-3 text-sm outline-none transition-colors focus:border-[hsl(var(--primary))]"
-                    placeholder={lang === "es" ? "Tu nombre" : "Your name"}
-                  />
-                </label>
-                <label className="text-xs font-bold text-[hsl(var(--foreground))]">
-                  {contact.phoneLabel}
-                  <input
-                    required
-                    type="tel"
-                    data-testid="input-contact-phone"
-                    className="mt-2 w-full rounded-xl border border-[hsl(var(--border))] bg-transparent px-4 py-3 text-sm outline-none transition-colors focus:border-[hsl(var(--primary))]"
-                    placeholder="(470) 412-7106"
-                  />
-                </label>
-              </div>
-              <label className="mt-5 block text-xs font-bold text-[hsl(var(--foreground))]">
-                {contact.helpLabel}
-                <textarea
-                  required
-                  data-testid="input-contact-message"
-                  className="mt-2 min-h-28 w-full resize-y rounded-xl border border-[hsl(var(--border))] bg-transparent px-4 py-3 text-sm outline-none transition-colors focus:border-[hsl(var(--primary))]"
-                  placeholder={
-                    lang === "es"
-                      ? "Cuéntanos qué hace (o no hace) tu sistema..."
-                      : "Tell us what your system is doing (or not doing)..."
-                  }
-                />
-              </label>
-              <div className="mt-5 flex items-start gap-3 text-xs text-[hsl(var(--muted-foreground))]">
-                <input
-                  type="checkbox"
-                  required
-                  data-testid="input-contact-consent"
-                  className="mt-0.5 accent-[hsl(var(--primary))]"
-                />
-                <span>{contact.consentCopy}</span>
-              </div>
-              <button
-                type="submit"
-                data-testid="button-contact-submit"
-                className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(var(--primary))] px-5 py-3.5 text-sm font-bold text-[hsl(var(--background))] transition-transform hover:-translate-y-0.5"
-              >
-                {contact.submit} <ArrowRight size={16} />
-              </button>
-            </form>
-          )}
+
+        <div className="flex min-h-[390px] flex-col items-center justify-center rounded-[2rem] bg-[hsl(var(--background))] p-8 text-center shadow-xl lg:p-12">
+          <div className="grid size-16 place-items-center rounded-full bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
+            <MessageCircle size={28} />
+          </div>
+
+          <h3 className="mt-6 font-display text-4xl text-[hsl(var(--foreground))]">
+            {lang === "es"
+              ? "Prueba el asistente de IA"
+              : "Try the AI lead assistant"}
+          </h3>
+
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
+            {lang === "es"
+              ? "Simula la experiencia de un visitante y observa cómo se puede capturar y calificar un lead. Esta demo no agenda citas, confirma precios ni solicita servicio real."
+              : "Simulate a website visitor and see how a lead can be captured and qualified. This demo does not book appointments, confirm pricing, or request actual service."}
+          </p>
+
+          <button
+            type="button"
+            onClick={onChat}
+            data-testid="button-contact-start-demo"
+            className="mt-7 flex items-center justify-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3.5 text-sm font-bold text-[hsl(var(--background))] transition-transform hover:-translate-y-0.5"
+          >
+            {lang === "es" ? "Iniciar demo" : "Start demo"}
+            <ArrowRight size={16} />
+          </button>
         </div>
       </div>
     </section>
@@ -1591,8 +1532,8 @@ function Home() {
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
       <div className="bg-black px-4 py-2 text-center text-xs font-medium text-white">
         {lang === "es"
-          ? "Demo no oficial creado por Local Lead Forge para Wade Heating & Air Conditioning. Introduce tu correo de Wade (@wadeheating.com) para recibir personalmente el lead de demostración."
-          : "Unofficial demo created by Local Lead Forge for Wade Heating & Air Conditioning. Enter your Wade email (@wadeheating.com) to receive the demo lead directly in your inbox."}
+          ? "Demo de ventas no oficial creado por Local Lead Forge. Local Lead Forge no está afiliado, respaldado ni autorizado por Wade Heating & Air Conditioning. No utilices esta demo para solicitar servicio HVAC real. Introduce tu correo de Wade (@wadeheating.com) para recibir el lead de demostración."
+          : "Unofficial sales demo created by Local Lead Forge. Local Lead Forge is not affiliated with, endorsed by, or authorized by Wade Heating & Air Conditioning. Do not use this demo to request actual HVAC service. Enter your Wade email (@wadeheating.com) to receive the demo lead directly in your inbox."}
       </div>
       <Header
         onChat={() => setChatOpen(true)}
