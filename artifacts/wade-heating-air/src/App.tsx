@@ -244,7 +244,7 @@ const translations = {
       placeholderDetails: "Name, phone number",
       answerPlaceholder: "Type your answer...",
       finalSummary:
-        "Thanks, {name}. Here’s what I’ll pass to the Wade Heating & Air team: {issue} in {location}, ideally {timing}. Phone: {phone}. A team member will review this during business hours — this chat does not confirm pricing or an appointment time.",
+        "Thanks, {name}. Here’s what I’ll pass to the Wade Heating & Air team: {issue} in {location}, ideally {timing}. Phone: {phone}. In a live installation, this lead could be delivered directly to the Wade Heating & Air team for follow-up — this chat does not confirm pricing or an appointment time.",
       closeNote:
         "You can close this window — your summary is ready for the team.",
     },
@@ -422,7 +422,7 @@ const translations = {
       placeholderAnswer: "Escribe tu respuesta...",
       placeholderDetails: "Nombre, número de teléfono",
       finalSummary:
-        "Gracias, {name}. Esto es lo que enviaré al equipo de Wade Heating & Air: {issue} en {location}, idealmente {timing}. Teléfono: {phone}. Un miembro del equipo revisará esto durante el horario comercial; este chat no confirma precios ni hora de cita.",
+        "Gracias, {name}. Esto es lo que enviaré al equipo de Wade Heating & Air: {issue} en {location}, idealmente {timing}. Teléfono: {phone}. En una instalación activa, este lead podría enviarse directamente al equipo de Wade Heating & Air para seguimiento; este chat no confirma precios ni hora de cita.",
       doneNote:
         "Puedes cerrar esta ventana — tu resumen está listo para el equipo.",
     },
@@ -1573,8 +1573,8 @@ function Home() {
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
       <div className="bg-black px-4 py-2 text-center text-xs font-medium text-white">
         {lang === "es"
-          ? "Demo no oficial creado por Local Lead Forge para Wade Heating & Air Conditioning. Los datos enviados en este demo no se envían a Wade."
-          : "Unofficial demo created by Local Lead Forge for Wade Heating & Air Conditioning. Demo submissions are not sent to Wade."}
+          ? "Demo no oficial creado por Local Lead Forge para Wade Heating & Air Conditioning. Introduce tu correo para recibir personalmente el lead de demostración."
+          : "Unofficial demo created by Local Lead Forge for Wade Heating & Air Conditioning. Enter your email to receive the demo lead directly in your inbox."}
       </div>
       <Header
         onChat={() => setChatOpen(true)}
