@@ -1206,6 +1206,13 @@ function ChatWidget({
   const [messages, setMessages] = useState<
     Array<{ from: "bot" | "user"; text: string }>
   >([{ from: "bot", text: chat.greeting }]);
+
+    useEffect(() => {
+      if (step === "problem") {
+        setMessages([{ from: "bot", text: chat.greeting }]);
+      }
+    }, [chat.greeting, step]);
+
   const prompts = useMemo(
     () => ({
       problem: chat.promptProblem,
@@ -1234,7 +1241,7 @@ function ChatWidget({
     if (submittedLeadKey.current === leadKey) return;
     submittedLeadKey.current = leadKey;
     console.log("Submitting ComfortAir lead");
-    void fetch("/.netlify/functions/submit-lead", {
+    void fetch("https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(finalizedLead),

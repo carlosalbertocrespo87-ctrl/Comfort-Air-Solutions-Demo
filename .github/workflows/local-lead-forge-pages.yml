@@ -52,12 +52,19 @@ jobs:
           BASE_PATH: /wade-demo/
         run: pnpm --dir artifacts/wade-heating-air run build
 
+      - name: Build ComfortAir Demo
+        env:
+          PORT: 3000
+          BASE_PATH: /comfortair-demo/
+        run: pnpm --dir artifacts/comfortair-solutions run build
+
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
+          cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
