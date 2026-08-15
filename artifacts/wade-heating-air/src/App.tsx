@@ -477,12 +477,12 @@ function Logo({ light = false }: { light?: boolean }) {
         <span
           className={`block text-[15px] font-bold tracking-[-.04em] ${light ? "text-[hsl(var(--background))]" : "text-[hsl(var(--foreground))]"}`}
         >
-          COMFORTAIR
+          WADE HEATING
         </span>
         <span
           className={`font-mono-ui text-[9px] tracking-[.21em] ${light ? "text-[hsl(var(--background)/.64)]" : "text-[hsl(var(--muted-foreground))]"}`}
         >
-          SOLUTIONS
+          & AIR
         </span>
       </span>
     </a>
