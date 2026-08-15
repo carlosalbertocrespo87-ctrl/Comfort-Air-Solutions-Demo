@@ -1220,7 +1220,7 @@ function ChatWidget({
   }, [open]);
   if (!open) return null;
 
-  const submitFinalizedLead = (finalizedLead: {
+  const submitFinalizedLead = async (finalizedLead: {
     name: string;
     phone: string;
     issue: string;
@@ -1229,10 +1229,51 @@ function ChatWidget({
     language: Language;
     demoEmail?: string;
   }) => {
+    if (!finalizedLead.demoEmail) return;
+
     const leadKey = JSON.stringify(finalizedLead);
     if (submittedLeadKey.current === leadKey) return;
     submittedLeadKey.current = leadKey;
-    console.log("Wade demo lead captured:", finalizedLead);
+
+    try {
+      const response = await fetch(
+        "https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalizedLead),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Demo email failed with status ${response.status}`);
+      }
+
+      setMessages((m) => [
+        ...m,
+        {
+          from: "bot",
+          text:
+            lang === "es"
+              ? `✅ Lead de demostración enviado a ${finalizedLead.demoEmail}. Revisa tu bandeja de entrada.`
+              : `✅ Demo lead sent to ${finalizedLead.demoEmail}. Check your inbox.`,
+        },
+      ]);
+    } catch (error) {
+      submittedLeadKey.current = null;
+      console.error("Wade demo email failed", error);
+
+      setMessages((m) => [
+        ...m,
+        {
+          from: "bot",
+          text:
+            lang === "es"
+              ? "No pude enviar el correo de demostración. Inténtalo de nuevo."
+              : "I couldn't send the demo email. Please try again.",
+        },
+      ]);
+    }
   };
 
   const handleUserResponse = (
