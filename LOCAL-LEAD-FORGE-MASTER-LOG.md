@@ -251,3 +251,9 @@ Do not add advanced features unless they directly help:
 - win CLIENT #1;
 - deliver CLIENT #1 successfully;
 - make future prospect demos faster and safer.
+
+## MASTER TEMPLATE VERSION
+- Official frozen version: MASTER-TEMPLATE-v1
+- Git tag pushed successfully to GitHub.
+- This version is the reusable baseline for future HVAC prospect demos.
+- Do not modify the tag; create a new version/tag for future master-template upgrades.
