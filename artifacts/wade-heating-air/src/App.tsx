@@ -213,7 +213,7 @@ const translations = {
       description:
         "A local HVAC team for the homes, neighborhoods, and weather we know best.",
       explore: "Explore",
-      exploreLinks: ["Services", "Our approach", "Customer reviews"],
+      exploreLinks: ["Services", "Our approach"],
       serviceArea: "Service area",
       serviceAreaItems: [
         "Atlanta & Midtown",
@@ -390,7 +390,7 @@ const translations = {
       description:
         "Un equipo local de HVAC para los hogares, vecindarios y clima que conocemos mejor.",
       explore: "Explorar",
-      exploreLinks: ["Servicios", "Nuestro enfoque", "Reseñas de clientes"],
+      exploreLinks: ["Servicios", "Nuestro enfoque"],
       serviceArea: "Área de servicio",
       serviceAreaItems: [
         "Atlanta y Midtown",
@@ -906,7 +906,7 @@ function Area({ lang }: { lang: Language }) {
           <h2 className="mt-4 font-display text-5xl leading-[.9] lg:text-7xl">
             {area.title1}
             <br />
-            helping <em>{area.title2}</em>
+            <em>{area.title2}</em> {area.title3}
           </h2>
           <p className="mt-7 max-w-md leading-relaxed text-[hsl(var(--background)/.68)]">
             {area.copy}
