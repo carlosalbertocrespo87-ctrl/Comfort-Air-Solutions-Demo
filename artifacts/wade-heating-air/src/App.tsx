@@ -1531,6 +1531,11 @@ function Home() {
 
   return (
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
+      <div className="bg-black px-4 py-2 text-center text-xs font-medium text-white">
+        {lang === "es"
+          ? "Demo no oficial creado por Local Lead Forge para Wade Heating & Air Conditioning. Los datos enviados en este demo no se envían a Wade."
+          : "Unofficial demo created by Local Lead Forge for Wade Heating & Air Conditioning. Demo submissions are not sent to Wade."}
+      </div>
       <Header
         onChat={() => setChatOpen(true)}
         language={lang}
