@@ -539,7 +539,6 @@ function Header({
     [t.nav.services, "#services"],
     [t.nav.approach, "#why"],
     [t.nav.area, "#area"],
-    [t.nav.reviews, "#reviews"],
   ];
   const languageSelector = (
     <div
