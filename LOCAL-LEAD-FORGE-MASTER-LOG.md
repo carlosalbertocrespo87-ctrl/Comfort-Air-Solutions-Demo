@@ -263,3 +263,11 @@ Do not add advanced features unless they directly help:
 - File: CLIENT-1-ONBOARDING-CHECKLIST.md
 - Commit: 6aed1d6 — Add client one onboarding checklist.
 - Covers client approval, commercial terms, payment, setup information, website integration, testing, launch, and first-week checks.
+
+## SERVICE AGREEMENT
+- Draft service agreement created.
+- File: LOCAL-LEAD-FORGE-SERVICE-AGREEMENT-DRAFT.md
+- Commit: ef0bb4e — Add draft service agreement.
+- Current pricing included: $299 setup + $199/month.
+- Status: DRAFT — requires final legal/commercial review before first client signature.
+- Includes scope, billing, cancellation, client responsibilities, no-results guarantee, IP, third-party services, security, termination, and signatures.
