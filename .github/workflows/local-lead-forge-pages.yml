@@ -7,6 +7,9 @@ on:
     paths:
       - "artifacts/local-lead-forge/**"
       - "artifacts/wade-heating-air/**"
+      - "artifacts/comfortair-solutions/**"
+      - "artifacts/new-level-mechanical/**"
+      - "pnpm-lock.yaml"
       - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
 
@@ -58,13 +61,20 @@ jobs:
           BASE_PATH: /comfortair-demo/
         run: pnpm --dir artifacts/comfortair-solutions run build
 
+      - name: Build New Level Mechanical Demo
+        env:
+          PORT: 3000
+          BASE_PATH: /new-level-mechanical-demo/
+        run: pnpm --dir artifacts/new-level-mechanical run build
+
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
           cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
+          cp -R artifacts/new-level-mechanical/dist/public/. pages-dist/new-level-mechanical-demo/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
