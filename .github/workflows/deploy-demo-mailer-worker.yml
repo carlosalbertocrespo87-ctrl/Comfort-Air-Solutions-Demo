@@ -37,4 +37,4 @@ jobs:
             -X POST "https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/" \
             -H "Origin: https://localleadforge.com" \
             -H "Content-Type: application/json" \
-            --data '{"name":"LLF Deployment QA","phone":"404-555-0100","issue":"Automated Worker smoke test","location":"Marietta, GA","timing":"Flexible","language":"en","demoEmail":"localleadforgeagency@gmail.com"}'
+            --data '{"name":"LLF Deployment QA","phone":"404-555-0100","issue":"Automated Worker smoke test","location":"Marietta, GA","timing":"Flexible","language":"en","demoEmail":"info@localleadforge.com"}'
