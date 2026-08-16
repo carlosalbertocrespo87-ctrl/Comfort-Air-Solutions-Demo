@@ -76,6 +76,15 @@ const airCompanyProspectTransform: Plugin = {
     const verifiedCities = `        "Atlanta",\n        "Sandy Springs",\n        "Marietta",\n        "Alpharetta",\n        "Brookhaven",\n        "Decatur",\n        "Smyrna",\n        "Tucker",\n        "Buckhead",\n        "Morningside",\n        "Virginia-Highland",\n        "Dunwoody",`;
     next = next.replace(originalCities, verifiedCities);
 
+    next = next.replace(
+      'import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";',
+      'import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";\nimport { SelfClosingFunnel } from "@/components/self-closing-funnel";',
+    );
+    next = next.replace(
+      '      <Footer lang={lang} />',
+      '      <SelfClosingFunnel companyName={prospectConfig.companyName} website="theaircompanyga.com" />\n      <Footer lang={lang} />',
+    );
+
     return { code: next, map: null };
   },
   transformIndexHtml(html) {
