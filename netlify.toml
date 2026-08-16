@@ -1,0 +1,13 @@
+[build]
+  command = "pnpm install --no-frozen-lockfile && PORT=4173 BASE_PATH=/ pnpm --dir artifacts/the-air-company-ga run build"
+  publish = "artifacts/the-air-company-ga/dist/public"
+
+[build.environment]
+  PNPM_VERSION = "10.14.0"
+  NODE_VERSION = "22"
+  PNPM_FLAGS = "--no-frozen-lockfile"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
