@@ -147,7 +147,8 @@ const translations = {
       title1: "Neighbors",
       title2: "helping",
       title3: "neighbors.",
-      body: `We are proud to serve communities throughout ${prospectConfig.serviceArea}. If you are nearby and not on the list, reach out to the company directly for current service-area information.`,
+      copy: `We are proud to serve communities throughout ${prospectConfig.serviceArea}. If you are nearby and not on the list, reach out to the company directly for current service-area information.`,
+      phone: prospectConfig.phoneDisplay,
       live: "local service area",
       cities: [
         "Atlanta",
@@ -362,6 +363,7 @@ const translations = {
       title2: "ayudando a vecinos.",
       copy: "Nos enorgullece servir comunidades en todo el oeste metropolitano de Georgia. Si estás cerca y no estás en la lista, llámanos — con gusto conversamos.",
       phone: prospectConfig.phoneDisplay,
+      live: "área de servicio local",
     },
     reviews: {
       eyebrow: "Palabras amables",
@@ -553,7 +555,7 @@ function Header({
     </div>
   );
   return (
-    <header className="absolute inset-x-0 top-0 z-30">
+    <header className="relative z-30 bg-[hsl(var(--primary))]">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-10">
         <Logo light />
         <nav className="hidden items-center gap-8 md:flex">
@@ -883,7 +885,8 @@ function Area({ lang }: { lang: Language }) {
           <h2 className="mt-4 font-display text-5xl leading-[.9] lg:text-7xl">
             {area.title1}
             <br />
-            <em>{area.title2}</em> {area.title3}
+            <em>{area.title2}</em>
+            {"title3" in area && area.title3 ? <> {area.title3}</> : null}
           </h2>
           <p className="mt-7 max-w-md leading-relaxed text-[hsl(var(--background)/.68)]">
             {area.copy}
@@ -924,7 +927,7 @@ function Area({ lang }: { lang: Language }) {
           </div>
           <div className="absolute bottom-7 right-7 flex items-center gap-2 rounded-full bg-[hsl(var(--accent))] px-4 py-2 font-mono-ui text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--accent-foreground))]">
             <span className="size-2 animate-pulse rounded-full bg-[hsl(var(--accent-foreground))]" />{" "}
-            local service area
+            {area.live}
           </div>
         </div>
       </div>
@@ -1402,6 +1405,7 @@ function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [lang, setLang] = useState<Language>("en");
   const [demoEmail, setDemoEmail] = useState<string>("");
+  const [demoExpanded, setDemoExpanded] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const request = () =>
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
@@ -1436,6 +1440,7 @@ function Home() {
     }
 
     setDemoError(null);
+    setDemoExpanded(false);
     setChatOpen(true);
   };
 
@@ -1449,7 +1454,10 @@ function Home() {
       <Header
         onChat={() => setChatOpen(true)}
         language={lang}
-        onLanguageChange={setLang}
+        onLanguageChange={(nextLang) => {
+          setLang(nextLang);
+          setDemoError(null);
+        }}
       />
       <main>
         <Hero
@@ -1464,24 +1472,38 @@ function Home() {
       </main>
       <Footer lang={lang} />
 
-      <div className="fixed bottom-20 right-5 z-30 flex items-center gap-2">
+      <div
+        className={`fixed bottom-5 right-24 z-30 flex items-center gap-2 ${
+          demoExpanded ? "left-5" : ""
+        } sm:bottom-20 sm:right-5 sm:left-auto`}
+      >
         <input
           value={demoEmail}
-          onChange={(e) => setDemoEmail(e.target.value)}
+          onChange={(e) => {
+            setDemoEmail(e.target.value);
+            setDemoError(null);
+          }}
           placeholder={translations[lang].demo.placeholder}
           data-testid="input-demo-email"
-          className="rounded-full px-3 py-2 text-sm shadow-sm"
+          className={`${demoExpanded ? "block" : "hidden"} min-w-0 flex-1 rounded-full px-3 py-2 text-sm shadow-sm sm:block sm:flex-none`}
         />
         <button
-          onClick={startDemo}
+          onClick={() => {
+            const isMobile = window.matchMedia("(max-width: 639px)").matches;
+            if (isMobile && !demoExpanded) {
+              setDemoExpanded(true);
+              return;
+            }
+            startDemo();
+          }}
           data-testid="button-demo-start"
-          className="rounded-full bg-[hsl(var(--accent))] px-4 py-2 text-sm font-bold text-[hsl(var(--accent-foreground))]"
+          className="shrink-0 rounded-full bg-[hsl(var(--accent))] px-4 py-2 text-sm font-bold text-[hsl(var(--accent-foreground))]"
         >
           {translations[lang].demo.button}
         </button>
       </div>
       {demoError && (
-        <div className="fixed bottom-16 right-5 z-40 text-xs text-red-500">
+        <div className="fixed bottom-16 left-5 right-24 z-40 text-center text-xs text-red-500 sm:left-auto sm:right-5 sm:text-left">
           {demoError}
         </div>
       )}
