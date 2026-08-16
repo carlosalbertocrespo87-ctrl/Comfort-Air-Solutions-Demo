@@ -1,6 +1,8 @@
 # The Air Company of GA — Outreach Draft
 
-Status: PREPARED — DO NOT SEND until iPostal/compliance blocker is cleared and Carlos authorizes outreach.
+Status: READY TO SEND AFTER iPostal/compliance blocker is cleared and Carlos authorizes outreach.
+
+Demo URL: https://deploy-preview-1--symphonious-travesseiro-c9bae1.netlify.app
 
 Verified public hooks (official site, re-checked 2026-08-16):
 - Local and family-owned HVAC company serving Metro Atlanta.
@@ -28,7 +30,7 @@ The goal is not to replace what is already working on your site. It is to help c
 
 I personalized the demo for The Air Company of GA so you can see the experience rather than read a generic pitch.
 
-[DEMO LINK — insert only after QA + publication]
+https://deploy-preview-1--symphonious-travesseiro-c9bae1.netlify.app
 
 If it looks useful, activation can be handled online without a sales call. Our launch offer is $299 setup + $199/month, with the demo and initial customization included in the evaluation.
 
@@ -48,7 +50,7 @@ Just following up on the private demo I built for The Air Company of GA.
 The main idea is simple: keep your current site and booking process, while adding a faster EN/ES conversation option that collects qualified HVAC lead details and hands your team a concise summary.
 
 Here is the demo again:
-[DEMO LINK]
+https://deploy-preview-1--symphonious-travesseiro-c9bae1.netlify.app
 
 If it is not relevant, no problem — I just wanted to make sure you had a chance to see what was built specifically for your company.
 
@@ -68,7 +70,7 @@ I’ll close the loop after this note.
 I built the demo because The Air Company of GA already has a strong web presence, and I thought a bilingual conversational lead-capture layer could complement the booking flow you already use rather than replace it.
 
 If you want to take a quick look, it will remain available here:
-[DEMO LINK]
+https://deploy-preview-1--symphonious-travesseiro-c9bae1.netlify.app
 
 If the timing is not right, I completely understand.
 
