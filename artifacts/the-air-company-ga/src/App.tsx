@@ -120,7 +120,7 @@ const translations = {
       eyebrow: `Why ${prospectConfig.companyName}`,
       title1: "Good work",
       title2: "feels different.",
-      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",
+      copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",
       imageAlt: "Technician checking air conditioning equipment",
       since: `Serving ${prospectConfig.serviceArea} since`,
       features: [
@@ -229,6 +229,7 @@ const translations = {
         "North Metro Atlanta",
       ],
       talk: "Talk to us",
+      phone: prospectConfig.phoneDisplay,
       hours: "Mon–Fri · 8:00am–5:00pm",
       licensed: "Licensed & insured in Georgia",
       copyright:  `© 2026 ${prospectConfig.companyName}`,
@@ -249,10 +250,10 @@ const translations = {
       quickProblem: ["AC blowing warm air", "No heat", "Strange noise"],
       quickTiming: ["Today", "This week", "I’m flexible"],
       placeholderDetails: "Name, phone number",
-      answerPlaceholder: "Type your answer...",
+      placeholderAnswer: "Type your answer...",
       finalSummary:
          `Thanks, {name}. Here’s what I’ll pass to the ${prospectConfig.companyName} team: {issue} in {location}, ideally {timing}. Phone: {phone}. In a live installation, this lead could be delivered directly to the ${prospectConfig.companyName} team for follow-up — this chat does not confirm pricing or an appointment time.`,
-      closeNote:
+      doneNote:
         "You can close this window — your summary is ready for the team.",
     },
     demo: {
