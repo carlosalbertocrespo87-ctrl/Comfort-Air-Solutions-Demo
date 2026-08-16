@@ -8,6 +8,11 @@ const TEST_EMAILS = [
   "localleadforgeagency@gmail.com",
 ];
 
+const ALLOWED_PROSPECT_DOMAINS = [
+  "wadeheating.com",
+  "newlevelmechanical.com",
+];
+
 function cors(origin) {
   return {
     "Access-Control-Allow-Origin": origin,
@@ -37,7 +42,10 @@ function clean(value = "") {
 
 function emailAllowed(email) {
   const e = email.toLowerCase().trim();
-  return TEST_EMAILS.includes(e) || e.endsWith("@wadeheating.com");
+  return (
+    TEST_EMAILS.includes(e) ||
+    ALLOWED_PROSPECT_DOMAINS.some((domain) => e.endsWith(`@${domain}`))
+  );
 }
 
 export default {
@@ -97,7 +105,7 @@ export default {
 
     if (!emailAllowed(email)) {
       return json(
-        { error: "Please use a Wade Heating & Air email address." },
+        { error: "Please use an approved prospect or Local Lead Forge test email address." },
         403,
         origin,
       );
@@ -118,7 +126,7 @@ export default {
         to: [email],
         subject: `Demo Website Lead — ${name} — ${location}`,
         text: `
-WADE HEATING & AIR CONDITIONING
+LOCAL LEAD FORGE
 DEMO WEBSITE LEAD
 
 Customer: ${name}
@@ -128,7 +136,7 @@ Location: ${location}
 Requested timing: ${timing}
 Language: ${language}
 
-This is a demonstration lead generated through the personalized Local Lead Forge preview created for Wade Heating & Air Conditioning.
+This is a demonstration lead generated through a personalized Local Lead Forge preview.
 
 In a live installation, leads like this can be delivered automatically to your team, including leads captured outside normal business hours.
 
@@ -139,7 +147,7 @@ https://localleadforge.com
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#183b45">
   <div style="background:#183b45;color:white;padding:24px;border-radius:12px 12px 0 0">
     <div style="color:#f47735;font-size:12px;font-weight:bold">
-      WADE HEATING & AIR CONDITIONING
+      LOCAL LEAD FORGE
     </div>
     <h1>DEMO WEBSITE LEAD</h1>
   </div>
