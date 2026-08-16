@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { SelfClosingFunnel } from '@/components/self-closing-funnel';
 
 import './index.css';
 
@@ -12,6 +13,12 @@ createRoot(document.getElementById('root')!, {
   },
 }).render(
   <ErrorBoundary>
-    <App />
+    <>
+      <App />
+      <SelfClosingFunnel
+        companyName="New Level Mechanical"
+        website="https://newlevelmechanical.com"
+      />
+    </>
   </ErrorBoundary>,
 );
