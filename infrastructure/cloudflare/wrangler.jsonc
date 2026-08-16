@@ -3,6 +3,7 @@
   "main": "./local-lead-forge-demo-mailer.worker.js",
   "compatibility_date": "2026-08-16",
   "workers_dev": true,
+  "preview_urls": false,
   "keep_vars": true,
   "secrets": {
     "required": ["RESEND_API_KEY"]
