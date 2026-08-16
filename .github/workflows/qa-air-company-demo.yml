@@ -1,0 +1,55 @@
+name: QA Air Company Demo
+
+on:
+  push:
+    branches:
+      - air-company-demo-build
+    paths:
+      - "artifacts/the-air-company-ga/**"
+      - ".github/workflows/qa-air-company-demo.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+          pnpm --version
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck prospect demo
+        env:
+          PORT: "4173"
+          BASE_PATH: "/the-air-company-demo/"
+        run: pnpm --dir artifacts/the-air-company-ga run typecheck
+
+      - name: Production build prospect demo
+        env:
+          NODE_ENV: production
+          PORT: "4173"
+          BASE_PATH: "/the-air-company-demo/"
+        run: pnpm --dir artifacts/the-air-company-ga run build
+
+      - name: Verify safety and funnel markers
+        run: |
+          grep -q "Disallow: /" artifacts/the-air-company-ga/public/robots.txt
+          grep -q "SelfClosingFunnel" artifacts/the-air-company-ga/vite.config.ts
+          grep -q "Unofficial sales demo" artifacts/the-air-company-ga/src/App.tsx
