@@ -141,7 +141,8 @@ const translations = {
       title1: "Neighbors",
       title2: "helping",
       title3: "neighbors.",
-      body: "We are proud to serve the neighborhoods that make metro Atlanta feel like home. If you are nearby and not on the list, give us a call — we are happy to talk.",
+      copy: "We are proud to serve the neighborhoods that make metro Atlanta feel like home. If you are nearby and not on the list, give us a call — we are happy to talk.",
+      phone: "(470) 555-0124",
       live: "local service area",
       cities: [
         "Atlanta",
@@ -358,6 +359,7 @@ const translations = {
       title2: "ayudando a vecinos.",
       copy: "Nos enorgullece servir los vecindarios que hacen que el área metropolitana de Atlanta se sienta como hogar. Si estás cerca y no estás en la lista, llámanos — con gusto conversamos.",
       phone: "(470) 555-0124",
+      live: "área de servicio local",
     },
     reviews: {
       eyebrow: "Palabras amables",
@@ -907,7 +909,8 @@ function Area({ lang }: { lang: Language }) {
           <h2 className="mt-4 font-display text-5xl leading-[.9] lg:text-7xl">
             {area.title1}
             <br />
-            helping <em>{area.title2}</em>
+            <em>{area.title2}</em>
+            {"title3" in area && area.title3 ? <> {area.title3}</> : null}
           </h2>
           <p className="mt-7 max-w-md leading-relaxed text-[hsl(var(--background)/.68)]">
             {area.copy}
@@ -949,7 +952,7 @@ function Area({ lang }: { lang: Language }) {
           </div>
           <div className="absolute bottom-7 right-7 flex items-center gap-2 rounded-full bg-[hsl(var(--accent))] px-4 py-2 font-mono-ui text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--accent-foreground))]">
             <span className="size-2 animate-pulse rounded-full bg-[hsl(var(--accent-foreground))]" />{" "}
-            local service area
+            {area.live}
           </div>
         </div>
       </div>
@@ -1532,6 +1535,7 @@ function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [lang, setLang] = useState<Language>("en");
   const [demoEmail, setDemoEmail] = useState<string>("");
+  const [demoExpanded, setDemoExpanded] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const request = () =>
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
@@ -1548,6 +1552,7 @@ function Home() {
       return;
     }
     setDemoError(null);
+    setDemoExpanded(false);
     setChatOpen(true);
   };
 
@@ -1572,24 +1577,35 @@ function Home() {
       </main>
       <Footer lang={lang} />
 
-      <div className="fixed bottom-20 right-5 z-30 flex items-center gap-2">
+      <div
+        className={`fixed bottom-5 right-24 z-30 flex items-center gap-2 ${
+          demoExpanded ? "left-5" : ""
+        } sm:bottom-20 sm:right-5 sm:left-auto`}
+      >
         <input
           value={demoEmail}
           onChange={(e) => setDemoEmail(e.target.value)}
           placeholder={translations[lang].demo.placeholder}
           data-testid="input-demo-email"
-          className="rounded-full px-3 py-2 text-sm shadow-sm"
+          className={`${demoExpanded ? "block" : "hidden"} min-w-0 flex-1 rounded-full px-3 py-2 text-sm shadow-sm sm:block sm:flex-none`}
         />
         <button
-          onClick={startDemo}
+          onClick={() => {
+            const isMobile = window.matchMedia("(max-width: 639px)").matches;
+            if (isMobile && !demoExpanded) {
+              setDemoExpanded(true);
+              return;
+            }
+            startDemo();
+          }}
           data-testid="button-demo-start"
-          className="rounded-full bg-[hsl(var(--accent))] px-4 py-2 text-sm font-bold text-[hsl(var(--accent-foreground))]"
+          className="shrink-0 rounded-full bg-[hsl(var(--accent))] px-4 py-2 text-sm font-bold text-[hsl(var(--accent-foreground))]"
         >
           {translations[lang].demo.button}
         </button>
       </div>
       {demoError && (
-        <div className="fixed bottom-16 right-5 z-40 text-xs text-red-500">
+        <div className="fixed bottom-32 left-5 right-5 z-40 text-center text-xs text-red-500 sm:bottom-16 sm:left-auto sm:right-5 sm:text-left">
           {demoError}
         </div>
       )}
