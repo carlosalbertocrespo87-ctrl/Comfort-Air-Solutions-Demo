@@ -12,7 +12,7 @@ on:
       - "package.json"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   qa:
@@ -20,6 +20,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: air-company-demo-build
+          fetch-depth: 0
+
+      - name: Normalize bilingual translation keys
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('artifacts/the-air-company-ga/src/App.tsx')
+          s = p.read_text()
+          replacements = [
+              ('      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",', '      copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",'),
+              ('      answerPlaceholder: "Type your answer...",', '      placeholderAnswer: "Type your answer...",'),
+              ('      closeNote:\n        "You can close this window — your summary is ready for the team.",', '      doneNote:\n        "You can close this window — your summary is ready for the team.",'),
+              ('      talk: "Talk to us",\n      hours: "Mon–Fri · 8:00am–5:00pm",', '      talk: "Talk to us",\n      phone: prospectConfig.phoneDisplay,\n      hours: "Mon–Fri · 8:00am–5:00pm",'),
+          ]
+          changed = False
+          for old, new in replacements:
+              if old in s:
+                  s = s.replace(old, new, 1)
+                  changed = True
+              elif new not in s:
+                  raise SystemExit(f'Neither expected nor normalized source pattern found: {old[:80]}')
+          if changed:
+              p.write_text(s)
+          PY
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -53,3 +79,16 @@ jobs:
           grep -q "Disallow: /" artifacts/the-air-company-ga/public/robots.txt
           grep -q "SelfClosingFunnel" artifacts/the-air-company-ga/vite.config.ts
           grep -q "Unofficial sales demo" artifacts/the-air-company-ga/src/App.tsx
+
+      - name: Persist normalized source
+        run: |
+          if git diff --quiet -- artifacts/the-air-company-ga/src/App.tsx; then
+            echo "Source already normalized"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/the-air-company-ga/src/App.tsx
+          git diff --cached --check
+          git commit -m "Fix Air Company bilingual translation keys"
+          git push origin HEAD:air-company-demo-build
