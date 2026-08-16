@@ -2,8 +2,7 @@ name: Repair New Level Syntax
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - ".github/workflows/repair-new-level-syntax.yml"
 
@@ -19,24 +18,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fix exact syntax typo
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("artifacts/new-level-mechanical/src/App.tsx")
-          text = path.read_text()
-          old = '''        ))}
-      </div>
-      {step !== "done" ? ('''
-          new = '''        )}
-      </div>
-      {step !== "done" ? ('''
-          count = text.count(old)
-          if count != 1:
-              raise SystemExit(f"Expected exactly one syntax target, found {count}")
-          path.write_text(text.replace(old, new, 1))
-          PY
+      - name: Fix syntax typo
+        run: sed -i '1240s/))}/)}/' artifacts/new-level-mechanical/src/App.tsx
 
       - name: Commit repair
         run: |
