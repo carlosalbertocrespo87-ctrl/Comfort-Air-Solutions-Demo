@@ -1561,7 +1561,10 @@ function Home() {
       <Header
         onChat={() => setChatOpen(true)}
         language={lang}
-        onLanguageChange={setLang}
+        onLanguageChange={(nextLang) => {
+          setLang(nextLang);
+          setDemoError(null);
+        }}
       />
       <main>
         <Hero
@@ -1584,7 +1587,10 @@ function Home() {
       >
         <input
           value={demoEmail}
-          onChange={(e) => setDemoEmail(e.target.value)}
+          onChange={(e) => {
+            setDemoEmail(e.target.value);
+            setDemoError(null);
+          }}
           placeholder={translations[lang].demo.placeholder}
           data-testid="input-demo-email"
           className={`${demoExpanded ? "block" : "hidden"} min-w-0 flex-1 rounded-full px-3 py-2 text-sm shadow-sm sm:block sm:flex-none`}
@@ -1605,7 +1611,7 @@ function Home() {
         </button>
       </div>
       {demoError && (
-        <div className="fixed bottom-32 left-5 right-5 z-40 text-center text-xs text-red-500 sm:bottom-16 sm:left-auto sm:right-5 sm:text-left">
+        <div className="fixed bottom-16 left-5 right-24 z-40 text-center text-xs text-red-500 sm:left-auto sm:right-5 sm:text-left">
           {demoError}
         </div>
       )}
