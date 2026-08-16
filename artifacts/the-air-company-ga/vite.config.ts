@@ -34,6 +34,22 @@ const airCompanyProspectTransform: Plugin = {
     if (!id.endsWith('/src/App.tsx')) return null;
 
     const replacements: Array<[string, string]> = [
+      [
+        '      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",',
+        '      copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",',
+      ],
+      [
+        '      answerPlaceholder: "Type your answer...",',
+        '      placeholderAnswer: "Type your answer...",',
+      ],
+      [
+        '      closeNote:\n        "You can close this window — your summary is ready for the team.",',
+        '      doneNote:\n        "You can close this window — your summary is ready for the team.",',
+      ],
+      [
+        '      talk: "Talk to us",\n      hours: "Mon–Fri · 8:00am–5:00pm",',
+        '      talk: "Talk to us",\n      phone: prospectConfig.phoneDisplay,\n      hours: "Mon–Fri · 8:00am–5:00pm",',
+      ],
       ['"PROSPECT HVAC COMPANY"', '"The Air Company of GA"'],
       ['"PROSPECT HVAC"', '"The Air Company"'],
       ['"prospectcompany.com"', '"theaircompanyga.com"'],
