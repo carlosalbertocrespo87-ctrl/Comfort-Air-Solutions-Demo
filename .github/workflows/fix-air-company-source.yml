@@ -1,0 +1,49 @@
+name: Fix Air Company Source
+
+on:
+  push:
+    branches:
+      - air-company-demo-build
+    paths:
+      - ".github/workflows/fix-air-company-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: air-company-demo-build
+          fetch-depth: 0
+
+      - name: Normalize bilingual translation keys
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('artifacts/the-air-company-ga/src/App.tsx')
+          s = p.read_text()
+          replacements = {
+              '      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",': '      copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",',
+              '      answerPlaceholder: "Type your answer...",': '      placeholderAnswer: "Type your answer...",',
+              '      closeNote:\n        "You can close this window — your summary is ready for the team.",': '      doneNote:\n        "You can close this window — your summary is ready for the team.",',
+              '      talk: "Talk to us",\n      hours: "Mon–Fri · 8:00am–5:00pm",': '      talk: "Talk to us",\n      phone: prospectConfig.phoneDisplay,\n      hours: "Mon–Fri · 8:00am–5:00pm",',
+          }
+          for old, new in replacements.items():
+              if old not in s:
+                  raise SystemExit(f'Expected source pattern not found: {old[:80]}')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Commit source normalization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/the-air-company-ga/src/App.tsx
+          git diff --cached --check
+          git commit -m "Fix Air Company bilingual translation keys"
+          git push origin HEAD:air-company-demo-build
