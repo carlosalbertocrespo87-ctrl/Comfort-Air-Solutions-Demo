@@ -271,3 +271,73 @@ Do not add advanced features unless they directly help:
 - Current pricing included: $299 setup + $199/month.
 - Status: DRAFT — requires final legal/commercial review before first client signature.
 - Includes scope, billing, cancellation, client responsibilities, no-results guarantee, IP, third-party services, security, termination, and signatures.
+
+## 15. PROGRESS UPDATE — 2026-08-15
+
+### COMFORTAIR DEMO — PRODUCTION COMPLETE
+Status: COMPLETE / VALIDATED
+
+Production:
+- https://localleadforge.com/comfortair-demo/
+- Desktop validated.
+- Mobile validated.
+- English validated.
+- Spanish validated.
+- Mobile menu validated.
+- Try Demo / Probar demo mobile UX validated.
+- Email validation UX validated.
+- EN/ES chatbot validated.
+- Real lead email delivery validated.
+- Cloudflare Worker + Resend integration validated.
+- GitHub Pages production deployment validated.
+
+Final relevant commits:
+- 4dacff8 — Polish ComfortAir mobile demo experience
+- 731eb6a — Refine ComfortAir demo validation UX
+
+ComfortAir is now a completed reference implementation.
+Do not reopen or rebuild it unless a future regression or required product change makes it necessary.
+
+### MASTER HVAC PROSPECT TEMPLATE — VERSION 2
+Status: COMPLETE / VALIDATED / FROZEN
+
+Location:
+artifacts/hvac-prospect-template
+
+Final improvements validated:
+- Mobile Try Demo starts compact and expands email input on tap.
+- Demo validation error clears correctly while typing.
+- Language changes clear stale validation errors.
+- EN/ES Area section fixed and validated.
+- Local service area badge translated EN/ES.
+- Phone and area copy render correctly.
+- Unofficial sales demo disclaimer preserved.
+- Mobile header no longer overlaps disclaimer.
+- Prospect recipient/domain restrictions preserved.
+- Build passed.
+- git diff --check passed.
+- Mobile QA passed in English and Spanish.
+
+Git:
+- Commit: dc72cde — Polish HVAC master template mobile experience
+- Frozen tag: MASTER-TEMPLATE-v2
+- Tag pushed successfully to GitHub.
+
+MASTER-TEMPLATE-v1 remains frozen and must not be moved or rewritten.
+MASTER-TEMPLATE-v2 is now the preferred reusable baseline for new HVAC prospect demos.
+
+### INFRASTRUCTURE CHECKPOINT
+- Cloudflare Worker production source is archived at:
+  infrastructure/cloudflare/local-lead-forge-demo-mailer.worker.js
+- RESEND_API_KEY remains stored securely in Cloudflare and must not be committed to GitHub, Replit, or documentation.
+
+### CURRENT NEXT PRIORITIES
+1. Update backup/documentation records for MASTER-TEMPLATE-v2.
+2. Wait for iPostal1 Form 1583/address approval.
+3. Confirm exact approved business mailing-address format.
+4. Finalize Wade outreach with approved address.
+5. Send first Wade outreach.
+6. Continue business banking resolution.
+7. Move Stripe from test to live only when banking/payment setup is ready.
+8. Build future prospect demos from MASTER-TEMPLATE-v2 instead of rebuilding from zero.
+

@@ -121,6 +121,17 @@ If future changes break the template, recover this version from the Git tag inst
 
 Do NOT move or rewrite this tag.
 
+Current preferred reusable baseline:
+
+MASTER-TEMPLATE-v2
+
+- Commit: dc72cde — Polish HVAC master template mobile experience
+- Mobile EN/ES QA completed.
+- Unofficial-demo safety protections preserved.
+- Git tag pushed successfully to GitHub.
+- MASTER-TEMPLATE-v1 remains preserved as the original frozen baseline.
+
+
 Future major template versions should receive new tags, for example:
 
 MASTER-TEMPLATE-v2
@@ -553,7 +564,7 @@ LOCAL-LEAD-FORGE-BACKUP-INDEX.md
 ### Step 4
 Confirm:
 
-MASTER-TEMPLATE-v1
+MASTER-TEMPLATE-v2
 
 ### Step 5
 Confirm external accounts:
@@ -588,7 +599,7 @@ GitHub `main`
 
 For frozen reusable HVAC baseline:
 
-Git tag `MASTER-TEMPLATE-v1`
+Git tag `MASTER-TEMPLATE-v2`
 
 For project state:
 
