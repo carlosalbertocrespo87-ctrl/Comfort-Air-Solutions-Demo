@@ -139,23 +139,25 @@ const translations = {
       eyebrow: `Why ${prospectConfig.companyName}`,
       title1: "Good work",
       title2: "feels different.",
-      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",
-      imageAlt: "Technician checking air conditioning equipment",
-      since: `Serving ${prospectConfig.serviceArea} since`,
+      copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",
       features: [
         [
+          "01",
           "We show up prepared",
           "The right tools, parts, and context to make the first visit count.",
         ],
         [
+          "02",
           "We explain the why",
           "Plain language. Honest options. No pressure to decide on the spot.",
         ],
         [
+          "03",
           "We leave it better",
           "Careful shoe covers, clean work areas, and respect for your home.",
         ],
         [
+          "04",
           "We think long-term",
           "Solutions designed for comfort today and fewer surprises tomorrow.",
         ],
@@ -202,6 +204,7 @@ const translations = {
       serviceArea: "Service area",
       serviceAreaItems: prospectConfig.serviceAreaItems,
       talk: "Talk to us",
+      phone: prospectConfig.phoneDisplay,
       hours: prospectConfig.businessHours,
       licensed: "Licensed & insured in Georgia",
       copyright:  `© 2026 ${prospectConfig.companyName}`,
@@ -222,10 +225,10 @@ const translations = {
       quickProblem: ["AC blowing warm air", "No heat", "Strange noise"],
       quickTiming: ["Today", "This week", "I’m flexible"],
       placeholderDetails: "Name, phone number",
-      answerPlaceholder: "Type your answer...",
+      placeholderAnswer: "Type your answer...",
       finalSummary:
          `Thanks, {name}. Here’s what I’ll pass to the ${prospectConfig.companyName} team: {issue} in {location}, ideally {timing}. Phone: {phone}. In a live installation, this lead could be delivered directly to the ${prospectConfig.companyName} team for follow-up — this chat does not confirm pricing or an appointment time.`,
-      closeNote:
+      doneNote:
         "You can close this window — your summary is ready for the team.",
     },
     demo: {
@@ -1234,7 +1237,7 @@ function ChatWidget({
               </button>
             ))}
           </div>
-        )}
+        ))}
       </div>
       {step !== "done" ? (
         <form
@@ -1406,7 +1409,7 @@ function Home() {
     <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
       <div className="bg-black px-4 py-2 text-center text-xs font-medium text-white">
         {lang === "es"
-          ?  `Demo de ventas no oficial creado por Local Lead Forge. Local Lead Forge no está afiliado, respaldado ni autorizado por ${prospectConfig.companyName}. No utilices esta demo para solicitar servicio HVAC real. Introduce un correo @${prospectConfig.emailDomain} para recibir el lead de demostración.`
+          ?  `Demo de ventas no oficial creada por Local Lead Forge. Local Lead Forge no está afiliado, respaldado ni autorizado por ${prospectConfig.companyName}. No utilices esta demo para solicitar servicio HVAC real. Introduce un correo @${prospectConfig.emailDomain} para recibir el lead de demostración.`
           :  `Unofficial sales demo created by Local Lead Forge. Local Lead Forge is not affiliated with, endorsed by, or authorized by ${prospectConfig.companyName}. Do not use this demo to request actual HVAC service. Enter an @${prospectConfig.emailDomain} email address to receive the demo lead directly in your inbox.`}
       </div>
       <Header
