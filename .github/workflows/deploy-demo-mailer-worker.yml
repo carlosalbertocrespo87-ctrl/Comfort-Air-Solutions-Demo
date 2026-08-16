@@ -29,3 +29,12 @@ jobs:
           workingDirectory: infrastructure/cloudflare
           wranglerVersion: "4"
           command: deploy
+
+      - name: Smoke test lead delivery
+        run: |
+          curl --fail --silent --show-error \
+            --retry 3 --retry-all-errors \
+            -X POST "https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/" \
+            -H "Origin: https://localleadforge.com" \
+            -H "Content-Type: application/json" \
+            --data '{"name":"LLF Deployment QA","phone":"404-555-0100","issue":"Automated Worker smoke test","location":"Marietta, GA","timing":"Flexible","language":"en","demoEmail":"localleadforgeagency@gmail.com"}'
