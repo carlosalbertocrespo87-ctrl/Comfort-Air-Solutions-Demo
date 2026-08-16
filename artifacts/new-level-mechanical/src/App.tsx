@@ -1237,7 +1237,7 @@ function ChatWidget({
               </button>
             ))}
           </div>
-        ))}
+        )}
       </div>
       {step !== "done" ? (
         <form
