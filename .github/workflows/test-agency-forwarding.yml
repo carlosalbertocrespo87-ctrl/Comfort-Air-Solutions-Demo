@@ -15,5 +15,6 @@ jobs:
           curl --fail-with-body --silent --show-error \
             -X POST \
             -H 'Content-Type: application/json' \
+            -H 'Origin: https://localleadforge.com' \
             --data '{"name":"LLF Forwarding QA","phone":"4045550100","issue":"External forwarding verification","location":"Atlanta, GA","timing":"QA now","language":"en","demoEmail":"localleadforgeagency@gmail.com"}' \
             'https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/'
