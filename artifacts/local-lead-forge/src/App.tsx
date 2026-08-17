@@ -12,6 +12,7 @@ import {
   Sparkles,
   Users,
   Wrench,
+  Zap,
 } from "lucide-react";
 
 export default function App() {
@@ -20,14 +21,19 @@ export default function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
-          <div className="text-lg font-bold">Local Lead Forge</div>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+          <div className="llf-brand" aria-label="Local Lead Forge">
+            <span className="llf-mark">LLF</span>
+            <span className="llf-flare">✦</span>
+            <span className="llf-brand-name">LOCAL LEAD FORGE</span>
+          </div>
 
-          <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
+          <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
+            <a href="#how" className="transition hover:text-white">{lang === "en" ? "Solutions" : "Soluciones"}</a>
             <a href="#how" className="transition hover:text-white">{lang === "en" ? "How It Works" : "Cómo Funciona"}</a>
-            <a href="#demo" className="transition hover:text-white">Demo</a>
             <a href="#pricing" className="transition hover:text-white">{lang === "en" ? "Pricing" : "Precios"}</a>
-            <a href="#faq" className="transition hover:text-white">FAQ</a>
+            <a href="#demo" className="transition hover:text-white">{lang === "en" ? "Results" : "Resultados"}</a>
+            <a href="#faq" className="transition hover:text-white">{lang === "en" ? "About" : "Acerca"}</a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -43,83 +49,169 @@ export default function App() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+      <section className="llf-hero mx-auto max-w-7xl px-6 pb-8 pt-12 lg:px-8 lg:pt-16">
+        <div className="grid gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-sm text-sky-300">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-sky-300">
               <Sparkles className="h-4 w-4" />
               {lang === "en" ? "AI-Powered Lead Capture for Local Service Businesses" : "Captura de Leads con IA para Negocios de Servicios Locales"}
             </div>
 
-            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-              {lang === "en" ? "Turn More Visitors Into Qualified Leads." : "Convierte Más Visitantes en Leads Calificados."}
+            <h1 className="llf-hero-title text-5xl font-bold tracking-tight sm:text-6xl lg:text-[4.35rem]">
+              {lang === "en" ? (
+                <>Turn More Visitors Into <span className="llf-accent">Qualified Leads.</span></>
+              ) : (
+                <>Convierte Más Visitantes en <span className="llf-accent">Leads Calificados.</span></>
+              )}
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
               {lang === "en"
-                ? "Local Lead Forge helps local service businesses capture, qualify, and organize website leads with bilingual AI, fast follow-up, and a conversion-focused experience built to close the gap between traffic and booked work."
-                : "Local Lead Forge ayuda a negocios de servicios locales a capturar, calificar y organizar leads con IA bilingüe, seguimiento rápido y una experiencia enfocada en convertir tráfico en oportunidades reales."}
+                ? "Local Lead Forge helps local service businesses capture, qualify, and convert more website leads with bilingual AI, automation, and high-converting demo experiences."
+                : "Local Lead Forge ayuda a negocios de servicios locales a capturar, calificar y convertir más leads con IA bilingüe, automatización y experiencias de demo enfocadas en conversión."}
             </p>
 
-            <div className="mt-10 flex flex-wrap gap-4">
+            <p className="mt-3 text-sm font-semibold text-slate-300">
+              {lang === "en" ? "A clearer path from website visit to qualified opportunity." : "Un camino más claro desde la visita web hasta una oportunidad calificada."}
+            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3">
               <a href="#how" className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-6 py-3 font-semibold text-white transition hover:bg-sky-400">
                 {lang === "en" ? "See How It Works" : "Ver Cómo Funciona"}
                 <ArrowRight className="h-5 w-5" />
               </a>
-              <a href="#demo" className="rounded-xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:border-slate-500">
-                {lang === "en" ? "Watch the Demo" : "Ver la Demo"}
+              <a href="#demo" className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-6 py-3 font-semibold text-white transition hover:border-slate-500">
+                <span className="llf-play">▶</span>{lang === "en" ? "Watch the Demo" : "Ver la Demo"}
               </a>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-slate-300">
-              <span className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-sky-400" />{lang === "en" ? "24/7 Lead Capture" : "Captura 24/7"}</span>
+            <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-xs text-slate-300">
               <span className="flex items-center gap-2"><MessageSquareText className="h-4 w-4 text-sky-400" />{lang === "en" ? "Bilingual EN / ES" : "Bilingüe EN / ES"}</span>
+              <span className="flex items-center gap-2"><Bot className="h-4 w-4 text-sky-400" />{lang === "en" ? "AI-Powered" : "Impulsado por IA"}</span>
               <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-sky-400" />{lang === "en" ? "Automated Follow-Up" : "Seguimiento Automatizado"}</span>
+              <span className="flex items-center gap-2"><Wrench className="h-4 w-4 text-sky-400" />{lang === "en" ? "Built for Local Services" : "Hecho para Servicios Locales"}</span>
             </div>
           </div>
 
-          <div className="llf-dashboard rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-2xl sm:p-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-400">LLF</div>
-                <div className="mt-1 text-lg font-semibold">{lang === "en" ? "Client Dashboard Preview" : "Vista Previa del Panel del Cliente"}</div>
-              </div>
-              <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">{lang === "en" ? "Demo data only" : "Solo datos demo"}</span>
-            </div>
+          <div className="llf-dashboard rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-2xl sm:p-5">
+            <div className="llf-dashboard-grid">
+              <aside className="llf-dashboard-side hidden md:block">
+                <div className="llf-dashboard-logo">LLF</div>
+                {(lang === "en" ? ["Overview", "Leads", "Conversations", "Appointments", "ROI Tracking", "Funnels"] : ["Resumen", "Leads", "Conversaciones", "Citas", "Seguimiento ROI", "Funnels"]).map((item, index) => (
+                  <div key={item} className={`llf-side-item ${index === 0 ? "is-active" : ""}`}>{item}</div>
+                ))}
+              </aside>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                [Users, lang === "en" ? "New Leads" : "Nuevos Leads", lang === "en" ? "Connected after launch" : "Se conecta al activar"],
-                [CheckCircle2, lang === "en" ? "Qualified Leads" : "Leads Calificados", lang === "en" ? "Tracked automatically" : "Seguimiento automático"],
-                [CalendarDays, lang === "en" ? "Appointments" : "Citas", lang === "en" ? "Visible in one place" : "Visibles en un solo lugar"],
-                [BarChart3, lang === "en" ? "ROI Tracking" : "Seguimiento de ROI", lang === "en" ? "Measured with real client data" : "Medido con datos reales"],
-              ].map(([Icon, title, copy]) => (
-                <div key={String(title)} className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{String(title)}</span>
-                    <Icon className="h-5 w-5 text-sky-400" />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-400">{lang === "en" ? "Dashboard" : "Panel"}</div>
+                    <div className="mt-1 text-sm font-semibold">{lang === "en" ? "Client Portal Preview" : "Vista Previa del Portal"}</div>
                   </div>
-                  <div className="mt-4 text-2xl font-bold text-slate-500">—</div>
-                  <div className="mt-1 text-xs text-slate-400">{String(copy)}</div>
+                  <span className="rounded-lg border border-slate-700 px-3 py-1 text-[11px] text-slate-400">{lang === "en" ? "Illustrative preview" : "Vista ilustrativa"}</span>
                 </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  {[
+                    [Users, lang === "en" ? "New Leads" : "Nuevos Leads"],
+                    [CheckCircle2, lang === "en" ? "Qualified" : "Calificados"],
+                    [CalendarDays, lang === "en" ? "Appointments" : "Citas"],
+                    [BarChart3, lang === "en" ? "Closed Jobs" : "Trabajos Cerrados"],
+                  ].map(([Icon, title]) => (
+                    <div key={String(title)} className="llf-metric-card rounded-2xl border border-slate-800 bg-slate-950 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-slate-300">{String(title)}</span>
+                        <Icon className="h-4 w-4 text-sky-400" />
+                      </div>
+                      <div className="mt-3 text-xl font-bold text-slate-400">—</div>
+                      <div className="mt-1 text-[10px] text-slate-500">{lang === "en" ? "Live after launch" : "Activo al lanzar"}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 grid gap-3 lg:grid-cols-[1.65fr_0.85fr]">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold">{lang === "en" ? "Leads Over Time" : "Leads en el Tiempo"}</div>
+                        <div className="mt-1 text-[10px] text-slate-500">{lang === "en" ? "Visual preview — not client results" : "Vista visual — no son resultados reales"}</div>
+                      </div>
+                      <span className="rounded-md border border-slate-700 px-2 py-1 text-[10px] text-slate-400">30D</span>
+                    </div>
+                    <div className="mt-4 flex h-28 items-end gap-2" aria-hidden="true">
+                      {[25, 38, 34, 48, 45, 58, 54, 67, 63, 75, 72, 88].map((height, index) => (
+                        <div key={index} className="llf-chart-bar flex-1 rounded-t-sm" style={{ height: `${height}%` }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                    <div className="text-xs font-semibold">{lang === "en" ? "Lead Sources" : "Fuentes de Leads"}</div>
+                    <div className="mt-4 flex justify-center">
+                      <div className="llf-donut" aria-hidden="true"><span>LLF</span></div>
+                    </div>
+                    <div className="mt-4 space-y-2 text-[10px] text-slate-400">
+                      <div className="flex justify-between"><span>{lang === "en" ? "Website" : "Sitio web"}</span><span>—</span></div>
+                      <div className="flex justify-between"><span>{lang === "en" ? "AI Assistant" : "Asistente IA"}</span><span>—</span></div>
+                      <div className="flex justify-between"><span>{lang === "en" ? "Referrals" : "Referidos"}</span><span>—</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-[10px] text-slate-500">
+                  {lang === "en" ? "Dashboard shown for product visualization only. Real metrics appear only after a client is live." : "Panel mostrado solo para visualizar el producto. Las métricas reales aparecen cuando el cliente está activo."}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="llf-feature-strip mt-7 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {[
+            [MessageSquareText, "1", lang === "en" ? "Bilingual AI Assistant" : "Asistente IA Bilingüe", lang === "en" ? "English or Spanish, instant answers." : "Inglés o español, respuestas al instante."],
+            [Users, "2", lang === "en" ? "Lead Capture & Qualification" : "Captura y Calificación", lang === "en" ? "Collects the details your team needs." : "Recopila los datos que tu equipo necesita."],
+            [Zap, "3", lang === "en" ? "Self-Closing Funnel" : "Funnel de Conversión", lang === "en" ? "Guides prospects toward the next step." : "Guía al prospecto al siguiente paso."],
+            [BarChart3, "4", lang === "en" ? "Client Portal / ROI" : "Portal / ROI", lang === "en" ? "One place for leads and performance." : "Un lugar para leads y rendimiento."],
+            [Clock3, "5", lang === "en" ? "Faster Response" : "Respuesta Más Rápida", lang === "en" ? "Reduce delay between interest and follow-up." : "Reduce la espera entre interés y seguimiento."],
+          ].map(([Icon, number, title, copy]) => (
+            <div key={String(number)} className="llf-feature-card rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <div className="flex items-start gap-3">
+                <div className="llf-icon-box"><Icon className="h-5 w-5" /></div>
+                <div><div className="text-sm font-semibold"><span className="mr-2 text-sky-400">{String(number)}</span>{String(title)}</div><div className="mt-1 text-xs leading-5 text-slate-400">{String(copy)}</div></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1.15fr]">
+          <div className="llf-offer-card rounded-3xl border border-sky-400/40 bg-slate-950 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-bold uppercase tracking-[0.12em] text-sky-400">{lang === "en" ? "Founding Client Offer" : "Oferta Cliente Fundador"}</div>
+              <div className="rounded-full border border-slate-700 px-3 py-1 text-[10px] font-semibold text-slate-300">{lang === "en" ? "LIMITED TO THE FIRST 5 CLIENTS" : "LIMITADO A LOS PRIMEROS 5"}</div>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="border-slate-800 sm:border-r sm:pr-4"><div className="flex items-end gap-2"><span className="text-4xl font-bold">$299</span><span className="pb-1 font-semibold text-sky-400">SETUP</span></div><div className="mt-2 text-xs text-slate-400">{lang === "en" ? "AI lead capture & automation setup" : "Configuración de captura y automatización"}</div></div>
+              <div><div className="flex items-end gap-2"><span className="text-4xl font-bold">$199</span><span className="pb-1 font-semibold text-sky-400">/MONTH</span></div><div className="mt-2 text-xs text-slate-400">{lang === "en" ? "Founding rate while active and in good standing" : "Tarifa fundadora mientras la cuenta siga activa"}</div></div>
+            </div>
+            <a href="#pricing" className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-sm font-semibold">{lang === "en" ? "Claim Your Founding Client Offer" : "Solicitar Oferta Fundadora"}<ArrowRight className="h-4 w-4" /></a>
+          </div>
+
+          <div className="llf-outcomes-card rounded-3xl border border-slate-800 bg-slate-950 p-5">
+            <div className="text-sm font-semibold">{lang === "en" ? "Built to Make Lead Performance Easier to See" : "Diseñado para Hacer Visible el Rendimiento"}</div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {(lang === "en" ? ["New Leads", "Appointments", "Closed Jobs", "Revenue"] : ["Nuevos Leads", "Citas", "Trabajos", "Ingresos"]).map((item) => (
+                <div key={item} className="rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-center"><div className="text-lg font-bold text-slate-400">—</div><div className="mt-1 text-[10px] text-slate-400">{item}</div></div>
               ))}
             </div>
-
-            <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-semibold">{lang === "en" ? "Leads Over Time" : "Leads en el Tiempo"}</div>
-                  <div className="mt-1 text-xs text-slate-500">{lang === "en" ? "Illustrative dashboard layout — not client results" : "Diseño ilustrativo — no son resultados de clientes"}</div>
-                </div>
-                <span className="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-400">30D</span>
-              </div>
-              <div className="mt-5 flex h-28 items-end gap-2" aria-hidden="true">
-                {[28, 42, 36, 54, 48, 70, 62, 78, 72, 88, 82, 96].map((height, index) => (
-                  <div key={index} className="llf-chart-bar flex-1 rounded-t-md" style={{ height: `${height}%` }} />
-                ))}
-              </div>
-            </div>
+            <div className="mt-4 text-[10px] text-slate-500">{lang === "en" ? "Real client metrics are displayed only after data exists — no invented results." : "Las métricas reales se muestran solo cuando existen datos — sin resultados inventados."}</div>
           </div>
+        </div>
+
+        <div className="llf-trust-strip mt-3 grid gap-3 rounded-2xl border border-slate-800 bg-slate-950 px-5 py-4 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+          <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-sky-400" />{lang === "en" ? "No Long-Term Contracts" : "Sin Contratos a Largo Plazo"}</span>
+          <span className="flex items-center gap-2"><Clock3 className="h-5 w-5 text-sky-400" />{lang === "en" ? "Cancel Anytime" : "Cancela Cuando Quieras"}</span>
+          <span className="flex items-center gap-2"><Wrench className="h-5 w-5 text-sky-400" />{lang === "en" ? "Built for Local Services" : "Hecho para Servicios Locales"}</span>
+          <span className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-sky-400" />{lang === "en" ? "U.S.-Based Business" : "Negocio Basado en EE. UU."}</span>
         </div>
       </section>
 
