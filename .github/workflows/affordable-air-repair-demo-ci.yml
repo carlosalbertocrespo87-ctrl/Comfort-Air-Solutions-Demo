@@ -1,0 +1,91 @@
+name: Affordable Air Repair Demo CI
+
+on:
+  push:
+    branches:
+      - demo-affordable-air-repair
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/affordable-air-repair.json"
+      - "AFFORDABLE-AIR-REPAIR-DEMO-BUILD-SPEC.md"
+      - ".github/workflows/affordable-air-repair-demo-ci.yml"
+      - ".github/qa/affordable-air-repair-browser.spec.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply Affordable Air Repair configuration
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:affordable-air
+      - name: Typecheck Affordable Air Repair demo
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+      - name: Build Affordable Air Repair demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template run build:affordable-air
+      - name: Static safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          INDEX="artifacts/hvac-prospect-template/index.html"
+          ROBOTS="artifacts/hvac-prospect-template/public/robots.txt"
+          grep -q 'Affordable Air Repair' "$APP"
+          grep -q 'affordableairrepair.com' "$APP"
+          grep -q '770-652-4040' "$APP"
+          grep -q 'Smyrna, Cartersville & Metro Atlanta' "$APP"
+          grep -q 'Verified highlights' "$APP"
+          grep -q 'noindex, nofollow, noarchive' "$INDEX"
+          grep -q 'Disallow: /' "$ROBOTS"
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain in App.tsx" >&2
+            exit 1
+          fi
+          if grep -q 'Marianne R\.\|Daniel K\.\|Priya S\.' "$APP"; then
+            echo "Template fictional review names remain in App.tsx" >&2
+            exit 1
+          fi
+      - name: Install Chromium for browser QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/affordable-air-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/affordable-air-preview.log
+          exit 1
+      - name: Functional browser QA
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/affordable-air-repair-browser.spec.ts --workers=1 --reporter=line
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/affordable-air-repair-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/affordable-air-repair-mobile.png
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: affordable-air-repair-render-qa
+          path: qa-artifacts/*.png
+          if-no-files-found: error
