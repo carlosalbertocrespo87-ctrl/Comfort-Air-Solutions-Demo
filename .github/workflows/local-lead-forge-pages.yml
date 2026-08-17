@@ -152,3 +152,47 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  verify-public-routes:
+    name: Verify published generic demo routes
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Verify live demo routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          configs=(artifacts/prospect-configs/*.json)
+          failures=0
+
+          for config in "${configs[@]}"; do
+            route=$(node -e 'const fs=require("fs"); const c=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(c.demoRoute) process.stdout.write(c.demoRoute)' "$config")
+            company=$(node -e 'const fs=require("fs"); const c=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(c.companyName||"")' "$config")
+            [ -n "$route" ] || continue
+
+            url="https://localleadforge.com/${route}/"
+            echo "Verifying $company -> $url"
+            ok=0
+            for attempt in {1..12}; do
+              html=$(curl --fail --silent --show-error --location --max-time 20 "$url" 2>/tmp/route-error || true)
+              robots=$(curl --fail --silent --show-error --location --max-time 20 "${url}robots.txt" 2>/tmp/robots-error || true)
+              if [ -n "$html" ] && grep -Fqi "<title>${company}</title>" <<<"$html" && grep -Fqi 'noindex' <<<"$html" && grep -Fqi 'Disallow: /' <<<"$robots"; then
+                ok=1
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$ok" -ne 1 ]; then
+              echo "::error::Public verification failed for $company at $url"
+              failures=$((failures+1))
+            fi
+          done
+
+          if [ "$failures" -ne 0 ]; then
+            echo "Public verification failures: $failures"
+            exit 1
+          fi
