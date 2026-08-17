@@ -82,6 +82,12 @@ jobs:
           mkdir -p /tmp/asap-heating-air-demo
           cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/asap-heating-air-demo/
 
+      - name: Restore shared HVAC template source
+        run: |
+          git checkout -- artifacts/hvac-prospect-template/src/App.tsx
+          git checkout -- artifacts/hvac-prospect-template/index.html
+          git checkout -- artifacts/hvac-prospect-template/public/robots.txt
+
       - name: Build PM Service Company Demo
         env:
           PORT: 3000
