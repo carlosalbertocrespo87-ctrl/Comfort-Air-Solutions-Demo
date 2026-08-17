@@ -7,57 +7,92 @@ on:
     paths:
       - "artifacts/prospect-configs/*.json"
       - ".github/workflows/hvac-fast-pipeline.yml"
-      - ".github/workflows/hvac-prospect-demo-ci-reusable.yml"
       - ".github/qa/hvac-prospect-browser-generic.spec.ts"
       - "artifacts/hvac-prospect-template/**"
-      - "scripts/build-generic-pages-demos.mjs"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  detect:
+  demo-fast:
     runs-on: ubuntu-latest
-    outputs:
-      slug: ${{ steps.prospect.outputs.slug }}
-      route: ${{ steps.prospect.outputs.route }}
     steps:
-      - uses: actions/checkout@v6
-      - id: prospect
-        name: Read newest manifest prospect
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Detect and configure newest prospect
         shell: bash
         run: |
-          node - <<'NODE' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          eval "$(node - <<'NODE'
           const fs = require('fs');
           const list = JSON.parse(fs.readFileSync('artifacts/prospect-configs/published-generic-demos.json','utf8'));
           const item = list.at(-1);
           if (!item?.slug || !item?.route) throw new Error('Manifest has no valid latest prospect');
-          console.log(`slug=${item.slug}`);
-          console.log(`route=${item.route}`);
+          console.log(`PROSPECT_SLUG=${JSON.stringify(item.slug)}`);
+          console.log(`PROSPECT_ROUTE=${JSON.stringify(item.route)}`);
           NODE
-
-  qa:
-    needs: detect
-    uses: ./.github/workflows/hvac-prospect-demo-ci-reusable.yml
-    with:
-      prospect_slug: ${{ needs.detect.outputs.slug }}
-      artifact_name: fast-pipeline-${{ needs.detect.outputs.slug }}
-
-  pages-builder:
-    needs: detect
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Build manifest demos
-        run: node scripts/build-generic-pages-demos.mjs
-      - name: Verify newest staged route
+          )"
+          echo "PROSPECT_SLUG=$PROSPECT_SLUG" >> "$GITHUB_ENV"
+          echo "PROSPECT_ROUTE=$PROSPECT_ROUTE" >> "$GITHUB_ENV"
+          node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs "$PROSPECT_SLUG"
+      - name: Build and prepare Chromium in parallel
+        shell: bash
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: |
+          set -euo pipefail
+          pnpm dlx playwright@1.55.0 install chromium & chromium_pid=$!
+          pnpm --dir artifacts/hvac-prospect-template run typecheck
+          pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
+          wait "$chromium_pid"
+          node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs "$PROSPECT_SLUG"
+      - name: Stage and verify Pages route from QA build
         shell: bash
         run: |
-          test -f "/tmp/llf-generic-pages/${{ needs.detect.outputs.route }}/index.html"
-          grep -q "noindex, nofollow, noarchive" "/tmp/llf-generic-pages/${{ needs.detect.outputs.route }}/index.html"
+          set -euo pipefail
+          out="/tmp/llf-generic-pages/$PROSPECT_ROUTE"
+          rm -rf "$out"
+          mkdir -p "$out"
+          cp -a artifacts/hvac-prospect-template/dist/public/. "$out/"
+          test -f "$out/index.html"
+          grep -q "noindex, nofollow, noarchive" "$out/index.html"
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/prospect-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/prospect-preview.log
+          exit 1
+      - name: Functional QA and renders in parallel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ "qa-artifacts/${PROSPECT_SLUG}-desktop.png" & desktop_pid=$!
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ "qa-artifacts/${PROSPECT_SLUG}-mobile.png" & mobile_pid=$!
+          PROSPECT_SLUG="$PROSPECT_SLUG" pnpm dlx @playwright/test@1.55.0 test .github/qa/hvac-prospect-browser-generic.spec.ts --workers=1 --reporter=line
+          wait "$desktop_pid"
+          wait "$mobile_pid"
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fast-pipeline-${{ env.PROSPECT_SLUG }}
+          path: qa-artifacts/*.png
+          if-no-files-found: error
