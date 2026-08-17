@@ -1,0 +1,6 @@
+# Temporary deploy-preview routing for PR #4 only.
+# Production/main is intentionally unchanged.
+
+[context.deploy-preview]
+  command = "pnpm --filter ./artifacts/local-lead-forge build"
+  publish = "artifacts/local-lead-forge/dist"
