@@ -1,0 +1,14 @@
+{
+  "companyName": "New Level Mechanical",
+  "shortName": "New Level Mechanical",
+  "website": "https://newlevelmechanical.com",
+  "emailDomain": "newlevelmechanical.com",
+  "phoneDisplay": "(404) 723-3830",
+  "serviceArea": "Marietta & North Atlanta",
+  "demoRoute": "new-level-mechanical-demo",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true
+  }
+}
