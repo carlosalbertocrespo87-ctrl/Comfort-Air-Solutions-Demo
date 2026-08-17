@@ -1,0 +1,36 @@
+{
+  "companyName": "Dynamic Heating & Air LLC",
+  "shortName": "Dynamic Heating & Air",
+  "website": "https://dynamicheatingandairllc.org",
+  "emailDomain": "dynamicheatingandairllc.org",
+  "publicEmail": "Air@dynamicheatingandairllc.org",
+  "phoneDisplay": "404-480-3248",
+  "serviceArea": "Atlanta and surrounding communities",
+  "publicContact": null,
+  "sinceYear": null,
+  "demoRoute": "dynamic-heating-air-demo",
+  "verifiedServices": [
+    "Air conditioning repair",
+    "Air conditioning installation",
+    "Furnace repair and installation",
+    "Ductwork",
+    "Emergency HVAC service",
+    "Residential and commercial HVAC projects"
+  ],
+  "verifiedHighlights": [
+    "Official site publishes 404-480-3248 and Air@dynamicheatingandairllc.org for Dynamic Heating & Air LLC.",
+    "Official site lists AC repair and installation, furnace repair and installation, ductwork and emergency service.",
+    "Official site says the company serves residential and commercial projects across Atlanta, Brookhaven, College Park, Douglasville, Fayetteville, Mableton, Marietta, Peachtree City, Riverdale and South Fulton."
+  ],
+  "opportunity": "Turn an active Atlanta HVAC presence with broad service coverage into a clearer mobile-first bilingual lead qualification experience while preserving only verified service claims.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
