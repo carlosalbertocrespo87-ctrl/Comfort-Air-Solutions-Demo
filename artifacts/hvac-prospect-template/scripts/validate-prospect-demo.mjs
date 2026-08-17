@@ -9,7 +9,7 @@ const repoRoot = path.resolve(templateRoot, "../..");
 const [slug] = process.argv.slice(2);
 if (!slug) throw new Error("Usage: node scripts/validate-prospect-demo.mjs <prospect-slug>");
 
-const configPath = path.join(repoRoot, "prospect-configs", `${slug}.json`);
+const configPath = path.join(repoRoot, "artifacts", "prospect-configs", `${slug}.json`);
 if (!fs.existsSync(configPath)) throw new Error(`Missing prospect config: ${configPath}`);
 
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
