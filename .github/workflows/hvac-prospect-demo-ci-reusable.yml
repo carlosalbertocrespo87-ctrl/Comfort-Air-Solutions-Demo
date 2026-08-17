@@ -1,0 +1,79 @@
+name: Reusable HVAC Prospect Demo CI
+
+on:
+  workflow_call:
+    inputs:
+      prospect_slug:
+        required: true
+        type: string
+      artifact_name:
+        required: false
+        type: string
+        default: prospect-demo-render-qa
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply generic prospect configuration
+        run: node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs ${{ inputs.prospect_slug }}
+      - name: Parallel build, validation, and browser prep
+        shell: bash
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: |
+          set -euo pipefail
+          start=$(date +%s)
+          pnpm --dir artifacts/hvac-prospect-template run typecheck & p_type=$!
+          pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts & p_build=$!
+          node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs ${{ inputs.prospect_slug }} & p_safe=$!
+          pnpm dlx playwright@1.55.0 install chromium & p_browser=$!
+          wait "$p_type"
+          wait "$p_build"
+          wait "$p_safe"
+          wait "$p_browser"
+          end=$(date +%s)
+          echo "Parallel QA prep completed in $((end-start))s"
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/prospect-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/prospect-preview.log
+          exit 1
+      - name: Functional browser QA
+        env:
+          PROSPECT_SLUG: ${{ inputs.prospect_slug }}
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/hvac-prospect-browser-generic.spec.ts --workers=1 --reporter=line
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/${{ inputs.prospect_slug }}-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/${{ inputs.prospect_slug }}-mobile.png
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: qa-artifacts/*.png
+          if-no-files-found: error

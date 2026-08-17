@@ -1,0 +1,34 @@
+{
+  "companyName": "FlowTech Mechanical Services, LLC",
+  "shortName": "FlowTech Mechanical Services",
+  "website": "https://www.flowtechms.com",
+  "emailDomain": "flowtechms.com",
+  "publicEmail": "contact@flowtechms.com",
+  "phoneDisplay": "770-410-9353",
+  "serviceArea": "North Metro Atlanta",
+  "publicContact": "Dan Pineyro",
+  "sinceYear": "Since 2005",
+  "demoRoute": "flowtech-mechanical-services-demo",
+  "verifiedServices": [
+    "Residential HVAC service and repair",
+    "HVAC maintenance and replacement",
+    "Heat pump repair and replacement",
+    "Commercial HVAC service and planned service agreements"
+  ],
+  "verifiedHighlights": [
+    "Official site says FlowTech Mechanical Services is family owned and has served North Metro Atlanta since 2005.",
+    "Official site lists residential and commercial HVAC service, maintenance, replacement, heat pumps and planned service agreements.",
+    "Official site identifies Dan Pineyro as founder and publishes 770-410-9353 and contact@flowtechms.com."
+  ],
+  "opportunity": "Modernize an established North Metro Atlanta HVAC presence into a clearer mobile-first bilingual qualification experience while preserving verified residential and commercial service positioning.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
