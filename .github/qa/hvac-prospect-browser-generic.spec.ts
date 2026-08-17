@@ -4,47 +4,48 @@ import { expect, test } from '@playwright/test';
 
 const slug = process.env.PROSPECT_SLUG;
 if (!slug) throw new Error('PROSPECT_SLUG is required');
-const config = JSON.parse(fs.readFileSync(path.resolve(`artifacts/prospect-configs/${slug}.json`), 'utf8'));
-const demoUrl = 'http://127.0.0.1:4173/';
-const mailerUrl = 'https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/**';
 
-test('generic prospect demo passes desktop bilingual lead-flow QA without external side effects', async ({ page }) => {
-  await page.route(mailerUrl, async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, qaMock: true }) });
-  });
+const config = JSON.parse(
+  fs.readFileSync(path.resolve(`artifacts/prospect-configs/${slug}.json`), 'utf8'),
+);
+const demoUrl = 'http://127.0.0.1:4173/';
+
+test('generic private demo passes desktop visual and bilingual assistant QA', async ({ page }) => {
   await page.goto(demoUrl, { waitUntil: 'networkidle' });
-  await expect(page.getByText(config.shortName).first()).toBeVisible();
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow, noarchive');
-  await page.getByRole('button', { name: 'ES', exact: true }).click();
-  await expect(page.getByText('Servicios', { exact: true }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'EN', exact: true }).click();
-  await expect(page.getByText('Services', { exact: true }).first()).toBeVisible();
-  const demoEmail = page.getByTestId('input-demo-email');
-  await demoEmail.fill('not-an-email');
-  await page.getByTestId('button-demo-start').click();
-  await expect(page.getByText('Please enter a valid email.')).toBeVisible();
-  await demoEmail.fill('info@localleadforge.com');
-  await page.getByTestId('button-demo-start').click();
-  await expect(page.getByTestId('widget-chat')).toBeVisible();
-  const input = page.getByTestId('input-chat-message');
-  const send = page.getByTestId('button-chat-send');
-  await input.fill('AC is not cooling'); await send.click();
-  await expect(page.getByText('What city or ZIP code is the home in?')).toBeVisible();
-  await input.fill(config.serviceArea); await send.click();
-  await expect(page.getByText(/When would you ideally like help/)).toBeVisible();
-  await input.fill('As soon as possible'); await send.click();
-  await expect(page.getByText(/Last step: what is your name and best phone number/)).toBeVisible();
-  await input.fill('QA Test 404-555-0101'); await send.click();
-  await expect(page.getByText(/Thanks, QA Test\./)).toBeVisible();
-  await expect(page.getByText('✅ Demo lead sent to info@localleadforge.com. Check your inbox.')).toBeVisible();
+
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    'content',
+    'noindex, nofollow, noarchive',
+  );
+  await expect(page.getByText(`Prepared for ${config.companyName}`)).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /A Better Way to Turn Website Visitors Into Qualified HVAC Leads/i }),
+  ).toBeVisible();
+  await expect(page.getByText('Captured Lead', { exact: true })).toBeVisible();
+  await expect(page.getByText('Founding Client Offer', { exact: true })).toBeVisible();
+  await expect(page.getByText('Your Potential Results with Local Lead Forge')).toBeVisible();
+
+  const assistant = page.locator('#assistant');
+  await expect(assistant).toBeVisible();
+  await assistant.getByRole('button', { name: 'ES', exact: true }).click();
+  await expect(assistant.getByText(new RegExp(`Asistente IA de ${config.shortName}`))).toBeVisible();
+  await assistant.getByRole('button', { name: 'EN', exact: true }).click();
+  await expect(assistant.getByText(new RegExp(`${config.shortName} AI Assistant`))).toBeVisible();
+
+  await assistant.getByRole('button', { name: 'Heating issue', exact: true }).click();
+  await expect(assistant.getByText('Heating issue', { exact: true })).toHaveCount(2);
+  await assistant.getByRole('button', { name: 'Today if possible', exact: true }).click();
+  await expect(assistant.getByRole('button', { name: /Lead ready for the team/i })).toBeVisible();
 });
 
-test('generic prospect demo passes mobile menu and language QA', async ({ page }) => {
+test('generic private demo stays usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(demoUrl, { waitUntil: 'networkidle' });
-  await page.getByTestId('button-mobile-menu').click();
-  await expect(page.getByTestId('link-mobile-services')).toBeVisible();
-  await page.getByRole('button', { name: 'ES', exact: true }).click();
-  await expect(page.getByText('Idioma', { exact: true })).toBeVisible();
-  await expect(page.getByTestId('link-mobile-servicios')).toBeVisible();
+
+  await expect(page.getByText('PRIVATE DEMO', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /A Better Way to Turn Website Visitors Into Qualified HVAC Leads/i }),
+  ).toBeVisible();
+  await expect(page.locator('#assistant')).toBeVisible();
+  await expect(page.getByText('Captured Lead', { exact: true })).toBeVisible();
 });
