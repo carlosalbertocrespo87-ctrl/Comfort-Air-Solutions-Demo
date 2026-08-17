@@ -10,6 +10,8 @@ on:
       - ".github/qa/hvac-prospect-browser-generic.spec.ts"
       - "artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs"
       - "artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs"
+      - "artifacts/prospect-configs/published-generic-demos.json"
+      - "scripts/build-generic-pages-demos.mjs"
   workflow_dispatch:
 
 jobs:
@@ -18,3 +20,26 @@ jobs:
     with:
       prospect_slug: affordable-air-repair
       artifact_name: speed-pipeline-affordable-air-smoke
+
+  generic-pages-builder-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build manifest demos
+        run: node scripts/build-generic-pages-demos.mjs
+      - name: Verify staged route
+        run: |
+          test -f /tmp/llf-generic-pages/affordable-air-repair-demo/index.html
+          grep -q "noindex, nofollow, noarchive" /tmp/llf-generic-pages/affordable-air-repair-demo/index.html
