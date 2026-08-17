@@ -71,3 +71,35 @@ jobs:
           fi
 
           echo "ASAP static QA checks passed."
+
+      - name: Install Chromium for render QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Start preview server
+        shell: bash
+        run: |
+          set -euo pipefail
+          PORT=4173 pnpm --dir artifacts/hvac-prospect-template run serve -- --host 127.0.0.1 > /tmp/asap-preview.log 2>&1 &
+          echo $! > /tmp/asap-preview.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              echo "Preview server ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/asap-preview.log
+          exit 1
+
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/asap-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --device="iPhone 13" --full-page http://127.0.0.1:4173/ qa-artifacts/asap-mobile.png
+
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: asap-render-qa
+          path: qa-artifacts/*.png
+          if-no-files-found: error
