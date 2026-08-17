@@ -43,7 +43,7 @@ jobs:
       - name: Generic safety validation
         run: node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs ${{ inputs.prospect_slug }}
       - name: Install Chromium for browser QA
-        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+        run: pnpm dlx playwright@1.55.0 install chromium
       - name: Start built-site server
         shell: bash
         run: |
