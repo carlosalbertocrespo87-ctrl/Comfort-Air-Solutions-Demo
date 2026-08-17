@@ -95,7 +95,7 @@ jobs:
         run: |
           mkdir -p qa-artifacts
           pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/asap-desktop.png
-          pnpm dlx playwright@1.55.0 screenshot --device="iPhone 13" --full-page http://127.0.0.1:4173/ qa-artifacts/asap-mobile.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/asap-mobile.png
 
       - name: Upload render QA artifacts
         uses: actions/upload-artifact@v4
