@@ -7,10 +7,12 @@
     "configure:asap": "node scripts/apply-asap-config.mjs",
     "configure:pm": "node scripts/apply-pm-service-config.mjs",
     "configure:ab": "node scripts/apply-ab-refrigeration-config.mjs",
+    "configure:bobs": "node scripts/apply-bobs-heating-air-config.mjs",
     "dev": "npm run configure:asap && vite --config vite.config.ts --host 0.0.0.0",
     "build": "npm run configure:asap && vite build --config vite.config.ts",
     "build:pm": "npm run configure:pm && vite build --config vite.config.ts",
     "build:ab": "npm run configure:ab && vite build --config vite.config.ts",
+    "build:bobs": "npm run configure:bobs && vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
