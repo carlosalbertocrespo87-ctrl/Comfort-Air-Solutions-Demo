@@ -13,6 +13,7 @@ on:
       - "artifacts/prospect-configs/asap-heating-air.json"
       - "artifacts/prospect-configs/pm-service-company.json"
       - "artifacts/prospect-configs/ab-refrigeration.json"
+      - "artifacts/prospect-configs/bobs-heating-air.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
@@ -113,17 +114,36 @@ jobs:
           BASE_PATH: /ab-refrigeration-demo/
         run: pnpm --dir artifacts/hvac-prospect-template run build:ab
 
+      - name: Stage AB Refrigeration demo output
+        run: |
+          rm -rf /tmp/ab-refrigeration-demo
+          mkdir -p /tmp/ab-refrigeration-demo
+          cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/ab-refrigeration-demo/
+
+      - name: Restore shared HVAC template source after AB Refrigeration
+        run: |
+          git checkout -- artifacts/hvac-prospect-template/src/App.tsx
+          git checkout -- artifacts/hvac-prospect-template/index.html
+          git checkout -- artifacts/hvac-prospect-template/public/robots.txt
+
+      - name: Build Bob's Heating & Air Demo
+        env:
+          PORT: 3000
+          BASE_PATH: /bobs-heating-air-demo/
+        run: pnpm --dir artifacts/hvac-prospect-template run build:bobs
+
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
           cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
           cp -R artifacts/new-level-mechanical/dist/public/. pages-dist/new-level-mechanical-demo/
           cp -R /tmp/asap-heating-air-demo/. pages-dist/asap-heating-air-demo/
           cp -R /tmp/pm-service-company-demo/. pages-dist/pm-service-company-demo/
-          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/ab-refrigeration-demo/
+          cp -R /tmp/ab-refrigeration-demo/. pages-dist/ab-refrigeration-demo/
+          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/bobs-heating-air-demo/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
