@@ -75,15 +75,15 @@ jobs:
       - name: Install Chromium for render QA
         run: pnpm dlx playwright@1.55.0 install --with-deps chromium
 
-      - name: Start preview server
+      - name: Start built-site server
         shell: bash
         run: |
           set -euo pipefail
-          PORT=4173 BASE_PATH=./ pnpm --dir artifacts/hvac-prospect-template run serve > /tmp/asap-preview.log 2>&1 &
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/asap-preview.log 2>&1 &
           echo $! > /tmp/asap-preview.pid
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
-              echo "Preview server ready."
+              echo "Built-site server ready."
               exit 0
             fi
             sleep 1
