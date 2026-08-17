@@ -33,17 +33,24 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Apply generic prospect configuration
         run: node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs ${{ inputs.prospect_slug }}
-      - name: Typecheck demo
-        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
-      - name: Build demo
+      - name: Parallel build, validation, and browser prep
+        shell: bash
         env:
           PORT: 3000
           BASE_PATH: /
-        run: pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
-      - name: Generic safety validation
-        run: node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs ${{ inputs.prospect_slug }}
-      - name: Install Chromium for browser QA
-        run: pnpm dlx playwright@1.55.0 install chromium
+        run: |
+          set -euo pipefail
+          start=$(date +%s)
+          pnpm --dir artifacts/hvac-prospect-template run typecheck & p_type=$!
+          pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts & p_build=$!
+          node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs ${{ inputs.prospect_slug }} & p_safe=$!
+          pnpm dlx playwright@1.55.0 install chromium & p_browser=$!
+          wait "$p_type"
+          wait "$p_build"
+          wait "$p_safe"
+          wait "$p_browser"
+          end=$(date +%s)
+          echo "Parallel QA prep completed in $((end-start))s"
       - name: Start built-site server
         shell: bash
         run: |
