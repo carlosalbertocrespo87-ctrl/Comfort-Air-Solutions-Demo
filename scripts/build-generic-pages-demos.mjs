@@ -30,6 +30,11 @@ const restorePaths = [
 
 const run = (cmd, args, options = {}) => execFileSync(cmd, args, { cwd: repoRoot, stdio: "inherit", ...options });
 
+// The shared TypeScript template is identical for every generic prospect build.
+// Run typecheck once before prospect-specific transforms instead of repeating the
+// same expensive check for every demo in the manifest.
+run("pnpm", ["--dir", "artifacts/hvac-prospect-template", "run", "typecheck"]);
+
 for (const item of demos) {
   if (!item?.slug || !item?.route) throw new Error("Each generic Pages demo requires slug and route");
   const outDir = path.join("/tmp/llf-generic-pages", item.route);
@@ -38,7 +43,6 @@ for (const item of demos) {
 
   try {
     run("node", ["artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs", item.slug]);
-    run("pnpm", ["--dir", "artifacts/hvac-prospect-template", "run", "typecheck"]);
     run("node", ["artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs", item.slug]);
     run("pnpm", ["exec", "vite", "build", "--config", "vite.config.ts"], {
       cwd: templateRoot,
