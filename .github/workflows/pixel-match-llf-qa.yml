@@ -8,6 +8,7 @@ on:
       - "artifacts/local-lead-forge/**"
       - "artifacts/hvac-prospect-template/**"
       - "artifacts/prospect-configs/**"
+      - "scripts/build-generic-pages-demos.mjs"
       - ".github/workflows/pixel-match-llf-qa.yml"
   workflow_dispatch:
 
@@ -108,3 +109,10 @@ jobs:
           name: llf-pixel-match-renders
           path: qa-artifacts/*.png
           if-no-files-found: error
+
+      - name: Verify every published demo builds from the unified master
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
+          node scripts/build-generic-pages-demos.mjs
