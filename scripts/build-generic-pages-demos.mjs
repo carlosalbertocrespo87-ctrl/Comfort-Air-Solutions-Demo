@@ -5,8 +5,23 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const templateRoot = path.join(repoRoot, "artifacts/hvac-prospect-template");
-const manifestPath = path.join(repoRoot, "artifacts/prospect-configs/published-generic-demos.json");
-const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+const configsRoot = path.join(repoRoot, "artifacts/prospect-configs");
+const manifestPath = path.join(configsRoot, "published-generic-demos.json");
+const legacyManifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+
+const selfRegistered = fs.readdirSync(configsRoot)
+  .filter((name) => name.endsWith(".json") && name !== "published-generic-demos.json")
+  .map((name) => {
+    const slug = name.replace(/\.json$/, "");
+    const config = JSON.parse(fs.readFileSync(path.join(configsRoot, name), "utf8"));
+    return config.demoRoute ? { slug, route: config.demoRoute } : null;
+  })
+  .filter(Boolean);
+
+const demos = [...legacyManifest, ...selfRegistered].filter((item, index, list) =>
+  list.findIndex((candidate) => candidate.slug === item.slug) === index
+);
+
 const restorePaths = [
   "artifacts/hvac-prospect-template/src/App.tsx",
   "artifacts/hvac-prospect-template/index.html",
@@ -15,7 +30,7 @@ const restorePaths = [
 
 const run = (cmd, args, options = {}) => execFileSync(cmd, args, { cwd: repoRoot, stdio: "inherit", ...options });
 
-for (const item of manifest) {
+for (const item of demos) {
   if (!item?.slug || !item?.route) throw new Error("Each generic Pages demo requires slug and route");
   const outDir = path.join("/tmp/llf-generic-pages", item.route);
   fs.rmSync(outDir, { recursive: true, force: true });
