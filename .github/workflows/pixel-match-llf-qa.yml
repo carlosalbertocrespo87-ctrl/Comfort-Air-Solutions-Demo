@@ -81,7 +81,7 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
             sleep 1
           done
-          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2048,1152" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-desktop.png
           pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-mobile.png
           kill $server_pid
           trap - EXIT
@@ -97,7 +97,7 @@ jobs:
             if curl -fsS http://127.0.0.1:4174/ >/dev/null; then break; fi
             sleep 1
           done
-          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2048,1152" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-desktop.png
           pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-mobile.png
           kill $server_pid
           trap - EXIT
