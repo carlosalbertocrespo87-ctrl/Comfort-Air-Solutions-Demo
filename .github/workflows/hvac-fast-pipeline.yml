@@ -9,6 +9,7 @@ on:
       - ".github/workflows/hvac-fast-pipeline.yml"
       - ".github/qa/hvac-prospect-browser-generic.spec.ts"
       - "artifacts/hvac-prospect-template/**"
+      - "scripts/build-generic-pages-demos.mjs"
   workflow_dispatch:
 
 permissions:
@@ -20,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -31,17 +34,27 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Detect and configure newest prospect
+      - name: Detect and configure prospect from changed config
         shell: bash
         run: |
           set -euo pipefail
-          eval "$(node - <<'NODE'
+          config_file="$(git diff --name-only HEAD^ HEAD -- 'artifacts/prospect-configs/*.json' | grep -v 'published-generic-demos.json' | tail -1 || true)"
+          if [ -z "$config_file" ]; then
+            config_file="$(git log --name-only --pretty=format: -- 'artifacts/prospect-configs/*.json' | grep '^artifacts/prospect-configs/.*\.json$' | grep -v 'published-generic-demos.json' | head -1 || true)"
+          fi
+          if [ -z "$config_file" ]; then
+            echo 'No prospect config found' >&2
+            exit 1
+          fi
+          eval "$(CONFIG_FILE="$config_file" node - <<'NODE'
           const fs = require('fs');
-          const list = JSON.parse(fs.readFileSync('artifacts/prospect-configs/published-generic-demos.json','utf8'));
-          const item = list.at(-1);
-          if (!item?.slug || !item?.route) throw new Error('Manifest has no valid latest prospect');
-          console.log(`PROSPECT_SLUG=${JSON.stringify(item.slug)}`);
-          console.log(`PROSPECT_ROUTE=${JSON.stringify(item.route)}`);
+          const path = require('path');
+          const file = process.env.CONFIG_FILE;
+          const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const slug = path.basename(file, '.json');
+          const route = config.demoRoute || `${slug}-demo`;
+          console.log(`PROSPECT_SLUG=${JSON.stringify(slug)}`);
+          console.log(`PROSPECT_ROUTE=${JSON.stringify(route)}`);
           NODE
           )"
           echo "PROSPECT_SLUG=$PROSPECT_SLUG" >> "$GITHUB_ENV"
