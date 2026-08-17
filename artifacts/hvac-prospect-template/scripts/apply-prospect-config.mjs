@@ -23,8 +23,6 @@ const required = [
   "website",
   "phoneDisplay",
   "serviceArea",
-  "verifiedHighlights",
-  "sourceReviewDate",
 ];
 
 for (const key of required) {
