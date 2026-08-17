@@ -1,0 +1,36 @@
+{
+  "companyName": "Atlanta North Cooling and Heating Inc",
+  "shortName": "Atlanta North Cooling & Heating",
+  "website": "https://metrocomfortsolution.com",
+  "emailDomain": "metrocomfortsolution.com",
+  "publicEmail": null,
+  "phoneDisplay": "(770) 591-0901",
+  "textPhoneDisplay": "(770) 480-4179",
+  "serviceArea": "Woodstock and North Metro Atlanta",
+  "publicContact": null,
+  "verifiedServices": [
+    "Air conditioning service and repair",
+    "Furnace service and repair",
+    "Replacement system estimates",
+    "Planned service agreements",
+    "Indoor air quality and home comfort"
+  ],
+  "verifiedHighlights": [
+    "Official site states over 30 years of HVAC experience",
+    "Official site identifies the company as family owned and locally based",
+    "Official site publishes Georgia license CN210377",
+    "Official site lists service across Woodstock, Marietta, Kennesaw, Acworth, Canton, Cumming, Dawsonville, Alpharetta, Milton and Roswell",
+    "Official site publishes phone 770-591-0901 and text 770-480-4179"
+  ],
+  "opportunity": "Modernize a simple, form-led website into a clearer mobile-first bilingual qualification experience while preserving verified local service positioning.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}

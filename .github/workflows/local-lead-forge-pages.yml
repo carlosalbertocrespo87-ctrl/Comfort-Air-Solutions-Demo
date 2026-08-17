@@ -16,6 +16,7 @@ on:
       - "artifacts/prospect-configs/bobs-heating-air.json"
       - "artifacts/prospect-configs/pro-cool-heating-air.json"
       - "artifacts/prospect-configs/stinos-heating-air.json"
+      - "artifacts/prospect-configs/atlanta-north-cooling-heating.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
@@ -106,10 +107,19 @@ jobs:
       - name: Build Stinos Heating & Air Demo
         env: { PORT: 3000, BASE_PATH: /stinos-heating-air-demo/ }
         run: pnpm --dir artifacts/hvac-prospect-template run build:stinos
+      - name: Stage Stinos Heating & Air demo output
+        run: |
+          rm -rf /tmp/stinos-heating-air-demo && mkdir -p /tmp/stinos-heating-air-demo
+          cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/stinos-heating-air-demo/
+      - name: Restore shared HVAC template source after Stinos Heating & Air
+        run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
+      - name: Build Atlanta North Cooling & Heating Demo
+        env: { PORT: 3000, BASE_PATH: /atlanta-north-cooling-heating-demo/ }
+        run: pnpm --dir artifacts/hvac-prospect-template run build:atlanta-north
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo pages-dist/pro-cool-heating-air-demo pages-dist/stinos-heating-air-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo pages-dist/pro-cool-heating-air-demo pages-dist/stinos-heating-air-demo pages-dist/atlanta-north-cooling-heating-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
           cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
@@ -119,7 +129,8 @@ jobs:
           cp -R /tmp/ab-refrigeration-demo/. pages-dist/ab-refrigeration-demo/
           cp -R /tmp/bobs-heating-air-demo/. pages-dist/bobs-heating-air-demo/
           cp -R /tmp/pro-cool-heating-air-demo/. pages-dist/pro-cool-heating-air-demo/
-          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/stinos-heating-air-demo/
+          cp -R /tmp/stinos-heating-air-demo/. pages-dist/stinos-heating-air-demo/
+          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/atlanta-north-cooling-heating-demo/
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload GitHub Pages artifact
