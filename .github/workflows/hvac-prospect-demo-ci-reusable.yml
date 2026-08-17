@@ -1,0 +1,78 @@
+name: Reusable HVAC Prospect Demo CI
+
+on:
+  workflow_call:
+    inputs:
+      prospect_slug:
+        required: true
+        type: string
+      configure_command:
+        required: true
+        type: string
+      build_command:
+        required: true
+        type: string
+      qa_spec:
+        required: true
+        type: string
+      artifact_name:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply prospect configuration
+        run: pnpm --dir artifacts/hvac-prospect-template run ${{ inputs.configure_command }}
+      - name: Typecheck demo
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+      - name: Build demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template run ${{ inputs.build_command }}
+      - name: Generic safety validation
+        run: node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs ${{ inputs.prospect_slug }}
+      - name: Install Chromium for browser QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/prospect-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/prospect-preview.log
+          exit 1
+      - name: Functional browser QA
+        run: pnpm dlx @playwright/test@1.55.0 test ${{ inputs.qa_spec }} --workers=1 --reporter=line
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/${{ inputs.prospect_slug }}-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/${{ inputs.prospect_slug }}-mobile.png
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: qa-artifacts/*.png
+          if-no-files-found: error
