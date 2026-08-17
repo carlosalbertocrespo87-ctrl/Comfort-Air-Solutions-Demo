@@ -29,11 +29,7 @@ const restorePaths = [
 ];
 
 const run = (cmd, args, options = {}) => execFileSync(cmd, args, { cwd: repoRoot, stdio: "inherit", ...options });
-
-// The shared TypeScript template is identical for every generic prospect build.
-// Run typecheck once before prospect-specific transforms instead of repeating the
-// same expensive check for every demo in the manifest.
-run("pnpm", ["--dir", "artifacts/hvac-prospect-template", "run", "typecheck"]);
+let typechecked = false;
 
 for (const item of demos) {
   if (!item?.slug || !item?.route) throw new Error("Each generic Pages demo requires slug and route");
@@ -43,6 +39,13 @@ for (const item of demos) {
 
   try {
     run("node", ["artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs", item.slug]);
+    // apply-prospect-config normalizes the shared bilingual template shape. Typecheck
+    // the first transformed demo once; subsequent prospects reuse the same code shape
+    // and only replace prospect data/content.
+    if (!typechecked) {
+      run("pnpm", ["--dir", "artifacts/hvac-prospect-template", "run", "typecheck"]);
+      typechecked = true;
+    }
     run("node", ["artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs", item.slug]);
     run("pnpm", ["exec", "vite", "build", "--config", "vite.config.ts"], {
       cwd: templateRoot,
