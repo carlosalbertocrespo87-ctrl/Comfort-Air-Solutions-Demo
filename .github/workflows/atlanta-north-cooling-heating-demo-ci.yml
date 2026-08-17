@@ -1,0 +1,91 @@
+name: Atlanta North Cooling & Heating Demo CI
+
+on:
+  push:
+    branches:
+      - demo-atlanta-north-cooling-heating
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/atlanta-north-cooling-heating.json"
+      - "ATLANTA-NORTH-COOLING-HEATING-DEMO-BUILD-SPEC.md"
+      - ".github/workflows/atlanta-north-cooling-heating-demo-ci.yml"
+      - ".github/qa/atlanta-north-cooling-heating-browser.spec.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply Atlanta North configuration
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:atlanta-north
+      - name: Typecheck Atlanta North demo
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+      - name: Build Atlanta North demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template run build:atlanta-north
+      - name: Static safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          INDEX="artifacts/hvac-prospect-template/index.html"
+          ROBOTS="artifacts/hvac-prospect-template/public/robots.txt"
+          grep -q 'Atlanta North Cooling' "$APP"
+          grep -q 'metrocomfortsolution.com' "$APP"
+          grep -q '770-591-0901' "$APP"
+          grep -q 'Woodstock & North Metro Atlanta' "$APP"
+          grep -q 'Verified highlights' "$APP"
+          grep -q 'noindex, nofollow, noarchive' "$INDEX"
+          grep -q 'Disallow: /' "$ROBOTS"
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain in App.tsx" >&2
+            exit 1
+          fi
+          if grep -q 'Marianne R\.\|Daniel K\.\|Priya S\.' "$APP"; then
+            echo "Template fictional review names remain in App.tsx" >&2
+            exit 1
+          fi
+      - name: Install Chromium for browser QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/atlanta-north-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/atlanta-north-preview.log
+          exit 1
+      - name: Functional browser QA
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/atlanta-north-cooling-heating-browser.spec.ts --workers=1 --reporter=line
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/atlanta-north-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/atlanta-north-mobile.png
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlanta-north-cooling-heating-render-qa
+          path: qa-artifacts/*.png
+          if-no-files-found: error
