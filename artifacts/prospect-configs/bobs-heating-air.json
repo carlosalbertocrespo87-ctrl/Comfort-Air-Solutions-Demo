@@ -1,0 +1,33 @@
+{
+  "companyName": "Bob's Heating & Air",
+  "shortName": "Bob's Heating & Air",
+  "website": "https://bobsheatingandair.com",
+  "emailDomain": "bobsheatingandair.com",
+  "publicEmail": null,
+  "phoneDisplay": "(404) 606-0548",
+  "serviceArea": "North Metro Atlanta",
+  "publicContact": "Bob Roy",
+  "verifiedServices": [
+    "HVAC repair",
+    "HVAC installation",
+    "HVAC maintenance",
+    "Indoor air quality"
+  ],
+  "verifiedHighlights": [
+    "Founder Bob Roy is identified publicly",
+    "30+ years of HVAC experience publicly stated",
+    "NATE credentials are highlighted publicly",
+    "North Metro Atlanta service positioning"
+  ],
+  "opportunity": "Modernize an older site structure with a clearer mobile-first bilingual qualification path while preserving Bob's direct local-service positioning.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}

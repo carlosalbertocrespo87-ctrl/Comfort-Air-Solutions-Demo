@@ -1,0 +1,112 @@
+name: Bob's Heating & Air Demo CI
+
+on:
+  push:
+    branches:
+      - demo-bobs-heating-air
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/bobs-heating-air.json"
+      - "BOBS-HEATING-AIR-DEMO-BUILD-SPEC.md"
+      - ".github/workflows/bobs-heating-air-demo-ci.yml"
+      - ".github/qa/bobs-heating-air-browser.spec.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply Bob's Heating & Air configuration
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:bobs
+
+      - name: Typecheck Bob's Heating & Air demo
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build Bob's Heating & Air demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template run build:bobs
+
+      - name: Static safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          INDEX="artifacts/hvac-prospect-template/index.html"
+          ROBOTS="artifacts/hvac-prospect-template/public/robots.txt"
+
+          grep -q "Bob's Heating & Air" "$APP"
+          grep -q 'Verified highlights' "$APP"
+          grep -q 'bobsheatingandair.com' "$APP"
+          grep -q '404-606-0548' "$APP"
+          grep -q 'North Metro Atlanta' "$APP"
+          grep -q 'noindex, nofollow, noarchive' "$INDEX"
+          grep -q 'Disallow: /' "$ROBOTS"
+
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain in App.tsx" >&2
+            exit 1
+          fi
+
+          if grep -q 'Marianne R\.\|Daniel K\.\|Priya S\.' "$APP"; then
+            echo "Template fictional review names remain in App.tsx" >&2
+            exit 1
+          fi
+
+          echo "Bob's Heating & Air static QA checks passed."
+
+      - name: Install Chromium for browser QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/bobs-heating-air-preview.log 2>&1 &
+          echo $! > /tmp/bobs-heating-air-preview.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              echo "Built-site server ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/bobs-heating-air-preview.log
+          exit 1
+
+      - name: Functional browser QA
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/bobs-heating-air-browser.spec.ts --workers=1 --reporter=line
+
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/bobs-heating-air-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/bobs-heating-air-mobile.png
+
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bobs-heating-air-render-qa
+          path: qa-artifacts/*.png
+          if-no-files-found: error
