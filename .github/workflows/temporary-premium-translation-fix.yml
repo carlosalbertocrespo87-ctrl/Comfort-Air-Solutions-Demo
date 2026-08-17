@@ -1,0 +1,105 @@
+name: Temporary premium translation repair
+
+on:
+  push:
+    branches: [premium-demo-visual-standard]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: premium-demo-visual-standard
+      - name: Normalize bilingual translation keys
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          files = [
+              Path('artifacts/wade-heating-air/src/App.tsx'),
+              Path('artifacts/hvac-prospect-template/src/App.tsx'),
+          ]
+
+          for path in files:
+              text = path.read_text()
+
+              text = text.replace(
+                  '      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",',
+                  '      copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",',
+                  1,
+              )
+              text = text.replace('      answerPlaceholder: "Type your answer...",', '      placeholderAnswer: "Type your answer...",', 1)
+              text = text.replace(
+                  '      closeNote:\n        "You can close this window — your summary is ready for the team.",',
+                  '      doneNote:\n        "You can close this window — your summary is ready for the team.",',
+                  1,
+              )
+
+              # English feature tuples are rendered as [number, title, copy].
+              text = text.replace(
+                  '        [\n          "We show up prepared",\n          "The right tools, parts, and context to make the first visit count.",\n        ],',
+                  '        [\n          "01",\n          "We show up prepared",\n          "The right tools, parts, and context to make the first visit count.",\n        ],',
+                  1,
+              )
+              text = text.replace(
+                  '        [\n          "We explain the why",\n          "Plain language. Honest options. No pressure to decide on the spot.",\n        ],',
+                  '        [\n          "02",\n          "We explain the why",\n          "Plain language. Honest options. No pressure to decide on the spot.",\n        ],',
+                  1,
+              )
+              text = text.replace(
+                  '        [\n          "We leave it better",\n          "Careful shoe covers, clean work areas, and respect for your home.",\n        ],',
+                  '        [\n          "03",\n          "We leave it better",\n          "Careful shoe covers, clean work areas, and respect for your home.",\n        ],',
+                  1,
+              )
+              text = text.replace(
+                  '        [\n          "We think long-term",\n          "Solutions designed for comfort today and fewer surprises tomorrow.",\n        ],',
+                  '        [\n          "04",\n          "We think long-term",\n          "Solutions designed for comfort today and fewer surprises tomorrow.",\n        ],',
+                  1,
+              )
+
+              if 'wade-heating-air' in str(path):
+                  text = text.replace(
+                      '      body: "We are proud to serve communities throughout Georgia\'s West Metro Area. If you are nearby and not on the list, give us a call — we are happy to talk.",',
+                      '      copy: "We are proud to serve communities throughout Georgia\'s West Metro Area. If you are nearby and not on the list, contact the company directly for current service-area information.",\n      phone: "(470) 412-7106",',
+                      1,
+                  )
+                  text = text.replace(
+                      '      title2: "ayudando a vecinos.",',
+                      '      title2: "ayudando a",\n      title3: "vecinos.",',
+                      1,
+                  )
+                  text = text.replace(
+                      '      talk: "Talk to us",\n      hours:',
+                      '      talk: "Talk to us",\n      phone: "(470) 412-7106",\n      hours:',
+                      1,
+                  )
+              else:
+                  text = text.replace(
+                      '      talk: "Talk to us",\n      hours:',
+                      '      talk: "Talk to us",\n      phone: prospectConfig.phoneDisplay,\n      hours:',
+                      1,
+                  )
+
+              path.write_text(text)
+          PY
+
+          git diff --check
+          git diff -- artifacts/wade-heating-air/src/App.tsx artifacts/hvac-prospect-template/src/App.tsx
+      - name: Commit repairs
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/wade-heating-air/src/App.tsx artifacts/hvac-prospect-template/src/App.tsx
+          git commit -m "fix: normalize bilingual demo translation keys"
+          git push origin HEAD:premium-demo-visual-standard
