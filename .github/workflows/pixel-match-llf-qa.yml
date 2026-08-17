@@ -65,3 +65,46 @@ jobs:
           PORT: 3000
           BASE_PATH: /
         run: pnpm --dir artifacts/hvac-prospect-template run build
+
+      - name: Install Chromium for render QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Capture official desktop and mobile renders
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-artifacts
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/local-lead-forge/dist/public > /tmp/llf-official.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-mobile.png
+          kill $server_pid
+          trap - EXIT
+
+      - name: Capture demo desktop and mobile renders
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4174 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/llf-demo.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4174/ >/dev/null; then break; fi
+            sleep 1
+          done
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-mobile.png
+          kill $server_pid
+          trap - EXIT
+
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: llf-pixel-match-renders
+          path: qa-artifacts/*.png
+          if-no-files-found: error
