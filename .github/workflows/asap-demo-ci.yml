@@ -1,0 +1,72 @@
+name: ASAP Demo CI
+
+on:
+  push:
+    branches:
+      - demo-asap-heating-air-current
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/asap-heating-air.json"
+      - "ASAP-DEMO-BUILD-SPEC.md"
+      - ".github/workflows/asap-demo-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply ASAP configuration
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:asap
+
+      - name: Typecheck ASAP demo
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build ASAP demo
+        env:
+          BASE_PATH: ./
+        run: pnpm --dir artifacts/hvac-prospect-template run build
+
+      - name: Static safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          INDEX="artifacts/hvac-prospect-template/index.html"
+          ROBOTS="artifacts/hvac-prospect-template/public/robots.txt"
+
+          grep -q 'ASAP Heating & Air Conditioning' "$APP"
+          grep -q 'Verified highlights' "$APP"
+          grep -q 'noindex, nofollow, noarchive' "$INDEX"
+          grep -q 'Disallow: /' "$ROBOTS"
+
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain in App.tsx" >&2
+            exit 1
+          fi
+
+          if grep -q 'Marianne R\.\|Daniel K\.\|Priya S\.' "$APP"; then
+            echo "Template fictional review names remain in App.tsx" >&2
+            exit 1
+          fi
+
+          echo "ASAP static QA checks passed."
