@@ -1,0 +1,61 @@
+name: QA A.R. Sims Premium Demo
+
+on:
+  push:
+    branches:
+      - ar-sims-demo-build
+    paths:
+      - "artifacts/ar-sims-ga/**"
+      - ".github/workflows/qa-ar-sims-demo.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ar-sims-demo-build
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+          pnpm --version
+
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck prospect demo
+        env:
+          PORT: "4173"
+          BASE_PATH: "/ar-sims-demo/"
+        run: pnpm --dir artifacts/ar-sims-ga run typecheck
+
+      - name: Production build prospect demo
+        env:
+          NODE_ENV: production
+          PORT: "4173"
+          BASE_PATH: "/ar-sims-demo/"
+        run: pnpm --dir artifacts/ar-sims-ga run build
+
+      - name: Verify premium, bilingual, safety and funnel markers
+        run: |
+          test -f artifacts/ar-sims-ga/src/premium-demo.css
+          grep -q "Disallow: /" artifacts/ar-sims-ga/public/robots.txt
+          grep -q "SelfClosingFunnel" artifacts/ar-sims-ga/vite.config.ts
+          grep -q "Unofficial sales demo" artifacts/ar-sims-ga/src/App.tsx
+          grep -q "en:" artifacts/ar-sims-ga/src/App.tsx
+          grep -q "es:" artifacts/ar-sims-ga/src/App.tsx
