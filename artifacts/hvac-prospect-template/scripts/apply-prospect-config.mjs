@@ -12,6 +12,20 @@ const configPath = path.join(repoRoot, "artifacts", "prospect-configs", `${slug}
 if (!fs.existsSync(configPath)) throw new Error(`Missing config ${configPath}`);
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
+const required = ["companyName", "shortName", "website", "phoneDisplay", "serviceArea", "verifiedHighlights", "sourceReviewDate"];
+for (const key of required) {
+  if (config[key] === undefined || config[key] === null || config[key] === "") throw new Error(`Config field missing: ${key}`);
+}
+
+let emailDomain = config.emailDomain;
+if (!emailDomain) {
+  try {
+    emailDomain = new URL(config.website).hostname.replace(/^www\./, "");
+  } catch {
+    throw new Error("emailDomain is missing and could not be derived from website");
+  }
+}
+
 const appPath = path.join(templateRoot, "src/App.tsx");
 const indexPath = path.join(templateRoot, "index.html");
 const robotsPath = path.join(templateRoot, "public/robots.txt");
@@ -25,7 +39,7 @@ const opportunity = config.opportunity || `A clearer mobile-first bilingual lead
 const replacements = [
   ['companyName: "PROSPECT HVAC COMPANY"', `companyName: "${esc(config.companyName)}"`],
   ['shortName: "PROSPECT HVAC"', `shortName: "${esc(config.shortName)}"`],
-  ['emailDomain: "prospectcompany.com"', `emailDomain: "${esc(config.emailDomain)}"`],
+  ['emailDomain: "prospectcompany.com"', `emailDomain: "${esc(emailDomain)}"`],
   ['phoneDisplay: "(000) 000-0000"', `phoneDisplay: "${esc(config.phoneDisplay)}"`],
   ['serviceArea: "TARGET SERVICE AREA"', `serviceArea: "${esc(area)}"`],
   ['sinceYear: "20XX"', `sinceYear: "${esc(positioning)}"`],
