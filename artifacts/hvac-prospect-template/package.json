@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --config vite.config.ts",
+    "configure:asap": "node scripts/apply-asap-config.mjs",
+    "dev": "npm run configure:asap && vite --config vite.config.ts --host 0.0.0.0",
+    "build": "npm run configure:asap && vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
