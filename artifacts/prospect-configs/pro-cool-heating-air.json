@@ -1,0 +1,33 @@
+{
+  "companyName": "Pro Cool Heating and Air Inc.",
+  "shortName": "Pro Cool Heating & Air",
+  "website": "https://procoolheatingandair.com",
+  "emailDomain": "procoolheatingandair.com",
+  "publicEmail": null,
+  "phoneDisplay": "(678) 927-1262",
+  "serviceArea": "Marietta, Cobb County & Metro Atlanta",
+  "publicContact": "Patrick Safford",
+  "verifiedServices": [
+    "Residential HVAC repair",
+    "HVAC service",
+    "HVAC installation",
+    "Heating and air conditioning"
+  ],
+  "verifiedHighlights": [
+    "Official site identifies Pro Cool as a licensed and insured residential HVAC company in Marietta",
+    "Official site publishes phone number 678-927-1262 and Georgia license CR110067",
+    "BBB profile identifies Patrick Safford as Business Manager",
+    "Official site currently uses a basic email form and coupon pages with 2025 expiration dates"
+  ],
+  "opportunity": "Modernize a text-heavy, older web experience with a clearer mobile-first bilingual lead qualification path while preserving Pro Cool's direct local-service positioning.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
