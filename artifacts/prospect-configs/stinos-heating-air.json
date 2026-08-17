@@ -1,0 +1,34 @@
+{
+  "companyName": "Stinos Heating & Air Services LLC",
+  "shortName": "Stinos Heating & Air",
+  "website": "https://www.stinosheatingair.com",
+  "emailDomain": "stinosheatingair.com",
+  "publicEmail": "info@stinosheatingair.com",
+  "phoneDisplay": "(706) 908-7616",
+  "serviceArea": "Conyers, Georgia",
+  "publicContact": "Austin Ugboma",
+  "verifiedServices": [
+    "AC installation",
+    "Heater and furnace repair",
+    "HVAC maintenance",
+    "HVAC system upgrades",
+    "24/7 emergency repairs"
+  ],
+  "verifiedHighlights": [
+    "Official site states the company is based in Conyers, Georgia and established in 2018",
+    "Official site publishes phone 706-908-7616 and info@stinosheatingair.com",
+    "Official site describes residential and commercial HVAC service",
+    "BBB identifies Austin Ugboma as business management/principal contact"
+  ],
+  "opportunity": "Upgrade a basic template-style site into a clearer mobile-first bilingual lead qualification experience while preserving Stinos' local Conyers HVAC positioning.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
