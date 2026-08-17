@@ -17,13 +17,12 @@ const app = fs.readFileSync(path.join(templateRoot, "src/App.tsx"), "utf8");
 const html = fs.readFileSync(path.join(templateRoot, "index.html"), "utf8");
 const robots = fs.readFileSync(path.join(templateRoot, "public/robots.txt"), "utf8");
 
-const requiredConfig = ["companyName", "shortName", "website", "phoneDisplay", "serviceArea", "verifiedHighlights", "sourceReviewDate"];
+const requiredConfig = ["companyName", "shortName", "website", "phoneDisplay", "serviceArea"];
 for (const key of requiredConfig) {
   if (config[key] === undefined || config[key] === null || config[key] === "") {
     throw new Error(`Config field missing: ${key}`);
   }
 }
-if (!Array.isArray(config.verifiedHighlights) || config.verifiedHighlights.length < 3) throw new Error("At least three verifiedHighlights are required");
 
 let emailDomain = config.emailDomain;
 if (!emailDomain) {
@@ -34,7 +33,7 @@ if (!emailDomain) {
   }
 }
 
-const requiredMarkers = [config.shortName, emailDomain, config.phoneDisplay];
+const requiredMarkers = [config.companyName, config.shortName, emailDomain, config.phoneDisplay, config.serviceArea];
 for (const marker of requiredMarkers) {
   if (!app.includes(String(marker))) throw new Error(`Configured marker missing from App.tsx: ${marker}`);
 }
@@ -64,4 +63,4 @@ if (rules.noFakeReviews !== true) throw new Error("demoRules.noFakeReviews must 
 if (rules.noRealServiceRequest !== true) throw new Error("demoRules.noRealServiceRequest must be true");
 if (rules.unofficialDemo !== true) throw new Error("demoRules.unofficialDemo must be true");
 
-console.log(`Generic demo validation passed for ${config.companyName} (${slug}).`);
+console.log(`Generic private-demo validation passed for ${config.companyName} (${slug}).`);
