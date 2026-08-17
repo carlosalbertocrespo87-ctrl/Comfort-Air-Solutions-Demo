@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PORT=4173 pnpm --dir artifacts/hvac-prospect-template run serve -- --host 127.0.0.1 > /tmp/asap-preview.log 2>&1 &
+          PORT=4173 BASE_PATH=./ pnpm --dir artifacts/hvac-prospect-template run serve > /tmp/asap-preview.log 2>&1 &
           echo $! > /tmp/asap-preview.pid
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
