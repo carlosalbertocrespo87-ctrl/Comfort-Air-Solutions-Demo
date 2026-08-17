@@ -20,7 +20,11 @@ const replacements = [
   ['El equipo local de confort del oeste metropolitano de Georgia', 'El equipo local de confort de Alpharetta, Johns Creek, Roswell y Milton'],
   ['en el oeste metropolitano de Georgia', 'en Alpharetta, Johns Creek, Roswell y Milton'],
   ['Servicio HVAC confiable en el oeste metropolitano de Georgia.', 'Servicio HVAC confiable en Alpharetta, Johns Creek, Roswell y Milton.'],
-  ['Nos enorgullece servir comunidades en todo el oeste metropolitano de Georgia.', 'Nos enorgullece servir Alpharetta, Johns Creek, Roswell, Milton y comunidades cercanas.']
+  ['Nos enorgullece servir comunidades en todo el oeste metropolitano de Georgia.', 'Nos enorgullece servir Alpharetta, Johns Creek, Roswell, Milton y comunidades cercanas.'],
+  ['body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable."', 'copy: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable."'],
+  ['answerPlaceholder: "Type your answer..."', 'placeholderAnswer: "Type your answer..."'],
+  ['closeNote:\n        "You can close this window — your summary is ready for the team."', 'doneNote:\n        "You can close this window — your summary is ready for the team."'],
+  ['talk: "Talk to us",\n      hours: "Mon–Fri · 8:00am–5:00pm"', 'talk: "Talk to us",\n      phone: prospectConfig.phoneDisplay,\n      hours: "Mon–Fri · 8:00am–5:00pm"']
 ];
 
 for (const [from, to] of replacements) {
@@ -40,7 +44,10 @@ const required = [
   'emailDomain: "fixacasap.com"',
   'phoneDisplay: "770-717-2727"',
   'sinceYear: "1997"',
-  'Verified highlights'
+  'Verified highlights',
+  'placeholderAnswer: "Type your answer..."',
+  'doneNote:',
+  'phone: prospectConfig.phoneDisplay'
 ];
 for (const marker of required) {
   if (!source.includes(marker)) throw new Error(`ASAP config marker missing after transform: ${marker}`);
@@ -57,4 +64,4 @@ fs.writeFileSync(indexPath, html);
 
 fs.writeFileSync(robotsPath, 'User-agent: *\nDisallow: /\n');
 
-console.log("Applied ASAP configuration, verified highlights, metadata and robots protection.");
+console.log("Applied ASAP configuration, bilingual key normalization, verified highlights, metadata and robots protection.");
