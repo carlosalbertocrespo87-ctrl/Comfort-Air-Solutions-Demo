@@ -6,18 +6,10 @@ on:
       prospect_slug:
         required: true
         type: string
-      configure_command:
-        required: true
-        type: string
-      build_command:
-        required: true
-        type: string
-      qa_spec:
-        required: true
-        type: string
       artifact_name:
-        required: true
+        required: false
         type: string
+        default: prospect-demo-render-qa
 
 permissions:
   contents: read
@@ -39,15 +31,15 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Apply prospect configuration
-        run: pnpm --dir artifacts/hvac-prospect-template run ${{ inputs.configure_command }}
+      - name: Apply generic prospect configuration
+        run: node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs ${{ inputs.prospect_slug }}
       - name: Typecheck demo
         run: pnpm --dir artifacts/hvac-prospect-template run typecheck
       - name: Build demo
         env:
           PORT: 3000
           BASE_PATH: /
-        run: pnpm --dir artifacts/hvac-prospect-template run ${{ inputs.build_command }}
+        run: pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
       - name: Generic safety validation
         run: node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs ${{ inputs.prospect_slug }}
       - name: Install Chromium for browser QA
@@ -64,7 +56,9 @@ jobs:
           cat /tmp/prospect-preview.log
           exit 1
       - name: Functional browser QA
-        run: pnpm dlx @playwright/test@1.55.0 test ${{ inputs.qa_spec }} --workers=1 --reporter=line
+        env:
+          PROSPECT_SLUG: ${{ inputs.prospect_slug }}
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/hvac-prospect-browser-generic.spec.ts --workers=1 --reporter=line
       - name: Capture desktop and mobile renders
         run: |
           mkdir -p qa-artifacts
