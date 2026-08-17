@@ -647,22 +647,21 @@ function Hero({
       <div className="absolute -right-20 top-60 size-[320px] rounded-full border border-[hsl(var(--accent)/.2)] lg:size-[500px]" />
       <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 lg:grid-cols-[1fr_410px] lg:px-10 lg:pb-28">
         <div className="max-w-3xl pt-16 lg:pt-24">
-          <div className="reveal mb-7 flex items-center gap-3 font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent))]">
-            <span className="h-px w-9 bg-[hsl(var(--accent))]" /> {t.eyebrow}
+          <div className="reveal mb-7 flex items-center gap-3 font-mono-ui text-[10px] font-bold uppercase tracking-[.2em] text-[hsl(var(--accent))]">
+            <span className="h-px w-8 bg-[hsl(var(--accent))]" />
+            {t.eyebrow}
           </div>
-          <h1 className="reveal reveal-delay-1 max-w-3xl font-display text-[clamp(4rem,8vw,7.2rem)] leading-[.84] tracking-[-.045em]">
+          <h1 className="reveal reveal-d1 max-w-4xl font-display text-[clamp(3.7rem,9.2vw,8.4rem)] leading-[.78] tracking-[-.045em]">
             {t.title1}
             <br />
             <em className="text-[hsl(var(--accent))]">{t.title2}</em>
             <br />
-            <span className="text-[hsl(var(--background)/.83)]">
-              {t.title3}
-            </span>
+            <span className="text-[.75em]">{t.title3}</span>
           </h1>
-          <p className="reveal reveal-delay-2 mt-8 max-w-md text-lg leading-relaxed text-[hsl(var(--background)/.75)]">
+          <p className="reveal reveal-d2 mt-8 max-w-lg text-base leading-relaxed text-[hsl(var(--background)/.7)] lg:text-lg">
             {t.subhead}
           </p>
-          <div className="reveal reveal-delay-3 mt-9 flex flex-wrap gap-3">
+          <div className="reveal reveal-d3 mt-10 flex flex-wrap gap-3">
             <Button onClick={onRequest} testId="button-hero-request">
               {t.request}
             </Button>
@@ -671,114 +670,95 @@ function Hero({
               variant="outline"
               testId="button-hero-chat"
             >
-              {t.chat}
+              <MessageCircle size={16} /> {t.chat}
             </Button>
           </div>
-          <div className="reveal reveal-delay-3 mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-semibold text-[hsl(var(--background)/.68)]">
+          <div className="reveal reveal-d3 mt-12 flex flex-wrap gap-x-6 gap-y-3">
             {t.trust.map((item) => (
-              <span key={item} className="flex items-center gap-2">
-                <CircleCheck size={15} className="text-[hsl(var(--accent))]" />{" "}
+              <div
+                key={item}
+                className="flex items-center gap-2 font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.55)]"
+              >
+                <CircleCheck size={13} className="text-[hsl(var(--accent))]" />
                 {item}
-              </span>
+              </div>
             ))}
           </div>
         </div>
-        <div className="reveal reveal-delay-2 relative hidden lg:block">
-          <div className="float-slow absolute -left-20 top-7 z-10 w-48 rounded-2xl border border-[hsl(var(--background)/.17)] bg-[hsl(var(--background)/.1)] p-4 backdrop-blur-md">
-            <div className="mb-3 flex items-center gap-2 text-[hsl(var(--accent))]">
-              <ShieldCheck size={18} />
-              <span className="font-mono-ui text-[9px] uppercase tracking-wider">
-                {t.peaceLabel}
-              </span>
-            </div>
-            <p className="text-sm font-semibold leading-snug">{t.peaceText}</p>
-          </div>
-          <div className="relative ml-auto w-[350px] rounded-[2.4rem] bg-[hsl(var(--accent))] p-2 shadow-2xl shadow-[hsl(207_38%_8%/.3)]">
-            <img
-              src="/images/technician.jpg"
-              alt={t.imageAlt}
-              className="h-[490px] w-full rounded-[2rem] object-cover object-center mix-blend-multiply opacity-75"
-            />
-            <div className="absolute inset-2 rounded-[2rem] bg-gradient-to-t from-[hsl(var(--primary)/.8)] via-transparent to-transparent" />
-            <div className="absolute bottom-8 left-8 right-8">
-              <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.18em] text-[hsl(var(--accent))]">
-                {language === "es" ? "Concepto de demo" : "Demo concept"}
-              </p>
-              <p className="mt-2 font-display text-2xl leading-none">
-                {language === "es"
-                  ? "Captura de leads asistida por IA"
-                  : "AI-assisted lead capture"}
-              </p>
+        <div className="reveal reveal-d2 hidden lg:block">
+          <div className="rounded-[2rem] border border-[hsl(var(--background)/.16)] bg-[hsl(var(--background)/.08)] p-6 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="grid size-11 place-items-center rounded-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[hsl(var(--background)/.5)]">
+                  {t.peaceLabel}
+                </p>
+                <p className="mt-1 text-sm font-bold">{t.peaceText}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[hsl(var(--background))] to-transparent" />
+      <div className="absolute inset-0 -z-10 bg-[hsl(var(--primary))]" />
     </section>
   );
 }
 
 function Services({ lang }: { lang: Language }) {
-  const [active, setActive] = useState("ac");
-  const servicesText = translations[lang].services;
+  const t = translations[lang].services;
+  const [selected, setSelected] = useState(0);
   return (
-    <section
-      id="services"
-      className="bg-[hsl(var(--background))] px-5 py-24 lg:px-10 lg:py-32"
-    >
+    <section id="services" className="bg-[hsl(var(--background))] px-5 py-24 lg:px-10 lg:py-32">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-14 grid gap-5 lg:grid-cols-[1fr_1.1fr] lg:items-end">
+        <div className="grid gap-8 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
           <div>
             <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground))]">
-              {servicesText.eyebrow}
+              {t.eyebrow}
             </p>
-            <h2 className="mt-4 max-w-xl font-display text-5xl leading-[.9] tracking-tight text-[hsl(var(--foreground))] lg:text-7xl">
-              {servicesText.title1}
+            <h2 className="mt-4 font-display text-5xl leading-[.9] tracking-tight text-[hsl(var(--foreground))] lg:text-7xl">
+              {t.title1}
               <br />
-              <em className="text-[hsl(var(--primary))]">
-                {servicesText.title2}
-              </em>
+              <em className="text-[hsl(var(--primary))]">{t.title2}</em>
             </h2>
           </div>
-          <p className="max-w-md text-base leading-relaxed text-[hsl(var(--muted-foreground))]">
-            {servicesText.intro}
+          <p className="max-w-xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] lg:justify-self-end lg:text-base">
+            {t.intro}
           </p>
         </div>
-        <div className="grid border-t border-[hsl(var(--border))] lg:grid-cols-4">
-          {servicesText.items.map((service, i) => {
-            const Icon = serviceIcons[i];
-            const isActive = active === service.id;
+        <div className="mt-14 grid gap-px overflow-hidden border border-[hsl(var(--border))] bg-[hsl(var(--border))] sm:grid-cols-2 lg:grid-cols-4">
+          {t.items.map((service, index) => {
+            const Icon = serviceIcons[index];
+            const active = selected === index;
             return (
               <button
                 key={service.id}
-                onClick={() => setActive(service.id)}
+                onClick={() => setSelected(index)}
                 data-testid={`button-service-${service.id}`}
-                className={`group relative border-b border-[hsl(var(--border))] p-6 text-left transition-colors lg:border-b-0 lg:border-r lg:p-8 ${isActive ? "bg-[hsl(var(--primary))] text-[hsl(var(--background))]" : "hover:bg-[hsl(var(--secondary)/.55)]"} ${i === 0 ? "lg:border-l" : ""}`}
+                className={`group min-h-[260px] bg-[hsl(var(--background))] p-6 text-left transition-colors ${active ? "bg-[hsl(var(--primary))] text-[hsl(var(--background))]" : "hover:bg-[hsl(var(--secondary))]"}`}
               >
-                <div
-                  className={`mb-16 flex items-center justify-between ${isActive ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--primary))]"}`}
-                >
-                  <Icon size={27} strokeWidth={1.6} />
+                <div className="flex items-center justify-between">
+                  <Icon
+                    size={19}
+                    className={active ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--primary))]"}
+                  />
                   <span
-                    className={`font-mono-ui text-[10px] ${isActive ? "text-[hsl(var(--background)/.55)]" : "text-[hsl(var(--muted-foreground))]"}`}
+                    className={`font-mono-ui text-[8px] ${active ? "text-[hsl(var(--background)/.45)]" : "text-[hsl(var(--muted-foreground))]"}`}
                   >
-                    0{i + 1}
+                    0{index + 1}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold">{service.title}</h3>
+                <h3 className="mt-11 text-base font-bold">{service.title}</h3>
                 <p
-                  className={`mt-3 text-sm leading-relaxed ${isActive ? "text-[hsl(var(--background)/.68)]" : "text-[hsl(var(--muted-foreground))]"}`}
+                  className={`mt-3 text-xs leading-relaxed ${active ? "text-[hsl(var(--background)/.6)]" : "text-[hsl(var(--muted-foreground))]"}`}
                 >
-                  {isActive ? service.detail : service.copy}
+                  {active ? service.detail : service.copy}
                 </p>
                 <span
-                  className={`mt-8 flex items-center gap-2 text-xs font-bold ${isActive ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--primary))]"}`}
+                  className={`mt-7 inline-flex items-center gap-1 font-mono-ui text-[8px] font-bold uppercase tracking-wider ${active ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--primary))]"}`}
                 >
-                  {isActive ? servicesText.selected : servicesText.learn}{" "}
-                  <ChevronRight
-                    size={14}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
+                  {active ? t.selected : t.learn} <ChevronRight size={11} />
                 </span>
               </button>
             );
@@ -857,77 +837,42 @@ function WhyChooseUs({ lang }: { lang: Language }) {
 }
 
 function Area({ lang }: { lang: Language }) {
-  const area = translations[lang].area;
-  const cities = [
-    "Atlanta",
-    "Decatur",
-    "Marietta",
-    "Roswell",
-    "Smyrna",
-    "Sandy Springs",
-    "Brookhaven",
-    "Alpharetta",
-    "East Cobb",
-    "Dunwoody",
-    "Vinings",
-    "Tucker",
-  ];
+  const t = translations[lang].area;
+  const cities = translations.en.area.cities;
   return (
-    <section
-      id="area"
-      className="bg-[hsl(var(--primary))] px-5 py-24 text-[hsl(var(--background))] lg:px-10 lg:py-28"
-    >
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.85fr_1.15fr]">
+    <section id="area" className="bg-[hsl(var(--primary))] px-5 py-24 text-[hsl(var(--background))] lg:px-10 lg:py-32">
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.8fr_1.2fr]">
         <div>
           <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent))]">
-            {area.eyebrow}
+            {t.eyebrow}
           </p>
-          <h2 className="mt-4 font-display text-5xl leading-[.9] lg:text-7xl">
-            {area.title1}
+          <h2 className="mt-5 max-w-lg font-display text-5xl leading-[.9] tracking-tight lg:text-7xl">
+            {t.title1}
             <br />
-            <em>{area.title2}</em>
-            {"title3" in area && area.title3 ? <> {area.title3}</> : null}
+            <em className="text-[hsl(var(--accent))]">{t.title2}</em>
+            {"title3" in t ? <><br />{t.title3}</> : null}
           </h2>
-          <p className="mt-7 max-w-md leading-relaxed text-[hsl(var(--background)/.68)]">
-            {area.copy}
+          <p className="mt-7 max-w-md text-sm leading-relaxed text-[hsl(var(--background)/.65)]">
+            {t.copy}
           </p>
-          <span
-            data-testid="text-area-phone"
-            className="mt-8 inline-flex items-center gap-2 font-bold text-[hsl(var(--accent))]"
-          >
-            <Phone size={17} /> {area.phone}
-          </span>
+          <div className="mt-8 flex items-center gap-2 text-sm font-bold text-[hsl(var(--accent))]">
+            <Phone size={15} /> {t.phone}
+          </div>
         </div>
-        <div className="relative min-h-[300px] overflow-hidden rounded-3xl border border-[hsl(var(--background)/.12)] bg-[hsl(var(--primary)/.45)] p-8">
-          <div
-            className="absolute inset-0 opacity-25"
-            style={{
-              backgroundImage:
-                "radial-gradient(hsl(var(--accent)) 1px, transparent 1px)",
-              backgroundSize: "24px 24px",
-            }}
-          />
-          <div className="relative grid grid-cols-2 gap-x-10 gap-y-5 sm:grid-cols-3">
-            {cities.map((city, i) => (
+        <div className="rounded-3xl border border-[hsl(var(--background)/.14)] bg-[hsl(var(--background)/.05)] p-6 lg:p-8">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {cities.map((city) => (
               <div
                 key={city}
-                className="flex items-center gap-2 border-b border-[hsl(var(--background)/.1)] pb-3 text-sm font-semibold text-[hsl(var(--background)/.78)]"
+                className="flex items-center gap-2 rounded-xl border border-[hsl(var(--background)/.08)] px-3 py-3 text-xs text-[hsl(var(--background)/.7)]"
               >
-                <Pin
-                  size={13}
-                  className={
-                    i === 0
-                      ? "text-[hsl(var(--accent))]"
-                      : "text-[hsl(var(--background)/.45)]"
-                  }
-                />
-                {city}
+                <Pin size={12} className="text-[hsl(var(--accent))]" /> {city}
               </div>
             ))}
           </div>
-          <div className="absolute bottom-7 right-7 flex items-center gap-2 rounded-full bg-[hsl(var(--accent))] px-4 py-2 font-mono-ui text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--accent-foreground))]">
-            <span className="size-2 animate-pulse rounded-full bg-[hsl(var(--accent-foreground))]" />{" "}
-            {area.live}
+          <div className="mt-6 flex items-center justify-end gap-2 font-mono-ui text-[8px] font-bold uppercase tracking-wider text-[hsl(var(--accent))]">
+            <span className="size-1.5 animate-pulse rounded-full bg-[hsl(var(--accent))]" />
+            {t.live}
           </div>
         </div>
       </div>
@@ -936,68 +881,61 @@ function Area({ lang }: { lang: Language }) {
 }
 
 function Contact({ onChat, lang }: { onChat: () => void; lang: Language }) {
-  const contact = translations[lang].contact;
-
   return (
-    <section
-      id="contact"
-      className="bg-[hsl(var(--accent))] px-5 py-24 lg:px-10 lg:py-28"
-    >
-      <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[.9fr_1.1fr]">
+    <section id="contact" className="bg-[hsl(var(--accent))] px-5 py-24 lg:px-10 lg:py-32">
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
         <div>
-          <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground)/.7)]">
-            {contact.eyebrow}
+          <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground)/.6)]">
+            {lang === "es" ? "Listo para empezar" : "Let's get comfortable"}
           </p>
-
-          <h2 className="mt-4 font-display text-6xl leading-[.87] tracking-tight text-[hsl(var(--accent-foreground))] lg:text-8xl">
-            {contact.title1}
-            <br />
-            {contact.title2}
+          <h2 className="mt-5 font-display text-6xl leading-[.84] tracking-tight text-[hsl(var(--accent-foreground))] lg:text-8xl">
+            {lang === "es" ? (
+              <>
+                Tu hogar
+                <br />
+                llamó.
+              </>
+            ) : (
+              <>
+                Your home
+                <br />
+                called.
+              </>
+            )}
           </h2>
-
-          <p className="mt-7 max-w-md text-base leading-relaxed text-[hsl(var(--accent-foreground)/.72)]">
+          <p className="mt-7 max-w-md text-sm leading-relaxed text-[hsl(var(--accent-foreground)/.7)]">
             {lang === "es"
-              ?  `Esta sección forma parte de una demostración no oficial de Local Lead Forge y no envía solicitudes reales de servicio a ${prospectConfig.companyName}.`
-              :  `This section is part of an unofficial Local Lead Forge demo and does not send real service requests to ${prospectConfig.companyName}.`}
+              ? `Esta sección es parte de una demo no oficial de Local Lead Forge y no envía solicitudes reales de servicio a ${prospectConfig.companyName}.`
+              : `This section is part of an unofficial Local Lead Forge demo and does not send real service requests to ${prospectConfig.companyName}.`}
           </p>
-
-          <div className="mt-9 flex flex-col gap-4">
-            <span className="flex items-center gap-3 text-sm font-semibold text-[hsl(var(--accent-foreground)/.7)]">
-              <Clock3 size={18} /> {contact.hours}
+          <div className="mt-8 flex flex-col gap-3 text-sm font-semibold text-[hsl(var(--accent-foreground)/.72)]">
+            <span className="flex items-center gap-2">
+              <Clock3 size={15} /> {lang === "es" ? "Lun–Vie · 8:00am–5:00pm" : "Mon–Fri · 8:00am–5:00pm"}
             </span>
+            <button onClick={onChat} className="flex items-center gap-2 text-left hover:underline">
+              {lang === "es" ? "¿Prefieres chatear? Conoce al asistente IA" : "Prefer to chat? Meet our AI assistant"}
+              <MessageCircle size={15} />
+            </button>
           </div>
-
-          <button
-            onClick={onChat}
-            data-testid="button-contact-chat"
-            className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[hsl(var(--accent-foreground))] underline decoration-[hsl(var(--accent-foreground)/.35)] underline-offset-4 hover:decoration-[hsl(var(--accent-foreground))]"
-          >
-            {contact.chat} <MessageCircle size={16} />
-          </button>
         </div>
-
-        <div className="flex min-h-[390px] flex-col items-center justify-center rounded-[2rem] bg-[hsl(var(--background))] p-8 text-center shadow-xl lg:p-12">
-          <div className="grid size-16 place-items-center rounded-full bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
-            <MessageCircle size={28} />
+        <div className="rounded-[2rem] bg-[hsl(var(--background))] p-6 shadow-xl lg:p-10">
+          <div className="mx-auto max-w-xl text-center">
+            <div className="mx-auto grid size-14 place-items-center rounded-full bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
+              <MessageCircle size={22} />
+            </div>
+            <h3 className="mt-6 font-display text-3xl text-[hsl(var(--foreground))]">
+              {lang === "es" ? "Prueba el asistente de leads con IA" : "Try the AI lead assistant"}
+            </h3>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
+              {lang === "es"
+                ? "Simula un visitante que necesita HVAC para ver cómo se puede capturar y calificar el lead. Esta demo no reserva citas, no confirma precios ni solicita servicio real."
+                : "Simulate a website visitor who needs HVAC to see how a lead can be captured and qualified. This demo does not book appointments, confirm pricing, or request actual service."}
+            </p>
           </div>
-
-          <h3 className="mt-6 font-display text-4xl text-[hsl(var(--foreground))]">
-            {lang === "es"
-              ? "Prueba el asistente de IA"
-              : "Try the AI lead assistant"}
-          </h3>
-
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
-            {lang === "es"
-              ? "Simula la experiencia de un visitante y observa cómo se puede capturar y calificar un lead. Esta demo no agenda citas, confirma precios ni solicita servicio real."
-              : "Simulate a website visitor and see how a lead can be captured and qualified. This demo does not book appointments, confirm pricing, or request actual service."}
-          </p>
-
           <button
             type="button"
             onClick={onChat}
-            data-testid="button-contact-start-demo"
-            className="mt-7 flex items-center justify-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3.5 text-sm font-bold text-[hsl(var(--background))] transition-transform hover:-translate-y-0.5"
+            className="mx-auto mt-7 flex items-center justify-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3.5 text-sm font-bold text-[hsl(var(--background))] transition-transform hover:-translate-y-0.5"
           >
             {lang === "es" ? "Iniciar demo" : "Start demo"}
             <ArrowRight size={16} />
@@ -1541,11 +1479,18 @@ function Router() {
     </ErrorBoundary>
   );
 }
+
+const rawRouterBase = import.meta.env.BASE_URL;
+const routerBase =
+  rawRouterBase === "/" || rawRouterBase === "./"
+    ? ""
+    : rawRouterBase.replace(/\/$/, "");
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={routerBase}>
           <Router />
         </WouterRouter>
         <Toaster />
