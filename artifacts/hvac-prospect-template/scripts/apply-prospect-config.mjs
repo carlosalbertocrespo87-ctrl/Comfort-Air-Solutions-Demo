@@ -20,12 +20,15 @@ let source = fs.readFileSync(appPath, "utf8");
 const esc = (value) => String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("`", "\\`");
 const area = config.serviceArea;
 const positioning = config.sinceYear || config.positioningLabel || "Local HVAC";
+const websiteHost = config.website ? new URL(config.website).hostname.replace(/^www\./, "") : "";
+const emailDomain = config.emailDomain || websiteHost;
+if (!emailDomain) throw new Error("emailDomain could not be inferred; provide website or emailDomain");
 const opportunity = config.opportunity || `A clearer mobile-first bilingual lead qualification experience for ${config.shortName}.`;
 
 const replacements = [
   ['companyName: "PROSPECT HVAC COMPANY"', `companyName: "${esc(config.companyName)}"`],
   ['shortName: "PROSPECT HVAC"', `shortName: "${esc(config.shortName)}"`],
-  ['emailDomain: "prospectcompany.com"', `emailDomain: "${esc(config.emailDomain)}"`],
+  ['emailDomain: "prospectcompany.com"', `emailDomain: "${esc(emailDomain)}"`],
   ['phoneDisplay: "(000) 000-0000"', `phoneDisplay: "${esc(config.phoneDisplay)}"`],
   ['serviceArea: "TARGET SERVICE AREA"', `serviceArea: "${esc(area)}"`],
   ['sinceYear: "20XX"', `sinceYear: "${esc(positioning)}"`],
