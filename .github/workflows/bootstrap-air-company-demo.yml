@@ -1,114 +1,16 @@
-name: Bootstrap Air Company Demo
+name: Bootstrap Air Company Demo (retired)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/bootstrap-air-company-demo.yml"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  bootstrap:
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create prospect demo from master template
+      - name: Legacy workflow retired
         run: |
-          rm -rf artifacts/the-air-company-ga
-          cp -R artifacts/hvac-prospect-template artifacts/the-air-company-ga
-          python - <<'PY'
-          from pathlib import Path
-
-          root = Path('artifacts/the-air-company-ga')
-          app = root / 'src' / 'App.tsx'
-          text = app.read_text()
-
-          old = '''const prospectConfig = {
-            companyName: "PROSPECT HVAC COMPANY",
-            shortName: "PROSPECT HVAC",
-            emailDomain: "prospectcompany.com",
-            phoneDisplay: "(000) 000-0000",
-            serviceArea: "TARGET SERVICE AREA",
-            sinceYear: "20XX",
-          } as const;'''
-          new = '''const prospectConfig = {
-            companyName: "The Air Company of GA",
-            shortName: "The Air Company",
-            emailDomain: "theaircompanyga.com",
-            phoneDisplay: "(404) 583-7788",
-            serviceArea: "Metro Atlanta",
-            sinceYear: "Atlanta",
-          } as const;'''
-          if old not in text:
-              raise SystemExit('prospectConfig placeholder not found')
-          text = text.replace(old, new, 1)
-
-          text = text.replace('"Atlanta",\n        "Decatur",\n        "Marietta",\n        "Roswell",\n        "Smyrna",\n        "Sandy Springs",\n        "Brookhaven",\n        "Alpharetta",\n        "East Cobb",\n        "Dunwoody",\n        "Vinings",\n        "Tucker",',
-          '"Alpharetta",\n        "Atlanta",\n        "Brookhaven",\n        "Decatur",\n        "Duluth",\n        "Johns Creek",\n        "Marietta",\n        "Norcross",\n        "Roswell",\n        "Sandy Springs",\n        "Smyrna",\n        "Tucker",', 1)
-
-          # Replace fictional review quotes with verified company highlights from the official website.
-          start = text.find('    reviews: {', text.find('  en: {'))
-          end = text.find('    contact: {', start)
-          if start == -1 or end == -1:
-              raise SystemExit('English reviews block not found')
-          reviews = '''    reviews: {
-      eyebrow: "Verified highlights",
-      title1: "Built around",
-      title2: "reliable service.",
-      items: [
-        {
-          quote: "Family-owned and operated, serving residential and commercial customers across Metro Atlanta.",
-          name: "Company profile",
-          location: "Official website",
-          initials: "GA",
-        },
-        {
-          quote: "Licensed, insured and NATE-certified technicians, with same-day service when available.",
-          name: "Service standards",
-          location: "Official website",
-          initials: "HV",
-        },
-        {
-          quote: "24/7 emergency service plus residential, commercial, refrigeration and maintenance options.",
-          name: "Service coverage",
-          location: "Official website",
-          initials: "24",
-        },
-      ],
-    },
-'''
-          text = text[:start] + reviews + text[end:]
-
-          # General Spanish localization for this prospect.
-          text = text.replace('El equipo local de confort del oeste metropolitano de Georgia', 'El equipo local de confort de Metro Atlanta')
-          text = text.replace('en el oeste metropolitano de Georgia', 'en Metro Atlanta')
-          text = text.replace('Servicio HVAC confiable en el oeste metropolitano de Georgia.', 'Servicio HVAC confiable en Metro Atlanta.')
-          text = text.replace('comunidades en todo el oeste metropolitano de Georgia', 'comunidades en toda el área metropolitana de Atlanta')
-
-          app.write_text(text)
-
-          (root / 'public' / 'robots.txt').write_text('User-agent: *\nDisallow: /\n')
-
-          index = root / 'index.html'
-          html = index.read_text()
-          html = html.replace('PROSPECT HVAC COMPANY', 'The Air Company of GA')
-          html = html.replace('Prospect HVAC', 'The Air Company of GA')
-          index.write_text(html)
-
-          readme = root / 'README.md'
-          readme.write_text('''# The Air Company of GA — Prospect Demo\n\nProspect #3 for Local Lead Forge.\n\nSource: MASTER-TEMPLATE-v2.\n\nVerified public facts used for customization:\n- Phone: (404) 583-7788\n- Service area: Metro Atlanta\n- Residential and commercial HVAC\n- Family-owned and operated\n- Licensed, insured and NATE-certified technicians\n- 24/7 emergency service\n- Official service-area cities include Alpharetta, Atlanta, Brookhaven, Decatur, Duluth, Johns Creek, Marietta, Norcross, Roswell, Sandy Springs, Smyrna and Tucker\n\nSafety: unofficial prospect demo, not affiliated; no real appointment confirmation; noindex/robots block required before publication.\n''')
-          PY
-
-      - name: Commit bootstrap
-        run: |
-          git config user.name "Local Lead Forge Bot"
-          git config user.email "localleadforgeagency@gmail.com"
-          git add artifacts/the-air-company-ga
-          git commit -m "Bootstrap The Air Company of GA prospect demo"
-          git push
+          echo "This legacy one-off bootstrap is retired."
+          echo "Use artifacts/prospect-configs/<slug>.json with the generic HVAC fast pipeline instead."
