@@ -1,0 +1,39 @@
+name: Pages Builder Speed Smoke
+
+on:
+  push:
+    branches:
+      - ops-pages-speed-typecheck-once
+    paths:
+      - "scripts/build-generic-pages-demos.mjs"
+      - ".github/workflows/pages-builder-speed-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build all generic Pages demos
+        run: node scripts/build-generic-pages-demos.mjs
+      - name: Verify generic output exists
+        run: |
+          test -f /tmp/llf-generic-pages/citywide-mechanical-demo/index.html
+          test -f /tmp/llf-generic-pages/dynamic-heating-air-demo/index.html
+          test -f /tmp/llf-generic-pages/dickerson-heating-air-demo/index.html
+          test -f /tmp/llf-generic-pages/melton-heating-ac-demo/index.html
+          echo "Generic Pages batch smoke passed"
