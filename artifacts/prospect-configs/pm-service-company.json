@@ -1,0 +1,27 @@
+{
+  "companyName": "PM Service Company LLC",
+  "shortName": "PM Service Company",
+  "website": "https://pmservicecompany.net",
+  "emailDomain": "gmail.com",
+  "publicEmail": "pmservicecompany@gmail.com",
+  "phoneDisplay": "(470) 757-3300",
+  "serviceArea": "Stonecrest & Atlanta",
+  "publicContact": "Perez Moody",
+  "verifiedServices": [
+    "HVAC installation",
+    "Heat pump services",
+    "HVAC maintenance",
+    "HVAC service and repair"
+  ],
+  "opportunity": "The public site relies on a conventional quote/contact flow, creating an opportunity for a clearer mobile-first bilingual lead qualification experience.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
