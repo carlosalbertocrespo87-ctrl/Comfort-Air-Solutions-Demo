@@ -11,6 +11,7 @@
     "configure:procool": "node scripts/apply-pro-cool-heating-air-config.mjs",
     "configure:stinos": "node scripts/apply-stinos-heating-air-config.mjs",
     "configure:atlanta-north": "node scripts/apply-atlanta-north-cooling-heating-config.mjs",
+    "configure:affordable-air": "node scripts/apply-affordable-air-repair-config.mjs",
     "dev": "npm run configure:asap && vite --config vite.config.ts --host 0.0.0.0",
     "build": "npm run configure:asap && vite build --config vite.config.ts",
     "build:pm": "npm run configure:pm && vite build --config vite.config.ts",
@@ -19,6 +20,7 @@
     "build:procool": "npm run configure:procool && vite build --config vite.config.ts",
     "build:stinos": "npm run configure:stinos && vite build --config vite.config.ts",
     "build:atlanta-north": "npm run configure:atlanta-north && vite build --config vite.config.ts",
+    "build:affordable-air": "npm run configure:affordable-air && vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
