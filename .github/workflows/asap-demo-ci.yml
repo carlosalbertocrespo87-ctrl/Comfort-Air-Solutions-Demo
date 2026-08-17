@@ -9,6 +9,7 @@ on:
       - "artifacts/prospect-configs/asap-heating-air.json"
       - "ASAP-DEMO-BUILD-SPEC.md"
       - ".github/workflows/asap-demo-ci.yml"
+      - ".github/qa/asap-browser.spec.ts"
   workflow_dispatch:
 
 permissions:
@@ -72,7 +73,7 @@ jobs:
 
           echo "ASAP static QA checks passed."
 
-      - name: Install Chromium for render QA
+      - name: Install Chromium for browser QA
         run: pnpm dlx playwright@1.55.0 install --with-deps chromium
 
       - name: Start built-site server
@@ -90,6 +91,9 @@ jobs:
           done
           cat /tmp/asap-preview.log
           exit 1
+
+      - name: Functional browser QA
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/asap-browser.spec.ts --workers=1 --reporter=line
 
       - name: Capture desktop and mobile renders
         run: |
