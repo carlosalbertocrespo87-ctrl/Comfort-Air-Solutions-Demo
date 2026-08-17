@@ -25,7 +25,8 @@ for (const item of manifest) {
     run("node", ["artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs", item.slug]);
     run("pnpm", ["--dir", "artifacts/hvac-prospect-template", "run", "typecheck"]);
     run("node", ["artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs", item.slug]);
-    run("pnpm", ["--dir", "artifacts/hvac-prospect-template", "run", "build"], {
+    run("pnpm", ["exec", "vite", "build", "--config", "vite.config.ts"], {
+      cwd: templateRoot,
       env: { ...process.env, PORT: "3000", BASE_PATH: `/${item.route}/` },
     });
     fs.cpSync(path.join(templateRoot, "dist/public"), outDir, { recursive: true });
