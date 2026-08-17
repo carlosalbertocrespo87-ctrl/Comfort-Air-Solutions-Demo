@@ -1,0 +1,20 @@
+name: Speed Pipeline Smoke Test
+
+on:
+  push:
+    branches:
+      - ops-speed-up-demo-pipeline
+    paths:
+      - ".github/workflows/speed-pipeline-smoke.yml"
+      - ".github/workflows/hvac-prospect-demo-ci-reusable.yml"
+      - ".github/qa/hvac-prospect-browser-generic.spec.ts"
+      - "artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs"
+      - "artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs"
+  workflow_dispatch:
+
+jobs:
+  affordable-air-smoke:
+    uses: ./.github/workflows/hvac-prospect-demo-ci-reusable.yml
+    with:
+      prospect_slug: affordable-air-repair
+      artifact_name: speed-pipeline-affordable-air-smoke
