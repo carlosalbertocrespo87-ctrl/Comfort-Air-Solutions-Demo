@@ -15,6 +15,7 @@ on:
       - "artifacts/prospect-configs/ab-refrigeration.json"
       - "artifacts/prospect-configs/bobs-heating-air.json"
       - "artifacts/prospect-configs/pro-cool-heating-air.json"
+      - "artifacts/prospect-configs/stinos-heating-air.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
@@ -31,130 +32,84 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Build Local Lead Forge
-        env:
-          BASE_PATH: ./
+        env: { BASE_PATH: ./ }
         run: pnpm --dir artifacts/local-lead-forge run build
-
       - name: Build Wade Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /wade-demo/
+        env: { PORT: 3000, BASE_PATH: /wade-demo/ }
         run: pnpm --dir artifacts/wade-heating-air run build
-
       - name: Build ComfortAir Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /comfortair-demo/
+        env: { PORT: 3000, BASE_PATH: /comfortair-demo/ }
         run: pnpm --dir artifacts/comfortair-solutions run build
-
       - name: Build New Level Mechanical Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /new-level-mechanical-demo/
+        env: { PORT: 3000, BASE_PATH: /new-level-mechanical-demo/ }
         run: pnpm --dir artifacts/new-level-mechanical run build
-
       - name: Build ASAP Heating & Air Conditioning Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /asap-heating-air-demo/
+        env: { PORT: 3000, BASE_PATH: /asap-heating-air-demo/ }
         run: pnpm --dir artifacts/hvac-prospect-template run build
-
       - name: Stage ASAP demo output
         run: |
-          rm -rf /tmp/asap-heating-air-demo
-          mkdir -p /tmp/asap-heating-air-demo
+          rm -rf /tmp/asap-heating-air-demo && mkdir -p /tmp/asap-heating-air-demo
           cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/asap-heating-air-demo/
-
       - name: Restore shared HVAC template source after ASAP
-        run: |
-          git checkout -- artifacts/hvac-prospect-template/src/App.tsx
-          git checkout -- artifacts/hvac-prospect-template/index.html
-          git checkout -- artifacts/hvac-prospect-template/public/robots.txt
-
+        run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
       - name: Build PM Service Company Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /pm-service-company-demo/
+        env: { PORT: 3000, BASE_PATH: /pm-service-company-demo/ }
         run: pnpm --dir artifacts/hvac-prospect-template run build:pm
-
       - name: Stage PM Service demo output
         run: |
-          rm -rf /tmp/pm-service-company-demo
-          mkdir -p /tmp/pm-service-company-demo
+          rm -rf /tmp/pm-service-company-demo && mkdir -p /tmp/pm-service-company-demo
           cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/pm-service-company-demo/
-
       - name: Restore shared HVAC template source after PM Service
-        run: |
-          git checkout -- artifacts/hvac-prospect-template/src/App.tsx
-          git checkout -- artifacts/hvac-prospect-template/index.html
-          git checkout -- artifacts/hvac-prospect-template/public/robots.txt
-
+        run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
       - name: Build AB Refrigeration Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /ab-refrigeration-demo/
+        env: { PORT: 3000, BASE_PATH: /ab-refrigeration-demo/ }
         run: pnpm --dir artifacts/hvac-prospect-template run build:ab
-
       - name: Stage AB Refrigeration demo output
         run: |
-          rm -rf /tmp/ab-refrigeration-demo
-          mkdir -p /tmp/ab-refrigeration-demo
+          rm -rf /tmp/ab-refrigeration-demo && mkdir -p /tmp/ab-refrigeration-demo
           cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/ab-refrigeration-demo/
-
       - name: Restore shared HVAC template source after AB Refrigeration
-        run: |
-          git checkout -- artifacts/hvac-prospect-template/src/App.tsx
-          git checkout -- artifacts/hvac-prospect-template/index.html
-          git checkout -- artifacts/hvac-prospect-template/public/robots.txt
-
+        run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
       - name: Build Bob's Heating & Air Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /bobs-heating-air-demo/
+        env: { PORT: 3000, BASE_PATH: /bobs-heating-air-demo/ }
         run: pnpm --dir artifacts/hvac-prospect-template run build:bobs
-
       - name: Stage Bob's Heating & Air demo output
         run: |
-          rm -rf /tmp/bobs-heating-air-demo
-          mkdir -p /tmp/bobs-heating-air-demo
+          rm -rf /tmp/bobs-heating-air-demo && mkdir -p /tmp/bobs-heating-air-demo
           cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/bobs-heating-air-demo/
-
       - name: Restore shared HVAC template source after Bob's Heating & Air
-        run: |
-          git checkout -- artifacts/hvac-prospect-template/src/App.tsx
-          git checkout -- artifacts/hvac-prospect-template/index.html
-          git checkout -- artifacts/hvac-prospect-template/public/robots.txt
-
+        run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
       - name: Build Pro Cool Heating & Air Demo
-        env:
-          PORT: 3000
-          BASE_PATH: /pro-cool-heating-air-demo/
+        env: { PORT: 3000, BASE_PATH: /pro-cool-heating-air-demo/ }
         run: pnpm --dir artifacts/hvac-prospect-template run build:procool
-
+      - name: Stage Pro Cool Heating & Air demo output
+        run: |
+          rm -rf /tmp/pro-cool-heating-air-demo && mkdir -p /tmp/pro-cool-heating-air-demo
+          cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/pro-cool-heating-air-demo/
+      - name: Restore shared HVAC template source after Pro Cool Heating & Air
+        run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
+      - name: Build Stinos Heating & Air Demo
+        env: { PORT: 3000, BASE_PATH: /stinos-heating-air-demo/ }
+        run: pnpm --dir artifacts/hvac-prospect-template run build:stinos
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo pages-dist/pro-cool-heating-air-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo pages-dist/pro-cool-heating-air-demo pages-dist/stinos-heating-air-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
           cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
@@ -163,11 +118,10 @@ jobs:
           cp -R /tmp/pm-service-company-demo/. pages-dist/pm-service-company-demo/
           cp -R /tmp/ab-refrigeration-demo/. pages-dist/ab-refrigeration-demo/
           cp -R /tmp/bobs-heating-air-demo/. pages-dist/bobs-heating-air-demo/
-          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/pro-cool-heating-air-demo/
-
+          cp -R /tmp/pro-cool-heating-air-demo/. pages-dist/pro-cool-heating-air-demo/
+          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/stinos-heating-air-demo/
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
@@ -177,10 +131,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
     needs: build
-
     steps:
       - name: Deploy GitHub Pages
         id: deployment
