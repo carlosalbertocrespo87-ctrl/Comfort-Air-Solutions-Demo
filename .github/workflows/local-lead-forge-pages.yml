@@ -11,6 +11,7 @@ on:
       - "artifacts/new-level-mechanical/**"
       - "artifacts/hvac-prospect-template/**"
       - "artifacts/prospect-configs/asap-heating-air.json"
+      - "artifacts/prospect-configs/pm-service-company.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
@@ -75,15 +76,28 @@ jobs:
           BASE_PATH: /asap-heating-air-demo/
         run: pnpm --dir artifacts/hvac-prospect-template run build
 
+      - name: Stage ASAP demo output
+        run: |
+          rm -rf /tmp/asap-heating-air-demo
+          mkdir -p /tmp/asap-heating-air-demo
+          cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/asap-heating-air-demo/
+
+      - name: Build PM Service Company Demo
+        env:
+          PORT: 3000
+          BASE_PATH: /pm-service-company-demo/
+        run: pnpm --dir artifacts/hvac-prospect-template run build:pm
+
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
           cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
           cp -R artifacts/new-level-mechanical/dist/public/. pages-dist/new-level-mechanical-demo/
-          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/asap-heating-air-demo/
+          cp -R /tmp/asap-heating-air-demo/. pages-dist/asap-heating-air-demo/
+          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/pm-service-company-demo/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
