@@ -1,0 +1,33 @@
+{
+  "companyName": "Affordable Air Repair Inc.",
+  "shortName": "Affordable Air Repair",
+  "website": "https://www.affordableairrepair.com",
+  "emailDomain": "affordableairrepair.com",
+  "publicEmail": null,
+  "phoneDisplay": "770-652-4040",
+  "serviceArea": "Smyrna, Cartersville and Metro Atlanta",
+  "publicContact": "Brian Goolsby",
+  "verifiedServices": [
+    "Residential HVAC repair",
+    "HVAC system replacement",
+    "HVAC maintenance",
+    "Indoor air quality solutions"
+  ],
+  "verifiedHighlights": [
+    "Official site publishes current HVAC guidance for Smyrna, Marietta and Cartersville homeowners",
+    "Official site describes residential heating, cooling, maintenance, replacement and indoor air quality services",
+    "CRM verification identifies Brian Goolsby as CEO from Georgia filing",
+    "CRM verified public phone 770-652-4040"
+  ],
+  "opportunity": "Upgrade a content-led local HVAC presence into a clearer mobile-first bilingual lead qualification experience while preserving verified service claims.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
