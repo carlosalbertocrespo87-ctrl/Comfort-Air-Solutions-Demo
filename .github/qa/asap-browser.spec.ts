@@ -72,5 +72,5 @@ test('ASAP mobile menu and language switch work', async ({ page }) => {
   await expect(page.getByTestId('link-mobile-services')).toBeVisible();
   await page.getByRole('button', { name: 'ES', exact: true }).click();
   await expect(page.getByText('Idioma', { exact: true })).toBeVisible();
-  await expect(page.getByText('Servicios', { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId('link-mobile-servicios')).toBeVisible();
 });
