@@ -3,4 +3,9 @@
 
 [context.deploy-preview]
   command = "pnpm --filter ./artifacts/local-lead-forge build"
-  publish = "artifacts/local-lead-forge/dist"
+  publish = "artifacts/local-lead-forge/dist/public"
+
+[[context.deploy-preview.redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
