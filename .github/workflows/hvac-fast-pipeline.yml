@@ -1,0 +1,63 @@
+name: HVAC Fast Pipeline
+
+on:
+  push:
+    branches:
+      - "demo-*"
+    paths:
+      - "artifacts/prospect-configs/*.json"
+      - ".github/workflows/hvac-fast-pipeline.yml"
+      - ".github/workflows/hvac-prospect-demo-ci-reusable.yml"
+      - ".github/qa/hvac-prospect-browser-generic.spec.ts"
+      - "artifacts/hvac-prospect-template/**"
+      - "scripts/build-generic-pages-demos.mjs"
+  workflow_dispatch:
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      slug: ${{ steps.prospect.outputs.slug }}
+      route: ${{ steps.prospect.outputs.route }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: prospect
+        name: Read newest manifest prospect
+        shell: bash
+        run: |
+          node - <<'NODE' >> "$GITHUB_OUTPUT"
+          const fs = require('fs');
+          const list = JSON.parse(fs.readFileSync('artifacts/prospect-configs/published-generic-demos.json','utf8'));
+          const item = list.at(-1);
+          if (!item?.slug || !item?.route) throw new Error('Manifest has no valid latest prospect');
+          console.log(`slug=${item.slug}`);
+          console.log(`route=${item.route}`);
+          NODE
+
+  qa:
+    needs: detect
+    uses: ./.github/workflows/hvac-prospect-demo-ci-reusable.yml
+    with:
+      prospect_slug: ${{ needs.detect.outputs.slug }}
+      artifact_name: fast-pipeline-${{ needs.detect.outputs.slug }}
+
+  pages-builder:
+    needs: detect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build manifest demos
+        run: node scripts/build-generic-pages-demos.mjs
+      - name: Verify newest staged route
+        shell: bash
+        run: |
+          test -f "/tmp/llf-generic-pages/${{ needs.detect.outputs.route }}/index.html"
+          grep -q "noindex, nofollow, noarchive" "/tmp/llf-generic-pages/${{ needs.detect.outputs.route }}/index.html"
