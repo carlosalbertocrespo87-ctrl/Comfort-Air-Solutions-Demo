@@ -64,10 +64,13 @@ const replacements = [
 ];
 
 for (const [from, to] of replacements) {
-  if (!source.includes(from)) {
+  if (source.includes(from)) {
+    source = source.replace(from, to);
+    continue;
+  }
+  if (!source.includes(to)) {
     throw new Error(`Demo master marker missing: ${from}`);
   }
-  source = source.replace(from, to);
 }
 
 fs.writeFileSync(appPath, source);
