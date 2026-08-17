@@ -10,14 +10,8 @@ on:
       - "artifacts/comfortair-solutions/**"
       - "artifacts/new-level-mechanical/**"
       - "artifacts/hvac-prospect-template/**"
-      - "artifacts/prospect-configs/asap-heating-air.json"
-      - "artifacts/prospect-configs/pm-service-company.json"
-      - "artifacts/prospect-configs/ab-refrigeration.json"
-      - "artifacts/prospect-configs/bobs-heating-air.json"
-      - "artifacts/prospect-configs/pro-cool-heating-air.json"
-      - "artifacts/prospect-configs/stinos-heating-air.json"
-      - "artifacts/prospect-configs/atlanta-north-cooling-heating.json"
-      - "artifacts/prospect-configs/affordable-air-repair.json"
+      - "artifacts/prospect-configs/**"
+      - "scripts/build-generic-pages-demos.mjs"
       - "pnpm-lock.yaml"
       - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
@@ -123,13 +117,12 @@ jobs:
           cp -R artifacts/hvac-prospect-template/dist/public/. /tmp/atlanta-north-cooling-heating-demo/
       - name: Restore shared HVAC template source after Atlanta North Cooling & Heating
         run: git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
-      - name: Build Affordable Air Repair Demo
-        env: { PORT: 3000, BASE_PATH: /affordable-air-repair-demo/ }
-        run: pnpm --dir artifacts/hvac-prospect-template run build:affordable-air
+      - name: Build generic manifest demos
+        run: node scripts/build-generic-pages-demos.mjs
       - name: Assemble GitHub Pages site
         run: |
           rm -rf pages-dist
-          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo pages-dist/pro-cool-heating-air-demo pages-dist/stinos-heating-air-demo pages-dist/atlanta-north-cooling-heating-demo pages-dist/affordable-air-repair-demo
+          mkdir -p pages-dist/wade-demo pages-dist/comfortair-demo pages-dist/new-level-mechanical-demo pages-dist/asap-heating-air-demo pages-dist/pm-service-company-demo pages-dist/ab-refrigeration-demo pages-dist/bobs-heating-air-demo pages-dist/pro-cool-heating-air-demo pages-dist/stinos-heating-air-demo pages-dist/atlanta-north-cooling-heating-demo
           cp -R artifacts/local-lead-forge/dist/public/. pages-dist/
           cp -R artifacts/wade-heating-air/dist/public/. pages-dist/wade-demo/
           cp -R artifacts/comfortair-solutions/dist/public/. pages-dist/comfortair-demo/
@@ -141,7 +134,7 @@ jobs:
           cp -R /tmp/pro-cool-heating-air-demo/. pages-dist/pro-cool-heating-air-demo/
           cp -R /tmp/stinos-heating-air-demo/. pages-dist/stinos-heating-air-demo/
           cp -R /tmp/atlanta-north-cooling-heating-demo/. pages-dist/atlanta-north-cooling-heating-demo/
-          cp -R artifacts/hvac-prospect-template/dist/public/. pages-dist/affordable-air-repair-demo/
+          if [ -d /tmp/llf-generic-pages ]; then cp -R /tmp/llf-generic-pages/. pages-dist/; fi
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload GitHub Pages artifact
