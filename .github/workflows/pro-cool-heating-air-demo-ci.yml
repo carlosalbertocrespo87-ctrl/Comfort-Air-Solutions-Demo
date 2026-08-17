@@ -1,0 +1,112 @@
+name: Pro Cool Heating & Air Demo CI
+
+on:
+  push:
+    branches:
+      - demo-pro-cool-heating-air
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/pro-cool-heating-air.json"
+      - "PRO-COOL-HEATING-AIR-DEMO-BUILD-SPEC.md"
+      - ".github/workflows/pro-cool-heating-air-demo-ci.yml"
+      - ".github/qa/pro-cool-heating-air-browser.spec.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply Pro Cool Heating & Air configuration
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:procool
+
+      - name: Typecheck Pro Cool Heating & Air demo
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build Pro Cool Heating & Air demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template run build:procool
+
+      - name: Static safety checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          INDEX="artifacts/hvac-prospect-template/index.html"
+          ROBOTS="artifacts/hvac-prospect-template/public/robots.txt"
+
+          grep -q 'Pro Cool Heating' "$APP"
+          grep -q 'Verified highlights' "$APP"
+          grep -q 'procoolheatingandair.com' "$APP"
+          grep -q '678-927-1262' "$APP"
+          grep -q 'Marietta, Cobb County' "$APP"
+          grep -q 'noindex, nofollow, noarchive' "$INDEX"
+          grep -q 'Disallow: /' "$ROBOTS"
+
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain in App.tsx" >&2
+            exit 1
+          fi
+
+          if grep -q 'Marianne R\.\|Daniel K\.\|Priya S\.' "$APP"; then
+            echo "Template fictional review names remain in App.tsx" >&2
+            exit 1
+          fi
+
+          echo "Pro Cool Heating & Air static QA checks passed."
+
+      - name: Install Chromium for browser QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/pro-cool-preview.log 2>&1 &
+          echo $! > /tmp/pro-cool-preview.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              echo "Built-site server ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/pro-cool-preview.log
+          exit 1
+
+      - name: Functional browser QA
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/pro-cool-heating-air-browser.spec.ts --workers=1 --reporter=line
+
+      - name: Capture desktop and mobile renders
+        run: |
+          mkdir -p qa-artifacts
+          pnpm dlx playwright@1.55.0 screenshot --device="Desktop Chrome" --full-page http://127.0.0.1:4173/ qa-artifacts/pro-cool-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/pro-cool-mobile.png
+
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pro-cool-heating-air-render-qa
+          path: qa-artifacts/*.png
+          if-no-files-found: error
