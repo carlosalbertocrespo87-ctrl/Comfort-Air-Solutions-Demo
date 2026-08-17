@@ -1,0 +1,22 @@
+name: Verify All Public Demo Routes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/verify-published-demo-routes.mjs"
+      - ".github/workflows/verify-all-public-demo-routes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Verify all published demo routes
+        run: node scripts/verify-published-demo-routes.mjs

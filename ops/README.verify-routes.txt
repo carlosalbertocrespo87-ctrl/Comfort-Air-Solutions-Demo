@@ -1,0 +1,1 @@
+This file intentionally documents the temporary operational verification entrypoint added on 2026-08-17. The executable verifier lives at scripts/verify-published-demo-routes.mjs and the workflow at .github/workflows/verify-all-public-demo-routes.yml.
