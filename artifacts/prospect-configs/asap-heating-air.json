@@ -1,0 +1,32 @@
+{
+  "companyName": "ASAP Heating & Air Conditioning",
+  "shortName": "ASAP Heating & Air",
+  "website": "https://fixacasap.com",
+  "emailDomain": "gmail.com",
+  "publicEmail": "asapboris@gmail.com",
+  "phoneDisplay": "(770) 717-2727",
+  "serviceArea": "Alpharetta, Johns Creek, Roswell & Milton",
+  "sinceYear": "1997",
+  "publicContact": "Boris",
+  "verifiedServices": [
+    "AC installation",
+    "AC repair",
+    "AC maintenance",
+    "AC replacement",
+    "Heating installation",
+    "Heating repair",
+    "Heating maintenance",
+    "Heating replacement"
+  ],
+  "opportunity": "Official site contains unfinished template/lorem ipsum content on service-related pages, creating a clear credibility and conversion opportunity.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-17"
+}
