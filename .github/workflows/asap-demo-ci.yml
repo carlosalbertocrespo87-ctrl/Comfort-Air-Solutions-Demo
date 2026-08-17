@@ -43,6 +43,7 @@ jobs:
 
       - name: Build ASAP demo
         env:
+          PORT: 3000
           BASE_PATH: ./
         run: pnpm --dir artifacts/hvac-prospect-template run build
 
