@@ -1,0 +1,64 @@
+name: LLF Pixel Match QA
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/**"
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/**"
+      - ".github/workflows/pixel-match-llf-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck official LLF page
+        run: pnpm --dir artifacts/local-lead-forge run typecheck
+
+      - name: Build official LLF page
+        run: pnpm --dir artifacts/local-lead-forge run build
+
+      - name: Configure ASAP prospect demo
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:asap
+
+      - name: Verify prospect injection
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          grep -q 'ASAP Heating & Air Conditioning' "$APP"
+          grep -q 'A Better Way to Turn Website Visitors' "$APP"
+          grep -q 'Founding Client Offer' "$APP"
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain after configuration" >&2
+            exit 1
+          fi
+
+      - name: Typecheck demo master
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build configured demo
+        run: pnpm --dir artifacts/hvac-prospect-template run build
