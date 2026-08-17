@@ -37,4 +37,5 @@ jobs:
       - name: Production build
         env:
           BASE_PATH: ./
+          PORT: 4173
         run: pnpm --dir ${{ matrix.artifact }} run build
