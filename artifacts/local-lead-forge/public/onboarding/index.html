@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Client Setup | Local Lead Forge</title>
+  <style>
+    :root{--navy:#07111f;--panel:#0b1728;--line:#24364d;--orange:#ff6a00;--text:#edf3fa;--muted:#9fb0c3;--ok:#42d392}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#172841 0,transparent 34%),var(--navy);color:var(--text);font-family:Inter,Arial,sans-serif}
+    .wrap{max-width:980px;margin:0 auto;padding:40px 18px 70px}.brand{display:flex;align-items:center;gap:14px;margin-bottom:28px}.mark{font-size:30px;font-weight:900;font-style:italic;letter-spacing:-2px}.mark span{color:var(--orange)}.name{font-size:17px;letter-spacing:.08em}.tag{color:var(--orange);font-size:13px;margin-top:3px}
+    .hero,.card{background:rgba(11,23,40,.94);border:1px solid var(--line);border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.22)}.hero{padding:28px;margin-bottom:20px;border-top:3px solid var(--orange)}h1{margin:0 0 8px;font-size:30px}.hero p{margin:0;color:var(--muted);line-height:1.6}.steps{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.step{border:1px solid #334861;border-radius:999px;padding:8px 12px;color:#b8c6d6;font-size:12px}.step.active{border-color:var(--orange);color:#fff;background:#2a1b10}
+    .card{padding:28px}form{display:grid;grid-template-columns:1fr 1fr;gap:18px}.full{grid-column:1/-1}label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:#d9e3ee}.req{color:var(--orange)}input,textarea,select{width:100%;border:1px solid #34475f;background:#091423;color:#fff;border-radius:10px;padding:12px 13px;font:inherit;outline:none}textarea{min-height:95px;resize:vertical}input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,106,0,.13)}.note{grid-column:1/-1;background:#091423;border:1px solid #263a52;border-radius:12px;padding:14px;color:#aebdd0;font-size:12px;line-height:1.55}.actions{grid-column:1/-1;display:flex;align-items:center;gap:16px;flex-wrap:wrap}.btn{border:0;border-radius:10px;background:var(--orange);color:#07111f;font-weight:900;padding:14px 20px;cursor:pointer;font-size:15px}.btn:disabled{opacity:.55;cursor:wait}.status{font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:#ff8d8d}.footer{margin-top:18px;color:#75879b;font-size:11px;line-height:1.5}
+    @media(max-width:720px){form{grid-template-columns:1fr}.full,.note,.actions{grid-column:auto}.wrap{padding-top:24px}.card,.hero{padding:20px}h1{font-size:25px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <div class="mark">LLF<span>↗</span></div>
+      <div><div class="name">LOCAL LEAD FORGE</div><div class="tag">Turn more visitors into booked jobs.</div></div>
+    </div>
+
+    <section class="hero">
+      <h1>Let’s set up your Local Lead Forge system.</h1>
+      <p>This intake gives our team the business facts needed to configure your lead-capture experience accurately. It usually takes about 5–10 minutes.</p>
+      <div class="steps"><span class="step active">Payment received</span><span class="step">Information received</span><span class="step">Configuration</span><span class="step">QA</span><span class="step">Validation</span><span class="step">Activation</span></div>
+    </section>
+
+    <section class="card">
+      <form id="intakeForm">
+        <div><label>Business name <span class="req">*</span></label><input name="businessName" autocomplete="organization" required /></div>
+        <div><label>Authorized contact <span class="req">*</span></label><input name="contactName" autocomplete="name" required /></div>
+        <div><label>Contact email <span class="req">*</span></label><input name="email" type="email" autocomplete="email" required /></div>
+        <div><label>Phone <span class="req">*</span></label><input name="phone" type="tel" autocomplete="tel" required /></div>
+        <div class="full"><label>Website URL <span class="req">*</span></label><input name="website" type="url" placeholder="https://example.com" required /></div>
+        <div class="full"><label>Service area <span class="req">*</span></label><textarea name="serviceArea" placeholder="Cities, ZIP codes, counties or service radius" required></textarea></div>
+        <div><label>Business hours</label><input name="businessHours" placeholder="Mon–Fri 8am–6pm" /></div>
+        <div><label>Website platform</label><select name="websitePlatform"><option value="">Not sure</option><option>WordPress</option><option>Wix</option><option>Squarespace</option><option>Shopify</option><option>Other</option></select></div>
+        <div class="full"><label>Services offered <span class="req">*</span></label><textarea name="services" placeholder="Repair, maintenance, installation, replacement, heating, AC, IAQ…" required></textarea></div>
+        <div class="full"><label>Services you do NOT offer</label><textarea name="excludedServices" placeholder="Anything the assistant should never represent as available"></textarea></div>
+        <div><label>Lead delivery email <span class="req">*</span></label><input name="leadEmail" type="email" required /></div>
+        <div><label>Backup lead email</label><input name="backupLeadEmail" type="email" /></div>
+        <div><label>Languages</label><select name="languages"><option>English + Spanish</option><option>English only</option><option>Spanish only</option></select></div>
+        <div><label>Assistant restrictions</label><input name="assistantRestrictions" placeholder="Prices, arrival times, specific claims, etc." /></div>
+        <div class="full"><label>Anything else we should know?</label><textarea name="notes" placeholder="Promotions, emergency-service wording, special lead priorities, approval notes…"></textarea></div>
+        <div class="note"><strong>Security note:</strong> Do not submit passwords, API keys, banking information, Social Security numbers, identity documents, or recovery codes here. If access is needed later, Local Lead Forge will guide you through a safer delegated-access process.</div>
+        <div class="actions"><button class="btn" id="submitBtn" type="submit">Submit Business Intake</button><span class="status" id="status" aria-live="polite"></span></div>
+      </form>
+      <div class="footer">Submitting this form provides business configuration information for your Local Lead Forge implementation. It does not expand the purchased scope or authorize unlisted claims.</div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('intakeForm');
+    const status = document.getElementById('status');
+    const button = document.getElementById('submitBtn');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      status.className = 'status';
+      status.textContent = 'Submitting securely…';
+      const payload = Object.fromEntries(new FormData(form).entries());
+      try {
+        const response = await fetch('https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Unable to submit your information.');
+        status.className = 'status ok';
+        status.textContent = 'Received. Your project is moving to review and configuration.';
+        button.textContent = 'Information Received';
+        form.querySelectorAll('input, textarea, select').forEach((field) => field.disabled = true);
+      } catch (error) {
+        status.className = 'status err';
+        status.textContent = error.message || 'Something went wrong. Please try again.';
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
