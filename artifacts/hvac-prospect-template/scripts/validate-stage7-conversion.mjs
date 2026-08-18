@@ -16,16 +16,25 @@ const required = [
   "Local Lead Forge — localleadforge.com",
   "mailto:info@localleadforge.com",
   "<Stage7ConversionLayer />",
+  "Lead Delivery & Visibility",
+  "Concept only — not part of the current launch package",
 ];
 
 for (const marker of required) {
   if (!source.includes(marker)) throw new Error(`Stage 7 validation failed; missing marker: ${marker}`);
 }
 
-if (source.includes("Book Your Strategy Call")) throw new Error("Stage 7 validation failed; legacy competing commercial CTA remains");
+for (const prohibited of [
+  "Book Your Strategy Call",
+  "Client Portal & ROI",
+  "Your Potential Results with Local Lead Forge",
+]) {
+  if (source.includes(prohibited)) throw new Error(`Stage 7 validation failed; unsupported/legacy claim remains: ${prohibited}`);
+}
+
 if (/href=\{`tel:\$\{prospectConfig\.phoneDisplay/.test(source)) throw new Error("Stage 7 validation failed; clickable prospect phone remains");
 
 const finalCtaCount = (source.match(/mailto:info@localleadforge\.com/g) || []).length;
 if (finalCtaCount !== 1) throw new Error(`Stage 7 validation failed; expected exactly one final commercial CTA, found ${finalCtaCount}`);
 
-console.log("Stage 7 conversion validation PASS");
+console.log("Stage 7 conversion + commercial truth validation PASS");
