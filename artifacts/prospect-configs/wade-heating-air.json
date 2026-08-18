@@ -8,7 +8,11 @@
   "demoRoute": "wade-demo",
   "demoRules": {
     "unofficialDemo": true,
+    "noindex": true,
     "noRealServiceRequest": true,
-    "noFakeReviews": true
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
   }
 }
