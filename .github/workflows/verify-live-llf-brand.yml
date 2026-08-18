@@ -1,0 +1,57 @@
+name: Verify Live LLF Brand
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-live-llf-brand.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/verify-live-llf-brand.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live-brand:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify official site, premium logo asset, and representative demo
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          fetch_with_retry() {
+            local url="$1"
+            local out="$2"
+            local attempts=18
+            for attempt in $(seq 1 "$attempts"); do
+              if curl --fail --silent --show-error --location --max-time 20 "$url" -o "$out"; then
+                return 0
+              fi
+              echo "Attempt $attempt/$attempts failed for $url; retrying..."
+              sleep 5
+            done
+            echo "::error::Unable to fetch $url"
+            return 1
+          }
+
+          fetch_with_retry "https://localleadforge.com/" /tmp/official.html
+          fetch_with_retry "https://localleadforge.com/llf-premium-logo.svg" /tmp/official-logo.svg
+          fetch_with_retry "https://localleadforge.com/asap-heating-air-demo/" /tmp/demo.html
+          fetch_with_retry "https://localleadforge.com/asap-heating-air-demo/llf-premium-logo.svg" /tmp/demo-logo.svg
+          fetch_with_retry "https://localleadforge.com/asap-heating-air-demo/robots.txt" /tmp/demo-robots.txt
+
+          grep -Fq 'llf-premium-logo.svg' /tmp/official.html
+          grep -Fq 'LOCAL LEAD FORGE' /tmp/official-logo.svg
+          grep -Fq 'Turn more visitors into booked jobs.' /tmp/official-logo.svg
+
+          grep -Fq 'llf-premium-logo.svg' /tmp/demo.html
+          grep -Fq 'LOCAL LEAD FORGE' /tmp/demo-logo.svg
+          grep -Fq 'Turn more visitors into booked jobs.' /tmp/demo-logo.svg
+          grep -Fqi 'noindex' /tmp/demo.html
+          grep -Fq 'Disallow: /' /tmp/demo-robots.txt
+
+          echo "Live verification passed: official site, premium logo/slogan, and ASAP demo are publicly serving the expected release."
