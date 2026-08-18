@@ -100,7 +100,7 @@ for (const [needle, reason] of requiredSafetyAndUx) {
   requireText("onboarding.tsx", page, needle, reason);
 }
 
-requireText("main.tsx", main, 'pathname.startsWith("/onboarding")', "the canonical React onboarding route must remain wired");
+requireText("main.tsx", main, "const isOnboarding = normalizedPath === '/onboarding';", "the canonical React onboarding route must remain wired");
 requireText("_headers", headers, "/onboarding", "onboarding must keep scoped response headers");
 requireText("_headers", headers, "X-Robots-Tag: noindex, nofollow, noarchive", "private intake must not be indexed");
 requireText("_headers", headers, "Referrer-Policy: strict-origin-when-cross-origin", "onboarding must retain its referrer policy");
