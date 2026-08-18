@@ -1,0 +1,50 @@
+name: Stage 7 Conversion CI
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - ".github/workflows/stage7-conversion-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage7:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Stage 7 conversion contract
+        run: node artifacts/hvac-prospect-template/scripts/validate-stage7-conversion.mjs
+
+      - name: Typecheck demo master
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Configure test prospect
+        run: node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs llf-test-hvac
+
+      - name: Revalidate Stage 7 after prospect injection
+        run: node artifacts/hvac-prospect-template/scripts/validate-stage7-conversion.mjs
+
+      - name: Build configured demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
