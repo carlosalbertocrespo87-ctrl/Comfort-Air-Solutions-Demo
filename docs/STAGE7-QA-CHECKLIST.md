@@ -1,0 +1,6 @@
+- Mobile supporting copy >= 11 px
+- Desktop supporting copy >= 11–12 px
+- EN/ES unchanged
+- CTA target unchanged
+- Disclaimer unchanged
+- No outreach side effects

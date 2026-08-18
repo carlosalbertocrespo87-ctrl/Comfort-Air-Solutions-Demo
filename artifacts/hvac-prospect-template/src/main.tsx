@@ -5,6 +5,7 @@ import { DemoConversionLayer } from '@/components/demo-conversion-layer';
 import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
+import './stage7-readability.css';
 
 createRoot(document.getElementById('root')!, {
   // Keeps caught errors off reportError(), which would raise the dev overlay.

@@ -1,0 +1,1 @@
+Stage 7 QA notes in this branch cover readability, commercial QA boundaries, and the no-outreach authorization rule.
