@@ -10,6 +10,13 @@ const config = JSON.parse(
 );
 const demoUrl = 'http://127.0.0.1:4173/';
 
+const configuredServices = Array.isArray(config.primaryServices) && config.primaryServices.length
+  ? config.primaryServices
+  : Array.isArray(config.verifiedServices) && config.verifiedServices.length
+    ? config.verifiedServices
+    : ['AC not cooling', 'Heating issue', 'Maintenance', 'New system'];
+const firstConfiguredService = String(configuredServices[0]);
+
 test('generic private demo passes desktop visual and bilingual assistant QA', async ({ page }) => {
   await page.goto(demoUrl, { waitUntil: 'networkidle' });
 
@@ -32,8 +39,8 @@ test('generic private demo passes desktop visual and bilingual assistant QA', as
   await assistant.getByRole('button', { name: 'EN', exact: true }).click();
   await expect(assistant.getByText(new RegExp(`${config.shortName} AI Assistant`))).toBeVisible();
 
-  await assistant.getByRole('button', { name: 'Heating issue', exact: true }).click();
-  await expect(assistant.getByText('Heating issue', { exact: true })).toHaveCount(2);
+  await assistant.getByRole('button', { name: firstConfiguredService, exact: true }).click();
+  await expect(assistant.getByText(firstConfiguredService, { exact: true })).toHaveCount(2);
   await assistant.getByRole('button', { name: 'Today if possible', exact: true }).click();
   await expect(assistant.getByRole('button', { name: /Lead ready for the team/i })).toBeVisible();
 });
