@@ -6,6 +6,23 @@
   "phoneDisplay": "(404) 723-3830",
   "serviceArea": "Marietta & North Atlanta",
   "demoRoute": "new-level-mechanical-demo",
+  "verifiedServices": [
+    "AC repair",
+    "AC replacement",
+    "Heating repair",
+    "Heating replacement",
+    "Duct cleaning",
+    "Indoor air quality",
+    "Commercial HVAC service",
+    "HVAC maintenance"
+  ],
+  "verifiedHighlights": [
+    "Official site describes residential and commercial HVAC repairs, installations and maintenance across Metro Atlanta.",
+    "Official site lists duct cleaning, mini-splits, indoor air quality and commercial HVAC among current services.",
+    "Official site publishes 404-723-3830 and identifies Marietta, Sandy Springs, Roswell, Alpharetta, Kennesaw and other North Atlanta areas among its service coverage."
+  ],
+  "opportunity": "Add a concise bilingual EN/ES conversational qualification layer that organizes service-request details before the prospect reaches New Level Mechanical's existing phone or booking workflow.",
+  "sourceReviewDate": "2026-08-18",
   "demoRules": {
     "unofficialDemo": true,
     "noindex": true,
