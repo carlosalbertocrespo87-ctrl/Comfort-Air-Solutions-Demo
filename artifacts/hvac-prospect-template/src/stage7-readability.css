@@ -1,0 +1,28 @@
+#llf-process p {
+  font-size: 11px !important;
+  line-height: 1.7 !important;
+}
+
+#llf-process article h3 {
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+#llf-process article p {
+  font-size: 11px !important;
+}
+
+#llf-process button,
+#llf-process a {
+  font-size: 11px !important;
+}
+
+@media (min-width: 640px) {
+  #llf-process p {
+    font-size: 12px !important;
+  }
+
+  #llf-process article p {
+    font-size: 11px !important;
+  }
+}
