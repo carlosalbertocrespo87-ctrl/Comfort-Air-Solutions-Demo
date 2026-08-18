@@ -14,6 +14,7 @@ const ALLOWED_PROSPECT_DOMAINS = [
 ];
 
 const MAX_FIELD_LENGTH = 1000;
+const MAX_ONBOARDING_BODY_BYTES = 64 * 1024;
 
 function cors(origin) {
   return {
@@ -99,6 +100,44 @@ async function verifyStripeSignature(rawBody, signatureHeader, secret) {
 
   const expected = await hmacSha256Hex(secret, `${timestamp}.${rawBody}`);
   return signatures.some((signature) => timingSafeEqualHex(expected, signature));
+}
+
+async function readJsonWithLimit(request, maxBytes = MAX_ONBOARDING_BODY_BYTES) {
+  const declaredLength = Number(request.headers.get("Content-Length") || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    return { error: "Request body too large", status: 413 };
+  }
+
+  if (!request.body) {
+    return { error: "Invalid JSON", status: 400 };
+  }
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let bytes = 0;
+  let raw = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > maxBytes) {
+        await reader.cancel();
+        return { error: "Request body too large", status: 413 };
+      }
+      raw += decoder.decode(value, { stream: true });
+    }
+    raw += decoder.decode();
+  } catch {
+    return { error: "Unable to read request body", status: 400 };
+  }
+
+  try {
+    return { value: JSON.parse(raw) };
+  } catch {
+    return { error: "Invalid JSON", status: 400 };
+  }
 }
 
 async function sendResendEmail(env, payload, idempotencyKey) {
@@ -233,6 +272,208 @@ async function handleStripeWebhook(request, env) {
   return json({ received: true, welcomeSent: true });
 }
 
+function normalizeOnboarding(form) {
+  const schemaVersion = Number(form.schemaVersion || 1);
+  const isV3 = schemaVersion === 3;
+
+  return {
+    schemaVersion,
+    source: text(form.source),
+    submittedAt: text(form.submittedAt),
+    legalBusinessName: text(form.legalBusinessName || form.businessName),
+    dbaName: text(form.dbaName),
+    businessAddress: text(form.businessAddress),
+    authorizedContactName: text(form.authorizedContactName || form.contactName),
+    authorizedContactTitle: text(form.authorizedContactTitle),
+    authorizedContactEmail: text(form.authorizedContactEmail || form.email).toLowerCase(),
+    authorizedContactPhone: text(form.authorizedContactPhone || form.phone),
+    websiteUrl: text(form.websiteUrl || form.website),
+    professionalLicense: text(form.professionalLicense),
+    socialProfiles: text(form.socialProfiles),
+    brandColors: text(form.brandColors),
+    brandMessage: text(form.brandMessage),
+    assetLinks: text(form.assetLinks),
+    approvedPhotos: text(form.approvedPhotos),
+    approvedReviews: text(form.approvedReviews),
+    brandUseAuthorized: Boolean(form.brandUseAuthorized),
+    servicesOffered: text(form.servicesOffered || form.services),
+    servicesNotOffered: text(form.servicesNotOffered || form.excludedServices),
+    equipmentBrands: text(form.equipmentBrands),
+    customerType: text(form.customerType),
+    customerLanguages: text(form.customerLanguages || form.languages),
+    areasServed: text(form.areasServed || form.serviceArea),
+    businessHours: text(form.businessHours),
+    afterHoursProtocol: text(form.afterHoursProtocol),
+    emergencyService: text(form.emergencyService),
+    promotions: text(form.promotions),
+    financing: text(form.financing),
+    faqs: text(form.faqs),
+    schedulingDetails: text(form.schedulingDetails),
+    assistantLanguage: text(form.assistantLanguage),
+    minimumLeadInfo: text(form.minimumLeadInfo),
+    priorityJobs: text(form.priorityJobs),
+    unwantedJobs: text(form.unwantedJobs),
+    urgencyDefinition: text(form.urgencyDefinition),
+    forbiddenQuestions: text(form.forbiddenQuestions),
+    forbiddenClaims: text(form.forbiddenClaims || form.assistantRestrictions),
+    pricingPermission: text(form.pricingPermission),
+    arrivalTimePermission: text(form.arrivalTimePermission),
+    schedulingPermission: text(form.schedulingPermission),
+    leadDeliveryEmail: text(form.leadDeliveryEmail || form.leadEmail).toLowerCase(),
+    backupLeadEmail: text(form.backupLeadEmail).toLowerCase(),
+    crmDestination: text(form.crmDestination),
+    leadReviewHours: text(form.leadReviewHours),
+    followupOwner: text(form.followupOwner),
+    requiredLeadData: text(form.requiredLeadData),
+    sensitiveDataRestrictions: text(form.sensitiveDataRestrictions),
+    retentionPreference: text(form.retentionPreference),
+    privacyContact: text(form.privacyContact),
+    websitePlatform: text(form.websitePlatform),
+    websiteAdminContact: text(form.websiteAdminContact),
+    dnsHostingController: text(form.dnsHostingController),
+    installationCoordination: text(form.installationCoordination),
+    accuracyConfirmed: Boolean(form.accuracyConfirmed),
+    configurationAuthorized: Boolean(form.configurationAuthorized),
+    isV3,
+  };
+}
+
+function validateOnboarding(data) {
+  const required = [
+    ["Legal business name", data.legalBusinessName],
+    ["Authorized contact name", data.authorizedContactName],
+    ["Authorized contact phone", data.authorizedContactPhone],
+    ["Website URL", data.websiteUrl],
+    ["Service area", data.areasServed],
+    ["Services offered", data.servicesOffered],
+    ["Lead-delivery email", data.leadDeliveryEmail],
+  ];
+
+  if (data.isV3) {
+    required.push(
+      ["Business address", data.businessAddress],
+      ["Authorized contact title", data.authorizedContactTitle],
+      ["Services not offered", data.servicesNotOffered],
+      ["Customer type", data.customerType],
+      ["Languages served", data.customerLanguages],
+      ["Business hours", data.businessHours],
+      ["After-hours protocol", data.afterHoursProtocol],
+      ["Emergency-service wording", data.emergencyService],
+      ["Customer FAQs", data.faqs],
+      ["Lead review hours", data.leadReviewHours],
+      ["Follow-up owner", data.followupOwner],
+      ["Required lead data", data.requiredLeadData],
+      ["Privacy contact", data.privacyContact],
+      ["Website platform", data.websitePlatform],
+      ["Website administrator/contact", data.websiteAdminContact],
+      ["DNS/hosting controller", data.dnsHostingController],
+      ["Installation coordination", data.installationCoordination],
+      ["Minimum lead information", data.minimumLeadInfo],
+      ["Priority jobs", data.priorityJobs],
+      ["Unwanted jobs", data.unwantedJobs],
+      ["Urgency definition", data.urgencyDefinition],
+      ["Forbidden claims", data.forbiddenClaims],
+      ["Pricing permission", data.pricingPermission],
+      ["Arrival-time permission", data.arrivalTimePermission],
+      ["Scheduling permission", data.schedulingPermission],
+    );
+  }
+
+  const missing = required.filter(([, value]) => !String(value || "").trim()).map(([label]) => label);
+  if (missing.length > 0) {
+    return `Missing required fields: ${missing.join(", ")}`;
+  }
+
+  if (!validEmail(data.authorizedContactEmail)) return "Authorized contact email is invalid";
+  if (!validEmail(data.leadDeliveryEmail)) return "Primary lead-delivery email is invalid";
+  if (data.backupLeadEmail && !validEmail(data.backupLeadEmail)) return "Backup lead email is invalid";
+
+  if (data.isV3) {
+    if (!data.brandUseAuthorized) return "Brand-use authorization is required";
+    if (!data.accuracyConfirmed) return "Accuracy confirmation is required";
+    if (!data.configurationAuthorized) return "Configuration authorization is required";
+  }
+
+  return "";
+}
+
+function onboardingSummary(data) {
+  return `
+LOCAL LEAD FORGE — CLIENT INTAKE RECEIVED
+Schema: ${data.schemaVersion}
+Source: ${data.source || "Not provided"}
+Submitted: ${data.submittedAt || "Not provided"}
+
+BUSINESS & AUTHORIZED CONTACT
+Legal business name: ${data.legalBusinessName}
+DBA: ${data.dbaName || "Not provided"}
+Business address: ${data.businessAddress || "Not provided"}
+Authorized contact: ${data.authorizedContactName}
+Title: ${data.authorizedContactTitle || "Not provided"}
+Contact email: ${data.authorizedContactEmail}
+Contact phone: ${data.authorizedContactPhone}
+Website: ${data.websiteUrl}
+Professional license: ${data.professionalLicense || "Not provided"}
+Social profiles: ${data.socialProfiles || "Not provided"}
+
+BRAND & CONTENT
+Brand colors: ${data.brandColors || "Not provided"}
+Approved message/slogan: ${data.brandMessage || "Not provided"}
+Logo/asset links: ${data.assetLinks || "Not provided"}
+Approved photos: ${data.approvedPhotos || "Not provided"}
+Approved reviews/testimonials: ${data.approvedReviews || "Not provided"}
+Brand use authorized: ${data.brandUseAuthorized ? "Yes" : "No"}
+
+OPERATIONS
+Services offered: ${data.servicesOffered}
+Services not offered: ${data.servicesNotOffered || "Not provided"}
+Equipment/brands: ${data.equipmentBrands || "Not provided"}
+Customer type: ${data.customerType || "Not provided"}
+Languages served: ${data.customerLanguages || "Not provided"}
+Service areas: ${data.areasServed}
+Business hours: ${data.businessHours || "Not provided"}
+After-hours protocol: ${data.afterHoursProtocol || "Not provided"}
+Emergency service wording: ${data.emergencyService || "Not provided"}
+Promotions: ${data.promotions || "None provided"}
+Financing: ${data.financing || "None provided"}
+Customer FAQs: ${data.faqs || "Not provided"}
+Scheduling details: ${data.schedulingDetails || "Not provided"}
+
+LEAD DELIVERY & PRIVACY
+Primary lead email: ${data.leadDeliveryEmail}
+Backup lead email: ${data.backupLeadEmail || "None"}
+CRM/external destination: ${data.crmDestination || "None"}
+Lead review hours: ${data.leadReviewHours || "Not provided"}
+Follow-up owner: ${data.followupOwner || "Not provided"}
+Required lead data: ${data.requiredLeadData || "Not provided"}
+Sensitive data restrictions: ${data.sensitiveDataRestrictions || "Not provided"}
+Retention preference: ${data.retentionPreference || "Not provided"}
+Privacy/incident contact: ${data.privacyContact || "Not provided"}
+
+WEBSITE & ACCESS
+Website platform: ${data.websitePlatform || "Unknown"}
+Website admin/contact: ${data.websiteAdminContact || "Not provided"}
+DNS/hosting controller: ${data.dnsHostingController || "Not provided"}
+Installation coordination: ${data.installationCoordination || "Not provided"}
+
+ASSISTANT GUARDRAILS
+Assistant language: ${data.assistantLanguage || "Not provided"}
+Minimum lead information: ${data.minimumLeadInfo || "Not provided"}
+Priority jobs: ${data.priorityJobs || "Not provided"}
+Unwanted jobs: ${data.unwantedJobs || "Not provided"}
+Urgency definition: ${data.urgencyDefinition || "Not provided"}
+Forbidden questions: ${data.forbiddenQuestions || "None provided"}
+Forbidden claims: ${data.forbiddenClaims || "None provided"}
+Pricing permission: ${data.pricingPermission || "Not provided"}
+Arrival-time permission: ${data.arrivalTimePermission || "Not provided"}
+Scheduling permission: ${data.schedulingPermission || "Not provided"}
+
+AUTHORIZATIONS
+Accuracy confirmed: ${data.accuracyConfirmed ? "Yes" : "No"}
+Configuration authorized: ${data.configurationAuthorized ? "Yes" : "No"}
+`;
+}
+
 async function handleOnboarding(request, env, origin) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(origin) });
@@ -242,58 +483,22 @@ async function handleOnboarding(request, env, origin) {
     return json({ error: "Method not allowed" }, 405, origin);
   }
 
-  let form;
-  try {
-    form = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON" }, 400, origin);
+  const parsed = await readJsonWithLimit(request);
+  if (parsed.error) {
+    return json({ error: parsed.error }, parsed.status, origin);
   }
 
-  const data = {
-    businessName: text(form.businessName),
-    contactName: text(form.contactName),
-    email: text(form.email).toLowerCase(),
-    phone: text(form.phone),
-    website: text(form.website),
-    serviceArea: text(form.serviceArea),
-    businessHours: text(form.businessHours),
-    services: text(form.services),
-    excludedServices: text(form.excludedServices),
-    leadEmail: text(form.leadEmail).toLowerCase(),
-    backupLeadEmail: text(form.backupLeadEmail).toLowerCase(),
-    websitePlatform: text(form.websitePlatform),
-    languages: text(form.languages),
-    assistantRestrictions: text(form.assistantRestrictions),
-    notes: text(form.notes),
-  };
-
-  if (!data.businessName || !data.contactName || !validEmail(data.email) || !data.phone || !data.website || !data.serviceArea || !data.services || !validEmail(data.leadEmail)) {
-    return json({ error: "Please complete all required fields" }, 400, origin);
+  const data = normalizeOnboarding(parsed.value || {});
+  if (![1, 3].includes(data.schemaVersion)) {
+    return json({ error: "Unsupported onboarding schema version" }, 400, origin);
   }
 
-  if (data.backupLeadEmail && !validEmail(data.backupLeadEmail)) {
-    return json({ error: "Backup lead email is invalid" }, 400, origin);
+  const validationError = validateOnboarding(data);
+  if (validationError) {
+    return json({ error: validationError }, 400, origin);
   }
 
-  const summaryText = `
-LOCAL LEAD FORGE — CLIENT INTAKE RECEIVED
-
-Business: ${data.businessName}
-Authorized contact: ${data.contactName}
-Contact email: ${data.email}
-Phone: ${data.phone}
-Website: ${data.website}
-Service area: ${data.serviceArea}
-Business hours: ${data.businessHours || "Not provided"}
-Services: ${data.services}
-Services not offered: ${data.excludedServices || "Not provided"}
-Lead delivery email: ${data.leadEmail}
-Backup lead email: ${data.backupLeadEmail || "None"}
-Website platform: ${data.websitePlatform || "Unknown"}
-Languages: ${data.languages || "Not provided"}
-Assistant restrictions: ${data.assistantRestrictions || "None provided"}
-Notes: ${data.notes || "None"}
-`;
+  const summaryText = onboardingSummary(data);
 
   try {
     await sendResendEmail(
@@ -301,31 +506,31 @@ Notes: ${data.notes || "None"}
       {
         from: "Local Lead Forge Intake <info@localleadforge.com>",
         to: ["localleadforgeagency@gmail.com"],
-        reply_to: data.email,
-        subject: `Client Intake Received — ${data.businessName}`,
+        reply_to: data.authorizedContactEmail,
+        subject: `Client Intake Received — ${data.legalBusinessName}`,
         text: summaryText,
       },
-      `llf-intake-internal/${data.email}/${data.businessName}`.slice(0, 256),
+      `llf-intake-internal/v${data.schemaVersion}/${data.authorizedContactEmail}/${data.legalBusinessName}`.slice(0, 256),
     );
 
     await sendResendEmail(
       env,
       {
         from: "Local Lead Forge <info@localleadforge.com>",
-        to: [data.email],
+        to: [data.authorizedContactEmail],
         reply_to: "info@localleadforge.com",
         subject: "We Received Your Local Lead Forge Setup Information",
-        text: `Hi ${data.contactName},\n\nWe received your business intake for ${data.businessName}. Your project is now moving into review and configuration. If anything essential is missing, we’ll contact you before the production clock starts.\n\nLocal Lead Forge\nTurn more visitors into booked jobs.`,
-        html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172033"><h2 style="color:#0b1728">Information received</h2><p>Hi ${clean(data.contactName)},</p><p>We received your business intake for <strong>${clean(data.businessName)}</strong>. Your project is now moving into review and configuration.</p><p>If anything essential is missing, we’ll contact you before the production clock starts.</p><p style="margin-top:28px"><strong>Local Lead Forge</strong><br><span style="color:#ff6a00">Turn more visitors into booked jobs.</span></p></div>`,
+        text: `Hi ${data.authorizedContactName},\n\nWe received your business intake for ${data.legalBusinessName}. Your project is now moving into review and configuration. If anything essential is missing, we’ll contact you before the production clock starts.\n\nLocal Lead Forge\nTurn more visitors into booked jobs.`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172033"><h2 style="color:#0b1728">Information received</h2><p>Hi ${clean(data.authorizedContactName)},</p><p>We received your business intake for <strong>${clean(data.legalBusinessName)}</strong>. Your project is now moving into review and configuration.</p><p>If anything essential is missing, we’ll contact you before the production clock starts.</p><p style="margin-top:28px"><strong>Local Lead Forge</strong><br><span style="color:#ff6a00">Turn more visitors into booked jobs.</span></p></div>`,
       },
-      `llf-intake-confirmation/${data.email}/${data.businessName}`.slice(0, 256),
+      `llf-intake-confirmation/v${data.schemaVersion}/${data.authorizedContactEmail}/${data.legalBusinessName}`.slice(0, 256),
     );
   } catch (error) {
     console.error(error);
     return json({ error: "Unable to process intake" }, 500, origin);
   }
 
-  return json({ success: true, stage: "information-received" }, 200, origin);
+  return json({ success: true, stage: "information-received", schemaVersion: data.schemaVersion }, 200, origin);
 }
 
 async function handleDemoLead(request, env, origin) {
