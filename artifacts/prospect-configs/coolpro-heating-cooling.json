@@ -1,0 +1,33 @@
+{
+  "companyName": "CoolPro Heating and Cooling",
+  "shortName": "CoolPro Heating and Cooling",
+  "website": "https://coolproatlanta.com",
+  "emailDomain": "coolproatlanta.com",
+  "publicEmail": "info@coolproatlanta.com",
+  "phoneDisplay": "770-694-6232",
+  "serviceArea": "Marietta & Greater Atlanta",
+  "publicContact": "Brandie & Lee Gill",
+  "demoRoute": "coolpro-heating-cooling-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "Heating and air conditioning repair",
+    "HVAC maintenance and replacement"
+  ],
+  "verifiedHighlights": [
+    "Official site describes CoolPro as family-owned and operated and identifies Brandie and Lee Gill as owners.",
+    "Official site lists residential and commercial HVAC service across Marietta and greater Atlanta, including Cobb, Cherokee and Paulding counties.",
+    "Official site publishes 770-694-6232 and info@coolproatlanta.com and highlights 650+ reviews while using a conventional Service Request flow."
+  ],
+  "opportunity": "Add a bilingual EN/ES conversational qualification layer alongside the existing Service Request flow for faster engagement and after-hours lead capture.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-16"
+}
