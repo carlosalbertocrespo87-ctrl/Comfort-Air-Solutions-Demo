@@ -1,0 +1,58 @@
+name: Stage 7 Production Smoke
+
+on:
+  workflow_run:
+    workflows: ["Deploy Local Lead Forge"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-stage7-live:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Verify Stage 7 on published prospect routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          failures=0
+          for config in artifacts/prospect-configs/*.json; do
+            route=$(node -e 'const fs=require("fs");const c=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(c.demoRoute)process.stdout.write(c.demoRoute)' "$config")
+            [ -n "$route" ] || continue
+            company=$(node -e 'const fs=require("fs");const c=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(c.companyName||"")' "$config")
+            url="https://localleadforge.com/${route}/"
+            echo "Stage 7 smoke: $company -> $url"
+            ok=0
+            for attempt in {1..12}; do
+              html=$(curl --fail --silent --show-error --location --max-time 20 "$url" || true)
+              if [ -n "$html" ] && grep -Fqi "$company" <<<"$html" && grep -Fqi 'noindex' <<<"$html"; then
+                assets=$(grep -Eo 'src="[^"]+\.js' <<<"$html" | sed 's/^src="//' | head -n 5)
+                bundle=""
+                while read -r asset; do
+                  [ -n "$asset" ] || continue
+                  case "$asset" in
+                    http*) asset_url="$asset" ;;
+                    /*) asset_url="https://localleadforge.com$asset" ;;
+                    *) asset_url="${url}${asset}" ;;
+                  esac
+                  bundle+=$(curl --fail --silent --location --max-time 20 "$asset_url" || true)
+                done <<<"$assets"
+                if grep -Fq 'How Local Lead Forge works' <<<"$bundle" && grep -Fq 'Cómo funciona Local Lead Forge' <<<"$bundle" && grep -Fq 'llf-process' <<<"$bundle"; then
+                  ok=1
+                  break
+                fi
+              fi
+              sleep 5
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error::Stage 7 production smoke failed for $company at $url"
+              failures=$((failures+1))
+            fi
+          done
+          [ "$failures" -eq 0 ] || exit 1
