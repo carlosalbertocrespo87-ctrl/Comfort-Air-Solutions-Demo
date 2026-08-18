@@ -53,14 +53,23 @@ for (const marker of forbidden) {
 if (!html.includes("noindex, nofollow, noarchive")) throw new Error("Noindex meta tag missing");
 if (!robots.includes("Disallow: /")) throw new Error("robots.txt must disallow crawling");
 
+// Sales demos may display verified public phone data as text, but must never
+// turn the prospect's number into a live call action. This prevents visitors
+// from mistaking an unofficial LLF demo for the contractor's production site.
+if (/href\s*=\s*{?`?tel:/i.test(app) || /href\s*=\s*["']tel:/i.test(app)) {
+  throw new Error("Clickable tel: link detected. Prospect demos must display phone numbers as non-clickable text only.");
+}
+
 const rules = {
   unofficialDemo: true,
   noRealServiceRequest: true,
   noFakeReviews: true,
+  noClickableProspectPhone: true,
   ...config.demoRules,
 };
 if (rules.noFakeReviews !== true) throw new Error("demoRules.noFakeReviews must be true");
 if (rules.noRealServiceRequest !== true) throw new Error("demoRules.noRealServiceRequest must be true");
 if (rules.unofficialDemo !== true) throw new Error("demoRules.unofficialDemo must be true");
+if (rules.noClickableProspectPhone !== true) throw new Error("demoRules.noClickableProspectPhone must be true");
 
 console.log(`Generic private-demo validation passed for ${config.companyName} (${slug}).`);
