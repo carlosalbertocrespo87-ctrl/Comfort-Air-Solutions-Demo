@@ -201,6 +201,18 @@ source = source.replace(
   '<div className="mt-5 rounded-lg border border-white/[0.08] bg-black/20 px-4 py-3 text-[8px] leading-4 text-slate-500">See the exact setup and activation steps below before deciding whether to move forward.</div>'
 );
 
+const claimHardening = [
+  ['title: "Client Portal & ROI"', 'title: "Lead Delivery & Visibility"'],
+  ['copy: "Makes lead volume, appointments and revenue easier to track in one place."', 'copy: "Keeps captured service-request details organized for follow-up; advanced reporting is not part of this demo."'],
+  ['"Performance tracking"', '"Lead-flow health checks"'],
+  ['Your Potential Results with Local Lead Forge', 'Illustrative Reporting Concept'],
+  ['Sample metrics — not a guarantee', 'Concept only — not part of the current launch package'],
+  ['Your Potential Results', 'Illustrative Lead Reporting'],
+  ['Illustrative performance dashboard', 'Concept preview — not a current client portal'],
+  ['title="Clearer ROI" copy="Connect lead activity to appointments and closed work."', 'title="Lead Context" copy="Keep captured request details organized so follow-up starts with useful context."'],
+];
+for (const [from, to] of claimHardening) source = source.split(from).join(to);
+
 for (const requiredMarker of [
   'data-stage7-conversion="v1"',
   "How Local Lead Forge works for your business",
@@ -209,8 +221,14 @@ for (const requiredMarker of [
   "¿Qué pasa si decides avanzar?",
   "Local Lead Forge — localleadforge.com",
   "<Stage7ConversionLayer />",
+  "Lead Delivery & Visibility",
+  "Concept only — not part of the current launch package",
 ]) {
   if (!source.includes(requiredMarker)) throw new Error(`Stage 7 marker missing: ${requiredMarker}`);
+}
+
+for (const prohibited of ["Book Your Strategy Call", "Client Portal & ROI", "Your Potential Results with Local Lead Forge"]) {
+  if (source.includes(prohibited)) throw new Error(`Commercial truth gate failed; legacy/future claim remains: ${prohibited}`);
 }
 
 fs.writeFileSync(appPath, source);
@@ -226,3 +244,4 @@ console.log(`Applied private-demo configuration for ${config.companyName} (${slu
 console.log(`Configured service choices: ${configuredServices.join(" | ")}`);
 console.log(`Operational config embedded: hours=${Boolean(operationalConfig.businessHours)} faqs=${operationalConfig.faqs.length} languages=${operationalConfig.languages.join(",")} leadRouting=${Boolean(operationalConfig.leadRouting?.primaryEmail)}`);
 console.log("Stage 7 conversion layer injected: EN/ES explanation + next steps + one final commercial CTA.");
+console.log("Commercial truth gate applied: future portal/ROI claims neutralized in generated prospect demos.");
