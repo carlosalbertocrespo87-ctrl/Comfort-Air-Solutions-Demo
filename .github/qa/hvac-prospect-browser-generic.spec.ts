@@ -24,7 +24,7 @@ test('generic private demo passes desktop visual and bilingual assistant QA', as
     'content',
     'noindex, nofollow, noarchive',
   );
-  await expect(page.getByText(`Prepared for ${config.companyName}`)).toBeVisible();
+  await expect(page.getByText(`Prepared for ${config.companyName}`, { exact: true })).toBeVisible();
   await expect(
     page.getByRole('heading', { name: /A Better Way to Turn Website Visitors Into Qualified HVAC Leads/i }),
   ).toBeVisible();
@@ -49,7 +49,7 @@ test('generic private demo stays usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(demoUrl, { waitUntil: 'networkidle' });
 
-  await expect(page.getByText('PRIVATE DEMO', { exact: true })).toBeVisible();
+  await expect(page.getByText(new RegExp(`Private concept demo prepared for ${config.companyName}`, 'i'))).toBeVisible();
   await expect(
     page.getByRole('heading', { name: /A Better Way to Turn Website Visitors Into Qualified HVAC Leads/i }),
   ).toBeVisible();
