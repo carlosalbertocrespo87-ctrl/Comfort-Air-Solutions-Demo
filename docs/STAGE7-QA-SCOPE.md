@@ -1,0 +1,1 @@
+Scope: readability only. No business logic, lead submission, pricing, payment, routing, or outreach behavior changes.
