@@ -1,0 +1,48 @@
+name: Stage 7 Conversion QA
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/hvac-prospect-template/**'
+      - 'artifacts/prospect-configs/**'
+      - '.github/workflows/stage7-conversion-qa.yml'
+  workflow_dispatch:
+
+jobs:
+  stage7-conversion:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        prospect:
+          - asap-heating-air
+          - wade-heating-air
+          - new-level-mechanical
+          - ar-sims-heating-air
+          - coolpro-heating-cooling
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install template dependencies
+        working-directory: artifacts/hvac-prospect-template
+        run: npm install --ignore-scripts
+
+      - name: Apply prospect configuration
+        working-directory: artifacts/hvac-prospect-template
+        run: node scripts/apply-prospect-config.mjs "${{ matrix.prospect }}"
+
+      - name: Validate Stage 7 conversion layer
+        working-directory: artifacts/hvac-prospect-template
+        run: node scripts/validate-stage7-conversion.mjs
+
+      - name: Typecheck
+        working-directory: artifacts/hvac-prospect-template
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: artifacts/hvac-prospect-template
+        run: npm run build
