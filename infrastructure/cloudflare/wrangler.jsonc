@@ -5,7 +5,11 @@
   "workers_dev": true,
   "preview_urls": false,
   "keep_vars": true,
+  "vars": {
+    "STRIPE_SETUP_PAYMENT_LINK_ID": "plink_1U4TWTHLLdnKVOcyUceWuXsn",
+    "ONBOARDING_URL": "https://localleadforge.com/onboarding/"
+  },
   "secrets": {
-    "required": ["RESEND_API_KEY"]
+    "required": ["RESEND_API_KEY", "STRIPE_WEBHOOK_SECRET"]
   }
 }
