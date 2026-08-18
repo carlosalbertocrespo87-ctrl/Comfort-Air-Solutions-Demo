@@ -21,10 +21,8 @@ const requiredComponentMarkers = [
   'href="#pricing"',
   'private, unofficial concept demo',
   'demo privada y no oficial',
-  'does not send a real service request',
-  'No envía una solicitud real de servicio',
-  'does not guarantee lead volume, appointments, revenue or ROI',
-  'ni garantiza volumen de leads, citas, ingresos o ROI',
+  'does not send a real service request or guarantee lead volume, appointments, revenue or ROI',
+  'No envía una solicitud real de servicio ni garantiza volumen de leads, citas, ingresos o ROI',
   'Local Lead Forge keeps the system running',
   'Local Lead Forge mantiene el sistema',
 ];
@@ -41,16 +39,16 @@ for (const marker of requiredMainMarkers) {
   if (!main.includes(marker)) throw new Error(`Stage 7 mount marker missing: ${marker}`);
 }
 
+const safeNegativeContext = component
+  .split("\n")
+  .filter((line) => !/does not send a real service request or guarantee|No envía una solicitud real de servicio ni garantiza/i.test(line))
+  .join("\n");
 const forbiddenPatterns = [
   /guarantee(?:d|s)?\s+(?:leads?|sales?|revenue|appointments?|roi)/i,
   /we guarantee/i,
   /guaranteed results/i,
 ];
 for (const pattern of forbiddenPatterns) {
-  const safeNegativeContext = component
-    .split("\n")
-    .filter((line) => !/does not guarantee|ni garantiza/i.test(line))
-    .join("\n");
   if (pattern.test(safeNegativeContext)) throw new Error(`Unsafe Stage 7 claim detected: ${pattern}`);
 }
 
