@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   validate:
-    name: Typecheck and build LLF
+    name: Typecheck, build and onboarding contract
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -51,6 +51,9 @@ jobs:
         run: |
           set +e
 
+          node artifacts/local-lead-forge/scripts/validate-onboarding.mjs > llf-ci-onboarding-contract.log 2>&1
+          contract_status=$?
+
           pnpm install --frozen-lockfile > llf-ci-install.log 2>&1
           install_status=$?
 
@@ -67,11 +70,13 @@ jobs:
           fi
 
           {
+            echo "contract_status=$contract_status"
             echo "install_status=$install_status"
             echo "typecheck_status=$typecheck_status"
             echo "build_status=$build_status"
           } | tee llf-ci-summary.txt
 
+          echo "contract_status=$contract_status" >> "$GITHUB_OUTPUT"
           echo "install_status=$install_status" >> "$GITHUB_OUTPUT"
           echo "typecheck_status=$typecheck_status" >> "$GITHUB_OUTPUT"
           echo "build_status=$build_status" >> "$GITHUB_OUTPUT"
@@ -83,6 +88,7 @@ jobs:
         with:
           name: llf-onboarding-ci-diagnostics
           path: |
+            llf-ci-onboarding-contract.log
             llf-ci-install.log
             llf-ci-typecheck.log
             llf-ci-build.log
@@ -94,7 +100,8 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ "${{ steps.validate.outputs.install_status }}" != "0" ] || \
+          if [ "${{ steps.validate.outputs.contract_status }}" != "0" ] || \
+             [ "${{ steps.validate.outputs.install_status }}" != "0" ] || \
              [ "${{ steps.validate.outputs.typecheck_status }}" != "0" ] || \
              [ "${{ steps.validate.outputs.build_status }}" != "0" ]; then
             echo "LLF validation failed. Download the llf-onboarding-ci-diagnostics artifact for exact logs."
