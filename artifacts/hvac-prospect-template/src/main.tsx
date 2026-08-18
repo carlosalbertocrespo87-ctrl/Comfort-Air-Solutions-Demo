@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 
 import App from './App';
+import { DemoConversionLayer } from '@/components/demo-conversion-layer';
 import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
@@ -13,5 +14,6 @@ createRoot(document.getElementById('root')!, {
 }).render(
   <ErrorBoundary>
     <App />
+    <DemoConversionLayer />
   </ErrorBoundary>,
 );
