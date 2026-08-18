@@ -1,45 +1,39 @@
-import {
-  type FormEvent,
-  type MouseEvent,
-  type ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
+import { type ComponentType, useState } from "react";
 import {
   ArrowRight,
+  BadgeCheck,
+  BarChart3,
+  Bot,
+  CalendarCheck2,
   Check,
+  CheckCircle2,
   ChevronRight,
-  CircleCheck,
+  CircleDollarSign,
   Clock3,
-  Facebook,
-  Fan,
-  Flame,
   Gauge,
-  Instagram,
-  Menu,
-  MessageCircle,
+  Headphones,
+  Languages,
+  LayoutDashboard,
+  MailCheck,
+  MessageSquareText,
+  MousePointerClick,
   Phone,
-  Pin,
   Send,
   ShieldCheck,
-  Snowflake,
   Sparkles,
+  Target,
+  TrendingUp,
+  Users,
   Wrench,
-  X,
+  Zap,
 } from "lucide-react";
 
-const queryClient = new QueryClient();
+const ORANGE = "#ff6a00";
 
 type Language = "en" | "es";
 
+// These literal defaults are intentionally kept stable: the demo factory replaces
+// them from artifacts/prospect-configs/<slug>.json before each prospect build.
 const prospectConfig = {
   companyName: "PROSPECT HVAC COMPANY",
   shortName: "PROSPECT HVAC",
@@ -49,1453 +43,424 @@ const prospectConfig = {
   sinceYear: "20XX",
 } as const;
 
-const translations = {
-  en: {
-    nav: {
-      services: "Services",
-      approach: "Our approach",
-      area: "Service area",
-      reviews: "Reviews",
-    },
-    headerChat: "Chat with our AI assistant",
-    languageLabel: "Language",
-    hero: {
-      eyebrow: `${prospectConfig.serviceArea} comfort team`,
-      title1: "Fast, Reliable",
-      title2: "HVAC Service",
-      title3: `across ${prospectConfig.serviceArea}`,
-      subhead:
-        "Air conditioning and heating repair, maintenance, and installation.",
-      request: "Try the Demo",
-      chat: "Chat With Our AI Assistant",
-      trust: [
-        "Licensed & insured",
-        "Upfront communication",
-        "Local technicians",
-      ],
-      peaceLabel: "Peace of mind",
-      peaceText: "The work is not done until your home feels right.",
-      imageAlt: `${prospectConfig.companyName} HVAC technician concept image`,
-    },
-    services: {
-      eyebrow: "What we do",
-      title1: "Comfort,",
-      title2: "handled.",
-      intro:
-        "From the first call to the final check, you get clear communication, careful work, and a home that feels better than we found it.",
-      selected: "Selected service",
-      learn: "Learn more",
-      items: [
-        {
-          id: "ac",
-          title: "AC Repair",
-          copy: `Reliable HVAC repairs across ${prospectConfig.serviceArea}. We find the root cause and explain it plainly.`,
-          detail:
-            "From strange sounds to a system that will not start, our technicians arrive prepared for the most common repairs.",
-        },
-        {
-          id: "heat",
-          title: "Heating Repair",
-          copy: "Warmth restored without the guesswork, rushed upsells, or cold-room shuffle.",
-          detail:
-            "Furnaces, heat pumps, and thermostats — handled by experienced local HVAC technicians.",
-        },
-        {
-          id: "maint",
-          title: "HVAC Maintenance",
-          copy: "A small seasonal check can prevent a very large, very inconvenient surprise.",
-          detail:
-            "Our tune-ups protect efficiency, extend equipment life, and catch wear before it becomes a weekend emergency.",
-        },
-        {
-          id: "install",
-          title: "New System Installation",
-          copy: "Right-sized comfort systems, thoughtfully installed for the way your home lives.",
-          detail:
-            "We make the options clear, then install the system with care for your home, air quality, and long-term comfort.",
-        },
-      ],
-    },
-    why: {
-      eyebrow: `Why ${prospectConfig.companyName}`,
-      title1: "Good work",
-      title2: "feels different.",
-      body: "You should never need an engineering degree to understand your own home. We pair technical excellence with the kind of human service that makes a stressful day feel manageable.",
-      imageAlt: "Technician checking air conditioning equipment",
-      since: `Serving ${prospectConfig.serviceArea} since`,
-      features: [
-        [
-          "We show up prepared",
-          "The right tools, parts, and context to make the first visit count.",
-        ],
-        [
-          "We explain the why",
-          "Plain language. Honest options. No pressure to decide on the spot.",
-        ],
-        [
-          "We leave it better",
-          "Careful shoe covers, clean work areas, and respect for your home.",
-        ],
-        [
-          "We think long-term",
-          "Solutions designed for comfort today and fewer surprises tomorrow.",
-        ],
-      ],
-    },
-    area: {
-      eyebrow: "Close to home",
-      title1: "Neighbors",
-      title2: "helping",
-      title3: "neighbors.",
-      copy: `We are proud to serve communities throughout ${prospectConfig.serviceArea}. If you are nearby and not on the list, reach out to the company directly for current service-area information.`,
-      phone: prospectConfig.phoneDisplay,
-      live: "local service area",
-      cities: [
-        "Atlanta",
-        "Decatur",
-        "Marietta",
-        "Roswell",
-        "Smyrna",
-        "Sandy Springs",
-        "Brookhaven",
-        "Alpharetta",
-        "East Cobb",
-        "Dunwoody",
-        "Vinings",
-        "Tucker",
-      ],
-    },
-    reviews: {
-      eyebrow: "Kind words",
-      title1: "Comfortable",
-      title2: "company.",
-      items: [
-        {
-          quote:
-            "Our upstairs was finally comfortable again by dinner. The technician found the issue quickly and took time to show me what he was doing.",
-          name: "Marianne R.",
-          location: "Decatur, GA",
-          initials: "MR",
-        },
-        {
-          quote:
-            "Clear communication, thoughtful diagnosis, and professional HVAC service.",
-          name: "Daniel K.",
-          location: "East Cobb, GA",
-          initials: "DK",
-        },
-        {
-          quote:
-            "The installation team treated our home like it was their own. Quiet, tidy, and our energy bill noticed the difference.",
-          name: "Priya S.",
-          location: "Brookhaven, GA",
-          initials: "PS",
-        },
-      ],
-    },
-    contact: {
-      eyebrow: "Let's get comfortable",
-      title1: "Your home",
-      title2: "called.",
-      body: "Tell us a little about what is going on. We will follow up with next steps — no pressure, no robotic runaround.",
-      hours: "Mon–Fri · 8:00am–5:00pm",
-      chat: "Prefer to chat? Meet our AI assistant",
-      successTitle: "We got it.",
-      successBody:
-         `Demo completed. No real service request has been submitted to ${prospectConfig.companyName}.`,
-      reset: "Send another request",
-      formTitle: "Request service",
-      formIntro: "A few details helps us make the first conversation useful.",
-      name: "Name",
-      namePlaceholder: "Your name",
-      phone: "Phone",
-      phonePlaceholder: prospectConfig.phoneDisplay,
-      help: "What can we help with?",
-      helpPlaceholder: "Tell us what your system is doing (or not doing)...",
-      consent:
-        "I agree to be contacted about this request. No marketing lists, no pressure.",
-      submit: "Start demo",
-    },
-    footer: {
-      description:
-        "A local HVAC team for the homes, neighborhoods, and weather we know best.",
-      explore: "Explore",
-      exploreLinks: ["Services", "Our approach"],
-      serviceArea: "Service area",
-      serviceAreaItems: [
-        "Atlanta & Midtown",
-        "Decatur & East Cobb",
-        "Marietta & Roswell",
-        "North Metro Atlanta",
-      ],
-      talk: "Talk to us",
-      hours: "Mon–Fri · 8:00am–5:00pm",
-      licensed: "Licensed & insured in Georgia",
-      copyright:  `© 2026 ${prospectConfig.companyName}`,
-      tagline: "Built for better home days.",
-    },
-    chat: {
-      assistantTitle: `${prospectConfig.companyName} AI Assistant`,
-      assistantSubtitle: "Here to point you in the right direction",
-      greeting:
-        `${prospectConfig.companyName} virtual assistant can collect a few details for the team. It won’t estimate pricing or promise a technician time, but it can make the next step easier.`,
-
-      promptProblem: "What is happening with your heating or air conditioning?",
-      promptLocation: "What city or ZIP code is the home in?",
-      promptTiming:
-        "When would you ideally like help? (For example: today, this week, or flexible.)",
-      promptDetails: "Last step: what is your name and best phone number?",
-
-      quickProblem: ["AC blowing warm air", "No heat", "Strange noise"],
-      quickTiming: ["Today", "This week", "I’m flexible"],
-      placeholderDetails: "Name, phone number",
-      answerPlaceholder: "Type your answer...",
-      finalSummary:
-         `Thanks, {name}. Here’s what I’ll pass to the ${prospectConfig.companyName} team: {issue} in {location}, ideally {timing}. Phone: {phone}. In a live installation, this lead could be delivered directly to the ${prospectConfig.companyName} team for follow-up — this chat does not confirm pricing or an appointment time.`,
-      closeNote:
-        "You can close this window — your summary is ready for the team.",
-    },
-    demo: {
-      label: "Try the demo",
-      placeholder: `${"name@" + prospectConfig.emailDomain}`,
-      button: "Try demo",
-      error: "Enter a valid email",
-    },
+const featureCards = [
+  {
+    number: "1",
+    icon: Languages,
+    title: "Bilingual AI Assistant",
+    copy: "Engages visitors instantly in English or Spanish, day or night.",
   },
-  es: {
-    nav: {
-      services: "Servicios",
-      approach: "Nuestro enfoque",
-      area: "Área de servicio",
-      reviews: "Reseñas",
-    },
-
-    headerChat: "Chatea con nuestro asistente de IA",
-    languageLabel: "Idioma",
-    hero: {
-      eyebrow: "El equipo local de confort del oeste metropolitano de Georgia",
-      title1: "Servicio de HVAC",
-      title2: "rápido y confiable",
-      title3: "en el oeste metropolitano de Georgia",
-      subhead:
-        "Reparación, mantenimiento e instalación de aire acondicionado y calefacción.",
-      request: "Probar la Demo",
-      chat: "Hablar con nuestro asistente de IA",
-      trust: [
-        "Con licencia y asegurados",
-        "Comunicación clara",
-        "Técnicos locales",
-      ],
-      peaceLabel: "Tranquilidad",
-      peaceText: "El trabajo no termina hasta que tu hogar se sienta bien.",
-      imageAlt:  `Imagen conceptual de técnico HVAC de ${prospectConfig.companyName}`,
-    },
-    services: {
-      eyebrow: "Lo que hacemos",
-      title1: "Confort,",
-      title2: "resuelto.",
-      intro:
-        "Desde la primera llamada hasta la revisión final, recibes comunicación clara, trabajo cuidadoso y un hogar que se siente mejor que cuando llegamos.",
-      selected: "Servicio seleccionado",
-      learn: "Más información",
-      items: [
-        {
-          id: "ac",
-          title: "Reparación de aire acondicionado",
-          copy: "Servicio HVAC confiable en el oeste metropolitano de Georgia. Encontramos la causa del problema y te la explicamos claramente.",
-          detail:
-            "Desde ruidos extraños hasta un sistema que no enciende, nuestros técnicos llegan preparados para las reparaciones más comunes.",
-        },
-        {
-          id: "heat",
-          title: "Reparación de calefacción",
-          copy: "Recupera el calor de tu hogar sin complicaciones, presión ni explicaciones confusas.",
-          detail:
-            "Trabajamos con hornos, bombas de calor y termostatos, buscando una solución clara y confiable.",
-        },
-        {
-          id: "maint",
-          title: "Mantenimiento HVAC",
-          copy: "Una revisión preventiva puede evitar una avería grande e inesperada.",
-          detail:
-            "Nuestro mantenimiento ayuda a mejorar la eficiencia, prolongar la vida del equipo y detectar desgaste antes de una emergencia.",
-        },
-        {
-          id: "install",
-          title: "Instalación de sistemas nuevos",
-          copy: "Sistemas de climatización adecuados para tu hogar e instalados cuidadosamente.",
-          detail:
-            "Te explicamos las opciones y realizamos la instalación pensando en el confort, la calidad del aire y el rendimiento a largo plazo.",
-        },
-      ],
-    },
-    why: {
-      eyebrow:  `Por qué ${prospectConfig.companyName}`,
-      title1: "El buen trabajo",
-      title2: "se siente distinto.",
-      copy: "No deberías necesitar un título de ingeniería para entender tu propio hogar. Combinamos excelencia técnica con un servicio humano que hace que un día estresante se sienta manejable.",
-      features: [
-        [
-          "01",
-          "Llegamos preparados",
-          "Las herramientas, las piezas y el contexto correcto para que la primera visita cuente.",
-        ],
-        [
-          "02",
-          "Explicamos el porqué",
-          "Lenguaje claro. Opciones honestas. Sin presión para decidir en el momento.",
-        ],
-        [
-          "03",
-          "Lo dejamos mejor",
-          "Cuidamos los zapatos, mantenemos el área limpia y respetamos tu hogar.",
-        ],
-        [
-          "04",
-          "Pensamos a largo plazo",
-          "Soluciones diseñadas para el confort de hoy y menos sorpresas mañana.",
-        ],
-      ],
-    },
-    area: {
-      eyebrow: "Cerca de casa",
-      title1: "Vecinos",
-      title2: "ayudando a vecinos.",
-      copy: "Nos enorgullece servir comunidades en todo el oeste metropolitano de Georgia. Si estás cerca y no estás en la lista, llámanos — con gusto conversamos.",
-      phone: prospectConfig.phoneDisplay,
-      live: "área de servicio local",
-    },
-    reviews: {
-      eyebrow: "Palabras amables",
-      title1: "Compañía",
-      title2: "confortable.",
-    },
-    contact: {
-      eyebrow: "Hagamos que te sientas cómodo",
-      title1: "Tu hogar",
-      title2: "habló.",
-      copy: "Cuéntanos un poco de lo que está pasando. Te daremos los siguientes pasos — sin presión, sin vueltas robóticas.",
-      phone: prospectConfig.phoneDisplay,
-      hours: "Lun–Vie · 8:00am–5:00pm",
-      chat: "¿Prefieres chatear? Conoce a nuestro asistente de IA",
-      successTitle: "Lo recibimos.",
-      successCopy:
-         `Demo completada. No se ha enviado ninguna solicitud real de servicio a ${prospectConfig.companyName}.`,
-      sentAgain: "Enviar otra solicitud",
-      formTitle: "Demostración de captura de leads",
-      formCopy:
-        "Unos pocos detalles ayudan a que la primera conversación sea útil.",
-      nameLabel: "Nombre",
-      phoneLabel: "Teléfono",
-      helpLabel: "¿En qué podemos ayudarte?",
-      consentCopy:
-        "Acepto ser contactado sobre esta solicitud. Sin listas de marketing, sin presión.",
-      submit: "Iniciar demo",
-    },
-    footer: {
-      description:
-        "Un equipo local de HVAC para los hogares, vecindarios y clima que conocemos mejor.",
-      explore: "Explorar",
-      exploreLinks: ["Servicios", "Nuestro enfoque"],
-      serviceArea: "Área de servicio",
-      serviceAreaItems: [
-        "Atlanta y Midtown",
-        "Decatur y East Cobb",
-        "Marietta y Roswell",
-        "Norte del metro de Atlanta",
-      ],
-      talk: "Contáctanos",
-      phone: prospectConfig.phoneDisplay,
-      hours: "Lun–Vie · 8:00am–5:00pm",
-      licensed: "Con licencia y asegurados en Georgia",
-      copyright:  `© 2026 ${prospectConfig.companyName}`,
-      tagline: "Construido para mejores días en casa.",
-    },
-    chat: {
-      assistantTitle: `Asistente IA ${prospectConfig.companyName}`,
-      assistantSubtitle: "Aquí para guiarte en la dirección correcta",
-      greeting:
-        `Hola — soy el asistente virtual de ${prospectConfig.companyName}. Puedo recopilar algunos detalles para el equipo. No estimaré precios ni prometo una hora de técnico, pero puedo hacer tu siguiente paso más sencillo.`,
-      promptProblem:
-        "¿Qué está pasando con tu calefacción o aire acondicionado?",
-      promptLocation: "¿En qué ciudad o código postal está la casa?",
-      promptTiming:
-        "¿Cuándo te gustaría idealmente recibir ayuda? (Por ejemplo: hoy, esta semana o flexible.)",
-      promptDetails:
-        "Último paso: ¿cuál es tu nombre y el mejor número de teléfono?",
-      quickProblem: ["El aire sale tibio", "No hay calor", "Ruido extraño"],
-      quickTiming: ["Hoy", "Esta semana", "Soy flexible"],
-      placeholderAnswer: "Escribe tu respuesta...",
-      placeholderDetails: "Nombre, número de teléfono",
-      finalSummary:
-         `Gracias, {name}. Esto es lo que enviaré al equipo de ${prospectConfig.companyName}: {issue} en {location}, idealmente {timing}. Teléfono: {phone}. En una instalación activa, este lead podría enviarse directamente al equipo de ${prospectConfig.companyName} para seguimiento; este chat no confirma precios ni hora de cita.`,
-      doneNote:
-        "Puedes cerrar esta ventana — tu resumen está listo para el equipo.",
-    },
-    demo: {
-      label: "Prueba la demo",
-      placeholder: `${"nombre@" + prospectConfig.emailDomain}`,
-      button: "Probar demo",
-      error: "Introduce un correo válido",
-    },
+  {
+    number: "2",
+    icon: Target,
+    title: "Lead Capture & Qualification",
+    copy: "Collects the problem, location, urgency and contact details automatically.",
   },
-};
+  {
+    number: "3",
+    icon: MousePointerClick,
+    title: "Self-Closing Funnel",
+    copy: "Guides high-intent homeowners toward the next best action without friction.",
+  },
+  {
+    number: "4",
+    icon: Gauge,
+    title: "Client Portal & ROI",
+    copy: "Makes lead volume, appointments and revenue easier to track in one place.",
+  },
+  {
+    number: "5",
+    icon: Zap,
+    title: "Faster Response",
+    copy: "Responds while prospects are still looking for an HVAC contractor.",
+  },
+];
 
-const serviceIcons = [Snowflake, Flame, Gauge, Wrench] as const;
-
-function Logo({ light = false }: { light?: boolean }) {
+function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <a
-      href="#top"
-      data-testid="link-logo"
-      className="flex items-center gap-3 group"
-    >
-      <span
-        className={`grid size-10 place-items-center rounded-xl ${light ? "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]" : "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"} transition-transform group-hover:-rotate-6`}
-      >
-        <Fan size={21} strokeWidth={2.3} />
-      </span>
-      <span className="leading-none">
-        <span
-          className={`block text-[15px] font-bold tracking-[-.04em] ${light ? "text-[hsl(var(--background))]" : "text-[hsl(var(--foreground))]"}`}
-        >
-          {prospectConfig.shortName}
-        </span>
-        <span
-          className={`font-mono-ui text-[9px] tracking-[.21em] ${light ? "text-[hsl(var(--background)/.64)]" : "text-[hsl(var(--muted-foreground))]"}`}
-        >
-          & AIR
-        </span>
-      </span>
+    <a href="#top" className="flex items-center gap-3" aria-label="Local Lead Forge home">
+      <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-orange-500/45 bg-[#0a1423] shadow-[0_0_24px_rgba(255,106,0,0.15)]">
+        <div className="absolute inset-[5px] rounded-md border border-orange-500/25" />
+        <span className="relative text-[13px] font-black tracking-[-0.08em] text-orange-500">LLF</span>
+      </div>
+      {!compact && (
+        <div className="leading-none">
+          <div className="text-[13px] font-extrabold tracking-[0.19em] text-white">LOCAL LEAD</div>
+          <div className="mt-1 text-[13px] font-extrabold tracking-[0.26em] text-orange-500">FORGE</div>
+        </div>
+      )}
     </a>
   );
 }
 
-function Button({
-  children,
-  variant = "primary",
-  onClick,
-  testId,
-  type = "button",
-}: {
-  children: ReactNode;
-  variant?: "primary" | "outline" | "light";
-  onClick?: () => void;
-  testId: string;
-  type?: "button" | "submit";
-}) {
-  const styles =
-    variant === "primary"
-      ? "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(20_87%_51%)]"
-      : variant === "light"
-        ? "bg-[hsl(var(--background))] text-[hsl(var(--primary))] hover:bg-[hsl(var(--accent))]"
-        : "border border-[hsl(var(--border)/.5)] text-[hsl(var(--background))] hover:border-[hsl(var(--accent))] hover:text-[hsl(var(--accent))]";
+function PrimaryButton({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      data-testid={testId}
-      className={`group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--primary))] ${styles}`}
+    <a
+      href={href}
+      className="group inline-flex items-center justify-center gap-2 rounded-lg border border-orange-400/90 bg-orange-600 px-5 py-3 text-[12px] font-extrabold text-white shadow-[0_0_28px_rgba(255,106,0,.28)] transition duration-200 hover:-translate-y-0.5 hover:bg-orange-500 hover:shadow-[0_0_38px_rgba(255,106,0,.38)]"
     >
       {children}
-      <ArrowRight
-        size={16}
-        className="transition-transform group-hover:translate-x-1"
-      />
-    </button>
+      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+    </a>
   );
 }
 
-function Header({
-  onChat,
-  language,
-  onLanguageChange,
-}: {
-  onChat: () => void;
-  language: Language;
-  onLanguageChange: (language: Language) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const t = translations[language];
-  const links = [
-    [t.nav.services, "#services"],
-    [t.nav.approach, "#why"],
-    [t.nav.area, "#area"],
-  ];
-  const languageSelector = (
-    <div
-      className="flex items-center gap-1 text-xs font-bold"
-      aria-label={t.languageLabel}
-    >
-      <button
-        type="button"
-        onClick={() => onLanguageChange("en")}
-        aria-pressed={language === "en"}
-        className={
-          language === "en"
-            ? "text-[hsl(var(--accent))]"
-            : "text-[hsl(var(--background)/.55)]"
-        }
-      >
-        EN
-      </button>
-      <span className="text-[hsl(var(--background)/.35)]">|</span>
-      <button
-        type="button"
-        onClick={() => onLanguageChange("es")}
-        aria-pressed={language === "es"}
-        className={
-          language === "es"
-            ? "text-[hsl(var(--accent))]"
-            : "text-[hsl(var(--background)/.55)]"
-        }
-      >
-        ES
-      </button>
+function BackgroundLines() {
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      <div className="absolute left-1/2 top-16 h-[620px] w-[1200px] -translate-x-1/2 rounded-full bg-orange-600/[0.045] blur-[130px]" />
+      <svg className="absolute left-0 top-[170px] h-[470px] w-full opacity-45" viewBox="0 0 1800 470" fill="none" preserveAspectRatio="none">
+        <path d="M-60 350 C210 255 322 255 520 295 C760 343 885 118 1130 180 C1390 246 1536 145 1870 -10" stroke="url(#demoLine)" strokeWidth="1.1" />
+        <path d="M-45 414 C260 326 372 316 575 342 C805 370 940 174 1180 219 C1420 265 1590 190 1880 63" stroke="rgba(255,106,0,.12)" />
+        <path d="M-70 268 C247 177 360 194 547 231 C755 273 879 69 1105 137 C1352 212 1536 103 1868 -32" stroke="rgba(255,106,0,.08)" />
+        <defs>
+          <linearGradient id="demoLine" x1="0" x2="1800" y1="0" y2="0">
+            <stop stopColor={ORANGE} stopOpacity="0" />
+            <stop offset=".24" stopColor={ORANGE} stopOpacity=".25" />
+            <stop offset=".58" stopColor={ORANGE} stopOpacity=".58" />
+            <stop offset="1" stopColor={ORANGE} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
   );
+}
+
+function ChatPreview() {
+  const [language, setLanguage] = useState<Language>("en");
+  const [service, setService] = useState("AC not cooling");
+  const [sent, setSent] = useState(false);
+
+  const text = language === "en"
+    ? {
+        title: `${prospectConfig.shortName} AI Assistant`,
+        online: "Online now",
+        greeting: `Hi! I’m the AI assistant for ${prospectConfig.shortName}. What can we help you with today?`,
+        location: "Thanks — what city or ZIP code is the home in?",
+        reply: "Lawrenceville, GA 30044",
+        next: "Perfect. I can prepare this request for the team. How urgent is the issue?",
+        urgent: "Today if possible",
+        placeholder: "Type a message...",
+        sent: "Lead ready for the team",
+      }
+    : {
+        title: `Asistente IA de ${prospectConfig.shortName}`,
+        online: "En línea",
+        greeting: `¡Hola! Soy el asistente IA de ${prospectConfig.shortName}. ¿En qué podemos ayudarte hoy?`,
+        location: "Gracias. ¿En qué ciudad o código postal está la propiedad?",
+        reply: "Lawrenceville, GA 30044",
+        next: "Perfecto. Puedo preparar esta solicitud para el equipo. ¿Qué tan urgente es?",
+        urgent: "Hoy si es posible",
+        placeholder: "Escribe un mensaje...",
+        sent: "Lead listo para el equipo",
+      };
+
   return (
-    <header className="relative z-30 bg-[hsl(var(--primary))]">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-10">
-        <Logo light />
-        <nav className="hidden items-center gap-8 md:flex">
-          {links.map(([label, href]) => (
-            <a
-              key={href}
-              href={href}
-              data-testid={`link-nav-${label.toLowerCase().replace(" ", "-")}`}
-              className="text-sm font-semibold text-[hsl(var(--background)/.75)] transition-colors hover:text-[hsl(var(--accent))]"
-            >
-              {label}
-            </a>
-          ))}
-          {languageSelector}
-          <span
-            data-testid="text-header-phone"
-            className="flex items-center gap-2 border-l border-[hsl(var(--background)/.2)] pl-7 text-sm font-bold text-[hsl(var(--background))]"
-          >
-            <Phone size={15} /> {prospectConfig.phoneDisplay}
-          </span>
-        </nav>
-        <button
-          onClick={() => setOpen(!open)}
-          data-testid="button-mobile-menu"
-          className="rounded-lg p-2 text-[hsl(var(--background))] md:hidden"
-        >
-          {open ? <X /> : <Menu />}
-        </button>
-      </div>
-      {open && (
-        <div className="mx-4 rounded-2xl border border-[hsl(var(--background)/.15)] bg-[hsl(var(--primary)/.97)] p-4 shadow-xl md:hidden">
-          {links.map(([label, href]) => (
-            <a
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              data-testid={`link-mobile-${label.toLowerCase().replace(" ", "-")}`}
-              className="block border-b border-[hsl(var(--background)/.1)] px-3 py-3 text-sm font-bold text-[hsl(var(--background))]"
-            >
-              {label}
-            </a>
-          ))}
-          <div className="flex items-center justify-between px-3 pt-4 text-[hsl(var(--background))]">
-            <span className="text-xs font-bold">{t.languageLabel}</span>
-            {languageSelector}
+    <div id="assistant" className="overflow-hidden rounded-2xl border border-white/[0.1] bg-[#07111f] shadow-[0_25px_80px_rgba(0,0,0,.48),0_0_65px_rgba(255,106,0,.065)]">
+      <div className="flex items-center justify-between border-b border-white/[0.075] px-4 py-3.5">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-orange-500/20 bg-orange-500/[0.08] text-orange-500"><Bot className="h-4 w-4" /></div>
+          <div className="min-w-0">
+            <div className="truncate text-[10px] font-extrabold text-white">{text.title}</div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[8px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{text.online}</div>
           </div>
-          <button
-            onClick={() => {
-              setOpen(false);
-              onChat();
-            }}
-            data-testid="button-mobile-chat"
-            className="mt-3 flex w-full items-center justify-between rounded-xl bg-[hsl(var(--accent))] px-4 py-3 text-sm font-bold text-[hsl(var(--accent-foreground))]"
-          >
-            {t.headerChat} <MessageCircle size={17} />
-          </button>
         </div>
-      )}
-    </header>
+        <div className="flex rounded-md border border-white/[0.09] bg-black/20 p-0.5 text-[7px] font-black">
+          <button type="button" onClick={() => setLanguage("en")} className={`rounded px-2 py-1 ${language === "en" ? "bg-orange-500 text-white" : "text-slate-500"}`}>EN</button>
+          <button type="button" onClick={() => setLanguage("es")} className={`rounded px-2 py-1 ${language === "es" ? "bg-orange-500 text-white" : "text-slate-500"}`}>ES</button>
+        </div>
+      </div>
+
+      <div className="min-h-[278px] space-y-3 p-4 text-[9px] leading-4">
+        <div className="max-w-[84%] rounded-xl rounded-tl-sm border border-white/[0.07] bg-white/[0.035] px-3 py-2.5 text-slate-300">{text.greeting}</div>
+        <div className="flex flex-wrap gap-1.5">
+          {["AC not cooling", "Heating issue", "Maintenance", "New system"].map((option) => (
+            <button
+              type="button"
+              key={option}
+              onClick={() => setService(option)}
+              className={`rounded-full border px-2.5 py-1.5 text-[7px] font-bold transition ${service === option ? "border-orange-500/45 bg-orange-500/10 text-orange-400" : "border-white/[0.08] bg-black/20 text-slate-500 hover:text-slate-300"}`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto max-w-[70%] rounded-xl rounded-tr-sm bg-orange-600 px-3 py-2.5 font-semibold text-white">{service}</div>
+        <div className="max-w-[84%] rounded-xl rounded-tl-sm border border-white/[0.07] bg-white/[0.035] px-3 py-2.5 text-slate-300">{text.location}</div>
+        <div className="ml-auto max-w-[70%] rounded-xl rounded-tr-sm bg-orange-600 px-3 py-2.5 font-semibold text-white">{text.reply}</div>
+        <div className="max-w-[84%] rounded-xl rounded-tl-sm border border-white/[0.07] bg-white/[0.035] px-3 py-2.5 text-slate-300">{text.next}</div>
+        <button type="button" onClick={() => setSent(true)} className="ml-auto block rounded-full border border-orange-500/35 bg-orange-500/[0.08] px-3 py-1.5 text-[7px] font-bold text-orange-400">{sent ? `✓ ${text.sent}` : text.urgent}</button>
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-white/[0.07] bg-black/15 p-3">
+        <div className="flex-1 rounded-lg border border-white/[0.08] bg-black/20 px-3 py-2.5 text-[8px] text-slate-600">{text.placeholder}</div>
+        <button type="button" onClick={() => setSent(true)} className="grid h-8 w-8 place-items-center rounded-lg bg-orange-600 text-white shadow-[0_0_18px_rgba(255,106,0,.25)]"><Send className="h-3.5 w-3.5" /></button>
+      </div>
+    </div>
   );
 }
 
-function Hero({
-  onChat,
-  onRequest,
-  language,
-}: {
-  onChat: () => void;
-  onRequest: () => void;
-  language: Language;
-}) {
-  const t = translations[language].hero;
+function CapturedLead() {
+  const rows = [
+    ["Name", "Michael R."],
+    ["Phone", "(678) 555-0187"],
+    ["Email", "michael@example.com"],
+    ["ZIP", "30044"],
+    ["Service", "AC Repair"],
+    ["Source", "AI Assistant"],
+    ["Time", "Just now"],
+  ];
 
   return (
-    <section
-      id="top"
-      className="relative min-h-[760px] overflow-hidden bg-[hsl(var(--primary))] pt-28 text-[hsl(var(--background))]"
-    >
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            'linear-gradient(115deg, hsl(193 62% 25% / .95) 0%, transparent 60%), url("https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=2200&q=85")',
-          backgroundPosition: "center",
-          backgroundSize: "cover",
-        }}
-      />
-      <div className="absolute -right-36 top-44 size-[480px] rounded-full border border-[hsl(var(--accent)/.28)] lg:size-[650px]" />
-      <div className="absolute -right-20 top-60 size-[320px] rounded-full border border-[hsl(var(--accent)/.2)] lg:size-[500px]" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 lg:grid-cols-[1fr_410px] lg:px-10 lg:pb-28">
-        <div className="max-w-3xl pt-16 lg:pt-24">
-          <div className="reveal mb-7 flex items-center gap-3 font-mono-ui text-[10px] font-bold uppercase tracking-[.2em] text-[hsl(var(--accent))]">
-            <span className="h-px w-8 bg-[hsl(var(--accent))]" />
-            {t.eyebrow}
+    <div className="rounded-2xl border border-white/[0.1] bg-[#07111f] p-4 shadow-[0_20px_70px_rgba(0,0,0,.42)]">
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] pb-3">
+        <div>
+          <div className="text-[9px] font-black uppercase tracking-[.13em] text-orange-400">Captured Lead</div>
+          <div className="mt-1 text-[8px] text-slate-600">Qualified automatically</div>
+        </div>
+        <div className="grid h-8 w-8 place-items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"><CheckCircle2 className="h-4 w-4" /></div>
+      </div>
+      <div className="mt-3 space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-4 text-[8px]">
+            <span className="text-slate-600">{label}</span>
+            <span className="truncate font-semibold text-slate-300">{value}</span>
           </div>
-          <h1 className="reveal reveal-d1 max-w-4xl font-display text-[clamp(3.7rem,9.2vw,8.4rem)] leading-[.78] tracking-[-.045em]">
-            {t.title1}
-            <br />
-            <em className="text-[hsl(var(--accent))]">{t.title2}</em>
-            <br />
-            <span className="text-[.75em]">{t.title3}</span>
-          </h1>
-          <p className="reveal reveal-d2 mt-8 max-w-lg text-base leading-relaxed text-[hsl(var(--background)/.7)] lg:text-lg">
-            {t.subhead}
-          </p>
-          <div className="reveal reveal-d3 mt-10 flex flex-wrap gap-3">
-            <Button onClick={onRequest} testId="button-hero-request">
-              {t.request}
-            </Button>
-            <Button
-              onClick={onChat}
-              variant="outline"
-              testId="button-hero-chat"
-            >
-              <MessageCircle size={16} /> {t.chat}
-            </Button>
-          </div>
-          <div className="reveal reveal-d3 mt-12 flex flex-wrap gap-x-6 gap-y-3">
-            {t.trust.map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-2 font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.55)]"
-              >
-                <CircleCheck size={13} className="text-[hsl(var(--accent))]" />
-                {item}
-              </div>
+        ))}
+      </div>
+      <a href={`tel:${prospectConfig.phoneDisplay.replace(/[^+\d]/g, "")}`} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-orange-400/90 bg-orange-600 px-3 py-2.5 text-[8px] font-extrabold text-white shadow-[0_0_22px_rgba(255,106,0,.22)] transition hover:bg-orange-500">
+        <MailCheck className="h-3.5 w-3.5" /> Send to {prospectConfig.shortName} Team
+      </a>
+    </div>
+  );
+}
+
+function PotentialDashboard() {
+  const cards = [
+    [Users, "158", "New Leads", "+18.4%"],
+    [BadgeCheck, "97", "Qualified", "+12.8%"],
+    [CalendarCheck2, "32", "Appointments", "+9.3%"],
+    [CircleDollarSign, "14", "Closed Jobs", "+21.6%"],
+  ] as const;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/[0.09] bg-[#050c17]">
+      <div className="flex h-8 items-center gap-1.5 border-b border-white/[0.07] bg-[#080f1b] px-3">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <div className="mx-auto h-3 w-28 rounded bg-white/[0.035]" />
+      </div>
+      <div className="grid grid-cols-[90px_1fr] sm:grid-cols-[112px_1fr]">
+        <div className="border-r border-white/[0.07] bg-[#050b14] p-2.5">
+          <Logo compact />
+          <div className="mt-5 space-y-1 text-[6px] text-slate-600">
+            {["Overview", "Leads", "Conversations", "Appointments", "ROI Tracking"].map((label, i) => (
+              <div key={label} className={`rounded px-2 py-1.5 ${i === 0 ? "border border-orange-500/15 bg-orange-500/[0.08] text-orange-400" : ""}`}>{label}</div>
             ))}
           </div>
         </div>
-        <div className="reveal reveal-d2 hidden lg:block">
-          <div className="rounded-[2rem] border border-[hsl(var(--background)/.16)] bg-[hsl(var(--background)/.08)] p-6 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]">
-                <ShieldCheck size={20} />
+        <div className="min-w-0 bg-[#060e1b] p-3">
+          <div className="text-[9px] font-black text-white">Your Potential Results</div>
+          <div className="mt-0.5 text-[6px] text-slate-600">Illustrative performance dashboard</div>
+          <div className="mt-3 grid grid-cols-2 gap-1.5 lg:grid-cols-4">
+            {cards.map(([Icon, value, label, delta]) => (
+              <div key={label} className="rounded-lg border border-white/[0.075] bg-[#071222] p-2">
+                <div className="flex items-center justify-between"><Icon className="h-2.5 w-2.5 text-orange-500" /><span className="text-[5px] font-bold text-emerald-400">{delta}</span></div>
+                <div className="mt-2 text-[14px] font-black text-white">{value}</div>
+                <div className="text-[5px] text-slate-600">{label}</div>
               </div>
-              <div>
-                <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[hsl(var(--background)/.5)]">
-                  {t.peaceLabel}
-                </p>
-                <p className="mt-1 text-sm font-bold">{t.peaceText}</p>
-              </div>
+            ))}
+          </div>
+          <div className="mt-2 grid gap-2 lg:grid-cols-[1.65fr_.8fr]">
+            <div className="rounded-lg border border-white/[0.075] bg-[#071222] p-2.5">
+              <div className="text-[7px] font-bold text-white">Lead Activity</div>
+              <svg viewBox="0 0 340 88" className="mt-2 h-[80px] w-full" aria-label="Potential lead activity chart">
+                <defs><linearGradient id="potentialFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={ORANGE} stopOpacity=".25" /><stop offset="1" stopColor={ORANGE} stopOpacity="0" /></linearGradient></defs>
+                {[17, 42, 67].map((y) => <line key={y} x1="0" x2="340" y1={y} y2={y} stroke="rgba(148,163,184,.08)" />)}
+                <path d="M0 75 C35 70 44 55 72 59 C103 64 118 42 146 48 C180 55 193 30 220 36 C247 42 268 23 295 28 C314 31 327 15 340 12 L340 88 L0 88 Z" fill="url(#potentialFill)" />
+                <path d="M0 75 C35 70 44 55 72 59 C103 64 118 42 146 48 C180 55 193 30 220 36 C247 42 268 23 295 28 C314 31 327 15 340 12" fill="none" stroke={ORANGE} strokeWidth="2" />
+              </svg>
+            </div>
+            <div className="rounded-lg border border-white/[0.075] bg-[#071222] p-2.5">
+              <div className="text-[7px] font-bold text-white">Lead Sources</div>
+              <div className="mx-auto mt-3 grid h-[61px] w-[61px] place-items-center rounded-full bg-[conic-gradient(#ff6a00_0_45%,#2563eb_45%_69%,#16a34a_69%_86%,#7c3aed_86%_100%)]"><div className="grid h-[40px] w-[40px] place-items-center rounded-full bg-[#071222] text-[8px] font-black text-white">158</div></div>
             </div>
           </div>
         </div>
       </div>
-      <div className="absolute inset-0 -z-10 bg-[hsl(var(--primary))]" />
-    </section>
+    </div>
   );
 }
 
-function Services({ lang }: { lang: Language }) {
-  const t = translations[lang].services;
-  const [selected, setSelected] = useState(0);
+function IconBenefit({ icon: Icon, title, copy }: { icon: ComponentType<{ className?: string }>; title: string; copy: string }) {
   return (
-    <section id="services" className="bg-[hsl(var(--background))] px-5 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid gap-8 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
-          <div>
-            <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground))]">
-              {t.eyebrow}
-            </p>
-            <h2 className="mt-4 font-display text-5xl leading-[.9] tracking-tight text-[hsl(var(--foreground))] lg:text-7xl">
-              {t.title1}
-              <br />
-              <em className="text-[hsl(var(--primary))]">{t.title2}</em>
-            </h2>
+    <div className="flex gap-3">
+      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-orange-500/20 bg-orange-500/[0.08] text-orange-500"><Icon className="h-4 w-4" /></div>
+      <div><div className="text-[10px] font-extrabold text-white">{title}</div><div className="mt-1 text-[8px] leading-4 text-slate-600">{copy}</div></div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <main id="top" className="relative min-h-screen overflow-hidden bg-[#030914] font-sans text-white selection:bg-orange-500 selection:text-white">
+      <BackgroundLines />
+
+      <header className="relative z-40 border-b border-white/[0.065] bg-[#030914]/90 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-[78px] max-w-[1500px] items-center justify-between gap-6 px-5 py-3 sm:px-8 lg:px-12">
+          <div className="flex min-w-0 items-center gap-6">
+            <Logo />
+            <div className="hidden min-w-0 border-l border-white/[0.09] pl-6 md:block">
+              <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[.16em] text-orange-400"><ShieldCheck className="h-3 w-3" /> Private Demo</div>
+              <div className="mt-1 max-w-[290px] truncate text-[9px] font-semibold text-slate-500">Prepared for {prospectConfig.companyName}</div>
+            </div>
           </div>
-          <p className="max-w-xl text-sm leading-relaxed text-[hsl(var(--muted-foreground))] lg:justify-self-end lg:text-base">
-            {t.intro}
-          </p>
+
+          <nav className="hidden items-center gap-6 text-[11px] font-semibold text-slate-500 xl:flex">
+            <a href="#how" className="transition hover:text-orange-400">How It Works</a>
+            <a href="#features" className="transition hover:text-orange-400">Features</a>
+            <a href="#results" className="transition hover:text-orange-400">Results</a>
+            <a href="#pricing" className="transition hover:text-orange-400">Pricing</a>
+            <a href="#about" className="transition hover:text-orange-400">About LLF</a>
+          </nav>
+
+          <PrimaryButton href="#pricing">Book Your Strategy Call</PrimaryButton>
         </div>
-        <div className="mt-14 grid gap-px overflow-hidden border border-[hsl(var(--border))] bg-[hsl(var(--border))] sm:grid-cols-2 lg:grid-cols-4">
-          {t.items.map((service, index) => {
-            const Icon = serviceIcons[index];
-            const active = selected === index;
+      </header>
+
+      <section className="relative mx-auto grid max-w-[1500px] gap-12 px-5 pb-12 pt-14 sm:px-8 lg:grid-cols-[.82fr_1.18fr] lg:items-center lg:px-12 lg:pb-14 lg:pt-16">
+        <div className="relative z-10 max-w-[610px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/25 bg-orange-500/[0.07] px-3.5 py-2 text-[9px] font-extrabold uppercase tracking-[0.17em] text-orange-400">
+            <Sparkles className="h-3 w-3" /> AI-Powered Lead Capture for HVAC Contractors
+          </div>
+
+          <h1 className="mt-6 text-[42px] font-black leading-[1.02] tracking-[-0.045em] text-white sm:text-[54px] xl:text-[65px]">
+            A Better Way to Turn Website Visitors Into <span className="text-orange-500">Qualified HVAC Leads.</span>
+          </h1>
+
+          <p className="mt-6 max-w-[580px] text-[14px] leading-7 text-slate-400">
+            This private concept shows how {prospectConfig.companyName} could engage visitors instantly, qualify service requests, capture contact details and route stronger opportunities to the team — 24/7.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <PrimaryButton href="#assistant">Try the AI Assistant</PrimaryButton>
+            <a href="#how" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/[0.13] bg-white/[0.025] px-5 py-3 text-[12px] font-bold text-slate-300 transition hover:border-orange-500/35 hover:text-white">See How It Works <ChevronRight className="h-4 w-4" /></a>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[9px] font-semibold text-slate-500">
+            <span className="flex items-center gap-1.5"><Check className="h-3 w-3 text-orange-500" /> Bilingual EN / ES</span>
+            <span className="flex items-center gap-1.5"><Check className="h-3 w-3 text-orange-500" /> 24/7 response</span>
+            <span className="flex items-center gap-1.5"><Check className="h-3 w-3 text-orange-500" /> Built for {prospectConfig.shortName}</span>
+          </div>
+        </div>
+
+        <div className="relative z-10 grid gap-3 md:grid-cols-[1.35fr_.78fr] lg:pl-2">
+          <ChatPreview />
+          <CapturedLead />
+        </div>
+      </section>
+
+      <section id="features" className="relative mx-auto max-w-[1500px] px-5 pb-14 sm:px-8 lg:px-12">
+        <div className="grid gap-3 md:grid-cols-5">
+          {featureCards.map(({ number, icon: Icon, title, copy }) => (
+            <article key={number} className="group relative min-h-[165px] overflow-hidden rounded-xl border border-white/[0.09] bg-[#07111f]/95 p-5 transition duration-300 hover:-translate-y-1 hover:border-orange-500/35">
+              <div className="absolute right-3 top-2 text-[36px] font-black leading-none text-white/[0.035]">{number}</div>
+              <div className="grid h-8 w-8 place-items-center rounded-lg border border-orange-500/20 bg-orange-500/[0.08] text-orange-500"><Icon className="h-4 w-4" /></div>
+              <h2 className="mt-4 text-[11px] font-extrabold text-white">{title}</h2>
+              <p className="mt-2 text-[8px] leading-[1.7] text-slate-600">{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="how" className="relative border-y border-white/[0.055] bg-[#040c18]/75">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_52%_45%,rgba(255,106,0,.055),transparent_46%)]" />
+        <div className="relative mx-auto grid max-w-[1500px] gap-6 px-5 py-14 sm:px-8 lg:grid-cols-[.72fr_1.28fr] lg:px-12">
+          <article id="pricing" className="rounded-2xl border border-orange-500/25 bg-[#07111f]/95 p-6 shadow-[0_0_55px_rgba(255,106,0,.055)] sm:p-8">
+            <div className="text-[9px] font-black uppercase tracking-[.18em] text-orange-400">Founding Client Offer</div>
+            <h2 className="mt-4 text-[28px] font-black tracking-[-.035em] sm:text-[34px]">Launch the complete system.</h2>
+            <p className="mt-3 text-[10px] leading-5 text-slate-500">A focused starting package for local service businesses ready to capture and organize more opportunities.</p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-white/[0.08] bg-black/20 p-4">
+                <div className="text-[7px] font-bold uppercase tracking-[.16em] text-slate-600">Setup</div>
+                <div className="mt-1 text-[34px] font-black text-white">$299</div>
+                <div className="text-[7px] text-slate-600">one time</div>
+              </div>
+              <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.035] p-4">
+                <div className="text-[7px] font-bold uppercase tracking-[.16em] text-orange-400">Monthly</div>
+                <div className="mt-1 text-[34px] font-black text-white">$199<span className="ml-1 text-[9px] font-semibold text-slate-600">/mo</span></div>
+                <div className="text-[7px] text-slate-600">ongoing system</div>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2 text-[9px] text-slate-400">
+              {["Bilingual AI lead assistant", "Custom qualification flow", "Lead delivery to your team", "Hosting & maintenance", "Performance tracking", "Ongoing optimization"].map((item) => (
+                <div key={item} className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-orange-500" />{item}</div>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-full border border-orange-500/25 bg-orange-500/[0.06] px-3 py-2 text-center text-[7px] font-black uppercase tracking-[.13em] text-orange-400">Limited founding-client availability</div>
+            <div className="mt-5"><PrimaryButton href={`mailto:hello@localleadforge.com?subject=Strategy%20Call%20-%20${encodeURIComponent(prospectConfig.companyName)}`}>Book Your Strategy Call</PrimaryButton></div>
+          </article>
+
+          <article id="results" className="rounded-2xl border border-white/[0.09] bg-[#07111f]/95 p-6 sm:p-8">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="text-[9px] font-black uppercase tracking-[.18em] text-orange-400">Illustrative Dashboard</div>
+                <h2 className="mt-3 text-[25px] font-black tracking-[-.03em] sm:text-[32px]">Your Potential Results with Local Lead Forge</h2>
+              </div>
+              <div className="rounded-full border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[7px] text-slate-600">Sample metrics — not a guarantee</div>
+            </div>
+
+            <div className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_.65fr]">
+              <PotentialDashboard />
+              <div className="space-y-5">
+                <IconBenefit icon={Zap} title="Instant Response" copy="Engage prospects before they move on to the next contractor." />
+                <IconBenefit icon={Target} title="Better Qualification" copy="Capture the details your team needs before follow-up begins." />
+                <IconBenefit icon={TrendingUp} title="Clearer ROI" copy="Connect lead activity to appointments and closed work." />
+                <IconBenefit icon={Clock3} title="After-Hours Coverage" copy="Keep capturing intent when your office is closed." />
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="about" className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:px-12">
+        <div className="grid gap-px overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.06] md:grid-cols-4">
+          {[
+            [ShieldCheck, "Private & Confidential", `Prepared specifically for ${prospectConfig.shortName}`],
+            [Languages, "English + Spanish", "Bilingual lead conversations"],
+            [Headphones, "U.S.-Based Support", "Direct implementation support"],
+            [Wrench, "HVAC Focused Demo", prospectConfig.serviceArea],
+          ].map(([Icon, title, copy]) => {
+            const I = Icon as ComponentType<{ className?: string }>;
             return (
-              <button
-                key={service.id}
-                onClick={() => setSelected(index)}
-                data-testid={`button-service-${service.id}`}
-                className={`group min-h-[260px] bg-[hsl(var(--background))] p-6 text-left transition-colors ${active ? "bg-[hsl(var(--primary))] text-[hsl(var(--background))]" : "hover:bg-[hsl(var(--secondary))]"}`}
-              >
-                <div className="flex items-center justify-between">
-                  <Icon
-                    size={19}
-                    className={active ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--primary))]"}
-                  />
-                  <span
-                    className={`font-mono-ui text-[8px] ${active ? "text-[hsl(var(--background)/.45)]" : "text-[hsl(var(--muted-foreground))]"}`}
-                  >
-                    0{index + 1}
-                  </span>
-                </div>
-                <h3 className="mt-11 text-base font-bold">{service.title}</h3>
-                <p
-                  className={`mt-3 text-xs leading-relaxed ${active ? "text-[hsl(var(--background)/.6)]" : "text-[hsl(var(--muted-foreground))]"}`}
-                >
-                  {active ? service.detail : service.copy}
-                </p>
-                <span
-                  className={`mt-7 inline-flex items-center gap-1 font-mono-ui text-[8px] font-bold uppercase tracking-wider ${active ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--primary))]"}`}
-                >
-                  {active ? t.selected : t.learn} <ChevronRight size={11} />
-                </span>
-              </button>
+              <div key={String(title)} className="flex items-center gap-3 bg-[#050d19] px-5 py-5">
+                <I className="h-4 w-4 shrink-0 text-orange-500" />
+                <div><div className="text-[9px] font-bold text-slate-300">{String(title)}</div><div className="mt-0.5 text-[7px] text-slate-600">{String(copy)}</div></div>
+              </div>
             );
           })}
         </div>
-      </div>
-    </section>
+
+        <div className="mt-8 border-y border-white/[0.055] py-7 text-center">
+          <div className="text-[7px] font-black uppercase tracking-[.2em] text-slate-700">Designed to fit leading HVAC workflows and equipment brands</div>
+          <div className="mx-auto mt-5 flex max-w-[850px] flex-wrap items-center justify-center gap-x-9 gap-y-4 text-[11px] font-black tracking-[.04em] text-slate-600">
+            {['Carrier', 'Trane', 'Lennox', 'Rheem', 'Goodman', 'American Standard'].map((brand) => <span key={brand}>{brand}</span>)}
+          </div>
+        </div>
+
+        <footer className="grid gap-6 py-8 text-[8px] text-slate-600 md:grid-cols-[1fr_auto_1fr] md:items-center">
+          <Logo />
+          <div className="max-w-[520px] text-center leading-4">Private concept demo prepared for {prospectConfig.companyName}. This page is for demonstration purposes and is not the company’s official website.</div>
+          <div className="flex flex-wrap justify-start gap-4 md:justify-end">
+            <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 text-orange-500" />{prospectConfig.phoneDisplay}</span>
+            <span>localleadforge.com</span>
+          </div>
+        </footer>
+      </section>
+    </main>
   );
 }
-
-function WhyChooseUs({ lang }: { lang: Language }) {
-  const why = translations[lang].why;
-  return (
-    <section
-      id="why"
-      className="overflow-hidden bg-[hsl(var(--secondary))] px-5 py-24 lg:px-10 lg:py-32"
-    >
-      <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
-        <div className="relative">
-          <div className="absolute -left-8 -top-8 size-48 rounded-full border border-[hsl(var(--accent)/.5)]" />
-          <div className="relative aspect-[.9] overflow-hidden rounded-[2rem] bg-[hsl(var(--primary))]">
-            <img
-              src="/images/technician.jpg"
-              alt="Technician checking air conditioning equipment"
-              className="h-full w-full object-cover mix-blend-luminosity opacity-70"
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--primary)/.5)] to-[hsl(var(--primary)/.1)]" />
-            <div className="absolute bottom-7 left-7 rounded-xl border border-[hsl(var(--background)/.2)] bg-[hsl(var(--primary)/.75)] p-4 backdrop-blur-sm">
-              <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[hsl(var(--accent))]">
-                Serving {prospectConfig.serviceArea} since
-              </p>
-              <p className="mt-1 font-display text-4xl text-[hsl(var(--background))]">
-                {prospectConfig.sinceYear}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div>
-          <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground))]">
-            {why.eyebrow}
-          </p>
-          <h2 className="mt-4 max-w-xl font-display text-5xl leading-[.93] tracking-tight text-[hsl(var(--foreground))] lg:text-7xl">
-            {why.title1}
-            <br />
-            <em className="text-[hsl(var(--primary))]">{why.title2}</em>
-          </h2>
-          <p className="mt-7 max-w-lg text-base leading-relaxed text-[hsl(var(--muted-foreground))]">
-            {why.copy}
-          </p>
-          <div className="mt-9 grid gap-5 sm:grid-cols-2">
-            {why.features.map(([n, title, copy]) => (
-              <div
-                key={n}
-                className="border-t border-[hsl(var(--border))] pt-4"
-              >
-                <div className="flex gap-4">
-                  <span className="font-mono-ui text-[10px] text-[hsl(var(--accent-foreground))]">
-                    {n}
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-[hsl(var(--foreground))]">
-                      {title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
-                      {copy}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Area({ lang }: { lang: Language }) {
-  const t = translations[lang].area;
-  const cities = translations.en.area.cities;
-  return (
-    <section id="area" className="bg-[hsl(var(--primary))] px-5 py-24 text-[hsl(var(--background))] lg:px-10 lg:py-32">
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.8fr_1.2fr]">
-        <div>
-          <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent))]">
-            {t.eyebrow}
-          </p>
-          <h2 className="mt-5 max-w-lg font-display text-5xl leading-[.9] tracking-tight lg:text-7xl">
-            {t.title1}
-            <br />
-            <em className="text-[hsl(var(--accent))]">{t.title2}</em>
-            {"title3" in t ? <><br />{t.title3}</> : null}
-          </h2>
-          <p className="mt-7 max-w-md text-sm leading-relaxed text-[hsl(var(--background)/.65)]">
-            {t.copy}
-          </p>
-          <div className="mt-8 flex items-center gap-2 text-sm font-bold text-[hsl(var(--accent))]">
-            <Phone size={15} /> {t.phone}
-          </div>
-        </div>
-        <div className="rounded-3xl border border-[hsl(var(--background)/.14)] bg-[hsl(var(--background)/.05)] p-6 lg:p-8">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {cities.map((city) => (
-              <div
-                key={city}
-                className="flex items-center gap-2 rounded-xl border border-[hsl(var(--background)/.08)] px-3 py-3 text-xs text-[hsl(var(--background)/.7)]"
-              >
-                <Pin size={12} className="text-[hsl(var(--accent))]" /> {city}
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 flex items-center justify-end gap-2 font-mono-ui text-[8px] font-bold uppercase tracking-wider text-[hsl(var(--accent))]">
-            <span className="size-1.5 animate-pulse rounded-full bg-[hsl(var(--accent))]" />
-            {t.live}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Contact({ onChat, lang }: { onChat: () => void; lang: Language }) {
-  return (
-    <section id="contact" className="bg-[hsl(var(--accent))] px-5 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
-        <div>
-          <p className="font-mono-ui text-[10px] font-bold uppercase tracking-[.22em] text-[hsl(var(--accent-foreground)/.6)]">
-            {lang === "es" ? "Listo para empezar" : "Let's get comfortable"}
-          </p>
-          <h2 className="mt-5 font-display text-6xl leading-[.84] tracking-tight text-[hsl(var(--accent-foreground))] lg:text-8xl">
-            {lang === "es" ? (
-              <>
-                Tu hogar
-                <br />
-                llamó.
-              </>
-            ) : (
-              <>
-                Your home
-                <br />
-                called.
-              </>
-            )}
-          </h2>
-          <p className="mt-7 max-w-md text-sm leading-relaxed text-[hsl(var(--accent-foreground)/.7)]">
-            {lang === "es"
-              ? `Esta sección es parte de una demo no oficial de Local Lead Forge y no envía solicitudes reales de servicio a ${prospectConfig.companyName}.`
-              : `This section is part of an unofficial Local Lead Forge demo and does not send real service requests to ${prospectConfig.companyName}.`}
-          </p>
-          <div className="mt-8 flex flex-col gap-3 text-sm font-semibold text-[hsl(var(--accent-foreground)/.72)]">
-            <span className="flex items-center gap-2">
-              <Clock3 size={15} /> {lang === "es" ? "Lun–Vie · 8:00am–5:00pm" : "Mon–Fri · 8:00am–5:00pm"}
-            </span>
-            <button onClick={onChat} className="flex items-center gap-2 text-left hover:underline">
-              {lang === "es" ? "¿Prefieres chatear? Conoce al asistente IA" : "Prefer to chat? Meet our AI assistant"}
-              <MessageCircle size={15} />
-            </button>
-          </div>
-        </div>
-        <div className="rounded-[2rem] bg-[hsl(var(--background))] p-6 shadow-xl lg:p-10">
-          <div className="mx-auto max-w-xl text-center">
-            <div className="mx-auto grid size-14 place-items-center rounded-full bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
-              <MessageCircle size={22} />
-            </div>
-            <h3 className="mt-6 font-display text-3xl text-[hsl(var(--foreground))]">
-              {lang === "es" ? "Prueba el asistente de leads con IA" : "Try the AI lead assistant"}
-            </h3>
-            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
-              {lang === "es"
-                ? "Simula un visitante que necesita HVAC para ver cómo se puede capturar y calificar el lead. Esta demo no reserva citas, no confirma precios ni solicita servicio real."
-                : "Simulate a website visitor who needs HVAC to see how a lead can be captured and qualified. This demo does not book appointments, confirm pricing, or request actual service."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onChat}
-            className="mx-auto mt-7 flex items-center justify-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3.5 text-sm font-bold text-[hsl(var(--background))] transition-transform hover:-translate-y-0.5"
-          >
-            {lang === "es" ? "Iniciar demo" : "Start demo"}
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-type ChatStep = "problem" | "location" | "timing" | "details" | "done";
-function extractContactDetails(value: string) {
-  const trimmed = value.trim();
-
-  const phoneMatch = trimmed.match(
-    /(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/,
-  );
-
-  const phone = phoneMatch?.[0]?.trim() ?? "";
-
-  let name = phoneMatch ? trimmed.replace(phoneMatch[0], "").trim() : trimmed;
-
-  name = name
-    .replace(/^[\s,;:-]+|[\s,;:-]+$/g, "")
-    .replace(/^(my name is|i am|i'm|mi nombre es|me llamo)\s+/i, "")
-    .replace(
-      /\s+(and\s+)?(my\s+)?(phone|phone number|teléfono|telefono|número|numero)\s*(is|es)?\s*$/i,
-      "",
-    )
-    .replace(/[\s,;:-]+$/g, "")
-    .trim();
-
-  return { name: name || trimmed, phone };
-}
-
-function ChatWidget({
-  open,
-  onClose,
-  lang,
-  demoEmail,
-}: {
-  open: boolean;
-  onClose: () => void;
-  lang: Language;
-  demoEmail?: string;
-}) {
-  const [step, setStep] = useState<ChatStep>("problem");
-  const [lead, setLead] = useState({
-    problem: "",
-    location: "",
-    timing: "",
-    name: "",
-    phone: "",
-  });
-  const [processing, setProcessing] = useState(false);
-  const processingRef = useRef(false);
-  const lastResponseRef = useRef<{ key: string; at: number } | null>(null);
-  const submittedLeadKey = useRef<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const chat = translations[lang].chat;
-  const [messages, setMessages] = useState<
-    Array<{ from: "bot" | "user"; text: string }>
-  >([{ from: "bot", text: chat.greeting }]);
-  const prompts = useMemo(
-    () => ({
-      problem: chat.promptProblem,
-      location: chat.promptLocation,
-      timing: chat.promptTiming,
-      details: chat.promptDetails,
-    }),
-    [chat],
-  );
-  useEffect(() => {
-    if (open)
-      setTimeout(() => document.getElementById("chat-input")?.focus(), 100);
-  }, [open]);
-  if (!open) return null;
-
-  const submitFinalizedLead = async (finalizedLead: {
-    name: string;
-    phone: string;
-    issue: string;
-    location: string;
-    timing: string;
-    language: Language;
-    demoEmail?: string;
-  }) => {
-    if (!finalizedLead.demoEmail) return;
-
-    const leadKey = JSON.stringify(finalizedLead);
-    if (submittedLeadKey.current === leadKey) return;
-    submittedLeadKey.current = leadKey;
-
-    try {
-      const response = await fetch(
-        "https://local-lead-forge-demo-mailer.localleadforgeagency.workers.dev/",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalizedLead),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Demo email failed with status ${response.status}`);
-      }
-
-      setMessages((m) => [
-        ...m,
-        {
-          from: "bot",
-          text:
-            lang === "es"
-              ? `✅ Lead de demostración enviado a ${finalizedLead.demoEmail}. Revisa tu bandeja de entrada.`
-              : `✅ Demo lead sent to ${finalizedLead.demoEmail}. Check your inbox.`,
-        },
-      ]);
-    } catch (error) {
-      submittedLeadKey.current = null;
-      console.error("Prospect demo email failed", error);
-
-      setMessages((m) => [
-        ...m,
-        {
-          from: "bot",
-          text:
-            lang === "es"
-              ? "No pude enviar el correo de demostración. Inténtalo de nuevo."
-              : "I couldn't send the demo email. Please try again.",
-        },
-      ]);
-    }
-  };
-
-  const handleUserResponse = (
-    rawValue: string,
-    event: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>,
-  ) => {
-    event.preventDefault();
-    const value = rawValue.trim();
-    if (!value || processingRef.current || step === "done") return;
-
-    const current = step;
-    const responseKey = `${current}:${value}`;
-    const now = Date.now();
-    if (
-      lastResponseRef.current?.key === responseKey &&
-      now - lastResponseRef.current.at < 1000
-    )
-      return;
-    processingRef.current = true;
-    lastResponseRef.current = { key: responseKey, at: now };
-    setProcessing(true);
-    setMessages((m) => [...m, { from: "user", text: value.trim() }]);
-    setDraft("");
-
-    if (current === "problem") {
-      setLead((l) => ({ ...l, problem: value }));
-      setStep("location");
-      setMessages((m) => [...m, { from: "bot", text: prompts.location }]);
-    }
-    if (current === "location") {
-      setLead((l) => ({ ...l, location: value }));
-      setStep("timing");
-      setMessages((m) => [...m, { from: "bot", text: prompts.timing }]);
-    }
-    if (current === "timing") {
-      setLead((l) => ({ ...l, timing: value }));
-      setStep("details");
-      setMessages((m) => [...m, { from: "bot", text: prompts.details }]);
-    }
-    if (current === "details") {
-      const { name, phone } = extractContactDetails(value);
-      const finalizedLead = {
-        name,
-        phone,
-        issue: lead.problem,
-        location: lead.location,
-        timing: lead.timing,
-        language: lang,
-      };
-      setLead((l) => ({ ...l, name, phone }));
-      setStep("done");
-      const summary = chat.finalSummary
-        .replace("{name}", name)
-        .replace(
-          "{issue}",
-          lead.problem || (lang === "es" ? "servicio HVAC" : "HVAC service"),
-        )
-        .replace(
-          "{location}",
-          lead.location || (lang === "es" ? "tu área" : "your area"),
-        )
-        .replace("{timing}", lead.timing || (lang === "es" ? "pronto" : "soon"))
-        .replace(
-          "{phone}",
-          phone || (lang === "es" ? "No proporcionado" : "Not provided"),
-        );
-      setMessages((m) => [...m, { from: "bot", text: summary }]);
-      const payload =
-        demoEmail && demoEmail.trim()
-          ? { ...finalizedLead, demoEmail: demoEmail.trim() }
-          : finalizedLead;
-      if (Object.values(finalizedLead).every(Boolean))
-        submitFinalizedLead(payload);
-
-      processingRef.current = false;
-      setProcessing(false);
-    }
-
-    if (current !== "details") {
-      window.setTimeout(() => {
-        processingRef.current = false;
-        setProcessing(false);
-      }, 350);
-    }
-  };
-  const quick =
-    step === "problem"
-      ? chat.quickProblem
-      : step === "timing"
-        ? chat.quickTiming
-        : [];
-  return (
-    <div
-      className="fixed bottom-5 right-5 z-40 w-[min(calc(100vw-2rem),390px)] overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] shadow-2xl shadow-[hsl(207_38%_16%/.22)]"
-      data-testid="widget-chat"
-    >
-      <div className="flex items-center justify-between bg-[hsl(var(--primary))] px-5 py-4 text-[hsl(var(--background))]">
-        <div className="flex items-center gap-3">
-          <div className="relative grid size-10 place-items-center rounded-full bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]">
-            <Sparkles size={18} />
-            <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-[hsl(var(--primary))] bg-emerald-400" />
-          </div>
-          <div>
-            <p className="font-bold">{chat.assistantTitle}</p>
-            <p className="font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.55)]">
-              {chat.assistantSubtitle}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          data-testid="button-chat-close"
-          className="rounded-full p-1.5 text-[hsl(var(--background)/.65)] hover:bg-[hsl(var(--background)/.12)] hover:text-[hsl(var(--background))]"
-        >
-          <X size={18} />
-        </button>
-      </div>
-      <div className="max-h-[340px] min-h-[250px] space-y-3 overflow-y-auto p-4">
-        {messages.map((message, i) => (
-          <div
-            key={`${message.text}-${i}`}
-            data-testid={`chat-message-${i}`}
-            className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.from === "user" ? "ml-auto rounded-br-sm bg-[hsl(var(--primary))] text-[hsl(var(--background))]" : "rounded-bl-sm bg-[hsl(var(--secondary))] text-[hsl(var(--foreground))]"}`}
-          >
-            {message.text}
-          </div>
-        ))}
-        {step !== "done" && quick.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {quick.map((item) => (
-              <button
-                type="button"
-                key={item}
-                onClick={(event) => handleUserResponse(item, event)}
-                disabled={processing}
-                data-testid={`button-chat-quick-${item.toLowerCase().replaceAll(" ", "-")}`}
-                className="rounded-full border border-[hsl(var(--primary)/.35)] px-3 py-1.5 text-xs font-bold text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--background))]"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {step !== "done" ? (
-        <form
-          onSubmit={(event) => handleUserResponse(draft, event)}
-          className="flex gap-2 border-t border-[hsl(var(--border))] p-3"
-        >
-          <input
-            id="chat-input"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={processing}
-            data-testid="input-chat-message"
-            className="min-w-0 flex-1 rounded-xl border border-[hsl(var(--border))] bg-transparent px-3 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))]"
-            placeholder={
-              step === "details"
-                ? chat.placeholderDetails
-                : chat.placeholderAnswer
-            }
-          />
-          <button
-            type="submit"
-            disabled={processing}
-            data-testid="button-chat-send"
-            className="grid size-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(20_87%_51%)]"
-          >
-            <Send size={16} />
-          </button>
-        </form>
-      ) : (
-        <div className="border-t border-[hsl(var(--border))] px-4 py-3 text-center text-xs text-[hsl(var(--muted-foreground))]">
-          {chat.doneNote}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Footer({ lang }: { lang: Language }) {
-  const footer = translations[lang].footer;
-  return (
-    <footer className="bg-[hsl(var(--primary))] px-5 pb-8 pt-16 text-[hsl(var(--background))] lg:px-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 border-b border-[hsl(var(--background)/.14)] pb-14 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
-          <div>
-            <Logo light />
-            <p className="mt-6 max-w-xs text-sm leading-relaxed text-[hsl(var(--background)/.6)]">
-              {footer.description}
-            </p>
-            <div className="mt-6 flex gap-3">
-              <a
-                href="https://www.instagram.com"
-                data-testid="link-instagram"
-                aria-label="Instagram"
-                className="rounded-full border border-[hsl(var(--background)/.18)] p-2.5 hover:border-[hsl(var(--accent))]"
-              >
-                <Instagram size={15} />
-              </a>
-              <a
-                href="https://www.facebook.com"
-                data-testid="link-facebook"
-                aria-label="Facebook"
-                className="rounded-full border border-[hsl(var(--background)/.18)] p-2.5 hover:border-[hsl(var(--accent))]"
-              >
-                <Facebook size={15} />
-              </a>
-            </div>
-          </div>
-          <div>
-            <p className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-[hsl(var(--accent))]">
-              {footer.explore}
-            </p>
-            <div className="mt-5 flex flex-col gap-3 text-sm text-[hsl(var(--background)/.67)]">
-              {footer.exploreLinks.map((link, index) => (
-                <a
-                  key={link}
-                  href={
-                    index === 0
-                      ? "#services"
-                      : index === 1
-                        ? "#why"
-                        : "#reviews"
-                  }
-                  data-testid={`link-footer-${index}`}
-                  className="hover:text-[hsl(var(--accent))]"
-                >
-                  {link}
-                </a>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-[hsl(var(--accent))]">
-              {footer.serviceArea}
-            </p>
-            <div className="mt-5 flex flex-col gap-3 text-sm text-[hsl(var(--background)/.67)]">
-              {footer.serviceAreaItems.map((item) => (
-                <span key={item}>{item}</span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-[hsl(var(--accent))]">
-              {footer.talk}
-            </p>
-            <span
-              data-testid="text-footer-phone"
-              className="mt-5 block text-lg font-bold"
-            >
-              {footer.phone}
-            </span>
-            <p className="mt-2 text-sm text-[hsl(var(--background)/.6)]">
-              {footer.hours}
-            </p>
-            <p className="mt-5 flex items-center gap-2 text-xs text-[hsl(var(--background)/.6)]">
-              <ShieldCheck size={15} className="text-[hsl(var(--accent))]" />{" "}
-              {footer.licensed}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap justify-between gap-4 pt-7 font-mono-ui text-[9px] uppercase tracking-wider text-[hsl(var(--background)/.4)]">
-          <span>{footer.copyright}</span>
-          <span>{footer.tagline}</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-function Home() {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [lang, setLang] = useState<Language>("en");
-  const [demoEmail, setDemoEmail] = useState<string>("");
-  const [demoExpanded, setDemoExpanded] = useState(false);
-  const [demoError, setDemoError] = useState<string | null>(null);
-  const request = () =>
-    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
-
-  const startDemo = () => {
-    const email = demoEmail.trim().toLowerCase();
-    const re = /^\S+@\S+\.\S+$/;
-    const allowedTestEmails = [
-      "info@localleadforge.com",
-      "localleadforgeagency@gmail.com",
-    ];
-
-    if (!re.test(email)) {
-      setDemoError(
-        lang === "es"
-          ? "Introduce un correo válido."
-          : "Please enter a valid email.",
-      );
-      return;
-    }
-
-    if (
-      !email.endsWith(`@${prospectConfig.emailDomain}`) &&
-      !allowedTestEmails.includes(email)
-    ) {
-      setDemoError(
-        lang === "es"
-          ?  `Para esta demo, utiliza un correo @${prospectConfig.emailDomain}.`
-          :  `For this demo, please use an @${prospectConfig.emailDomain} email address.`,
-      );
-      return;
-    }
-
-    setDemoError(null);
-    setDemoExpanded(false);
-    setChatOpen(true);
-  };
-
-  return (
-    <div className="noise min-h-[100dvh] bg-[hsl(var(--background))]">
-      <div className="bg-black px-4 py-2 text-center text-xs font-medium text-white">
-        {lang === "es"
-          ?  `Demo de ventas no oficial creado por Local Lead Forge. Local Lead Forge no está afiliado, respaldado ni autorizado por ${prospectConfig.companyName}. No utilices esta demo para solicitar servicio HVAC real. Introduce un correo @${prospectConfig.emailDomain} para recibir el lead de demostración.`
-          :  `Unofficial sales demo created by Local Lead Forge. Local Lead Forge is not affiliated with, endorsed by, or authorized by ${prospectConfig.companyName}. Do not use this demo to request actual HVAC service. Enter an @${prospectConfig.emailDomain} email address to receive the demo lead directly in your inbox.`}
-      </div>
-      <Header
-        onChat={() => setChatOpen(true)}
-        language={lang}
-        onLanguageChange={(nextLang) => {
-          setLang(nextLang);
-          setDemoError(null);
-        }}
-      />
-      <main>
-        <Hero
-          onChat={() => setChatOpen(true)}
-          onRequest={request}
-          language={lang}
-        />
-        <Services lang={lang} />
-        <WhyChooseUs lang={lang} />
-        <Area lang={lang} />
-        <Contact onChat={() => setChatOpen(true)} lang={lang} />
-      </main>
-      <Footer lang={lang} />
-
-      <div
-        className={`fixed bottom-5 right-24 z-30 flex items-center gap-2 ${
-          demoExpanded ? "left-5" : ""
-        } sm:bottom-20 sm:right-5 sm:left-auto`}
-      >
-        <input
-          value={demoEmail}
-          onChange={(e) => {
-            setDemoEmail(e.target.value);
-            setDemoError(null);
-          }}
-          placeholder={translations[lang].demo.placeholder}
-          data-testid="input-demo-email"
-          className={`${demoExpanded ? "block" : "hidden"} min-w-0 flex-1 rounded-full px-3 py-2 text-sm shadow-sm sm:block sm:flex-none`}
-        />
-        <button
-          onClick={() => {
-            const isMobile = window.matchMedia("(max-width: 639px)").matches;
-            if (isMobile && !demoExpanded) {
-              setDemoExpanded(true);
-              return;
-            }
-            startDemo();
-          }}
-          data-testid="button-demo-start"
-          className="shrink-0 rounded-full bg-[hsl(var(--accent))] px-4 py-2 text-sm font-bold text-[hsl(var(--accent-foreground))]"
-        >
-          {translations[lang].demo.button}
-        </button>
-      </div>
-      {demoError && (
-        <div className="fixed bottom-16 left-5 right-24 z-40 text-center text-xs text-red-500 sm:left-auto sm:right-5 sm:text-left">
-          {demoError}
-        </div>
-      )}
-
-      <button
-        onClick={() => setChatOpen(true)}
-        data-testid="button-chat-open"
-        aria-label={translations[lang].headerChat}
-        className={`fixed bottom-5 right-5 z-30 flex items-center gap-3 rounded-full bg-[hsl(var(--accent))] px-4 py-3 font-bold text-[hsl(var(--accent-foreground))] shadow-xl shadow-[hsl(20_87%_30%/.2)] transition-all hover:-translate-y-1 ${chatOpen ? "pointer-events-none scale-0 opacity-0" : "scale-100 opacity-100"}`}
-      >
-        <span className="grid size-8 place-items-center rounded-full bg-[hsl(var(--accent-foreground)/.12)]">
-          <MessageCircle size={18} />
-        </span>
-        <span className="hidden text-sm sm:block">
-          {translations[lang].headerChat}
-        </span>
-      </button>
-
-      <ChatWidget
-        open={chatOpen}
-        onClose={() => setChatOpen(false)}
-        lang={lang}
-        demoEmail={demoEmail}
-      />
-    </div>
-  );
-}
-function Router() {
-  return (
-    <ErrorBoundary resetKey={useLocation()[0]}>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route component={NotFound} />
-      </Switch>
-    </ErrorBoundary>
-  );
-}
-
-const rawRouterBase = import.meta.env.BASE_URL;
-const routerBase =
-  rawRouterBase === "/" || rawRouterBase === "./"
-    ? ""
-    : rawRouterBase.replace(/\/$/, "");
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={routerBase}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
-export default App;

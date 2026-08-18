@@ -1,0 +1,14 @@
+{
+  "companyName": "Wade Heating & Air Conditioning",
+  "shortName": "Wade Heating & Air",
+  "website": "https://localleadforge.com/wade-demo/",
+  "emailDomain": "wadeheating.com",
+  "phoneDisplay": "(470) 412-7106",
+  "serviceArea": "Georgia's West Metro Area",
+  "demoRoute": "wade-demo",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true
+  }
+}

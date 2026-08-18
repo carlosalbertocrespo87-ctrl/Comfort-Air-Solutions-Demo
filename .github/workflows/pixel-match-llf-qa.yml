@@ -1,0 +1,118 @@
+name: LLF Pixel Match QA
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/**"
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/**"
+      - "scripts/build-generic-pages-demos.mjs"
+      - ".github/workflows/pixel-match-llf-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck official LLF page
+        run: pnpm --dir artifacts/local-lead-forge run typecheck
+
+      - name: Build official LLF page
+        run: pnpm --dir artifacts/local-lead-forge run build
+
+      - name: Configure ASAP prospect demo
+        run: pnpm --dir artifacts/hvac-prospect-template run configure:asap
+
+      - name: Verify prospect injection
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          grep -q 'ASAP Heating & Air Conditioning' "$APP"
+          grep -q 'A Better Way to Turn Website Visitors' "$APP"
+          grep -q 'Founding Client Offer' "$APP"
+          if grep -q 'PROSPECT HVAC COMPANY\|TARGET SERVICE AREA\|prospectcompany.com' "$APP"; then
+            echo "Generic prospect placeholders remain after configuration" >&2
+            exit 1
+          fi
+
+      - name: Typecheck demo master
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build configured demo
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template run build
+
+      - name: Install Chromium for render QA
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Capture official desktop and mobile renders
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-artifacts
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/local-lead-forge/dist/public > /tmp/llf-official.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2048,1152" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4173/ qa-artifacts/llf-official-mobile.png
+          kill $server_pid
+          trap - EXIT
+
+      - name: Capture demo desktop and mobile renders
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4174 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/llf-demo.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4174/ >/dev/null; then break; fi
+            sleep 1
+          done
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="2048,1152" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-desktop.png
+          pnpm dlx playwright@1.55.0 screenshot --browser=chromium --viewport-size="390,844" --full-page http://127.0.0.1:4174/ qa-artifacts/llf-demo-mobile.png
+          kill $server_pid
+          trap - EXIT
+
+      - name: Upload render QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: llf-pixel-match-renders
+          path: qa-artifacts/*.png
+          if-no-files-found: error
+
+      - name: Verify every published demo builds from the unified master
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- artifacts/hvac-prospect-template/src/App.tsx artifacts/hvac-prospect-template/index.html artifacts/hvac-prospect-template/public/robots.txt
+          node scripts/build-generic-pages-demos.mjs

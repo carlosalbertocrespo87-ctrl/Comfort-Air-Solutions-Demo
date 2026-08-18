@@ -1,0 +1,14 @@
+{
+  "companyName": "ComfortAir Solutions",
+  "shortName": "ComfortAir",
+  "website": "https://localleadforge.com/comfortair-demo/",
+  "emailDomain": "comfortair.demo",
+  "phoneDisplay": "(470) 555-0124",
+  "serviceArea": "Metro Atlanta",
+  "demoRoute": "comfortair-demo",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true
+  }
+}
