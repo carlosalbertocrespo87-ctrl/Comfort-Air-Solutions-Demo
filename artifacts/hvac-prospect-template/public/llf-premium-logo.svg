@@ -45,7 +45,11 @@
     <text x="358" y="94" fill="url(#silver)" stroke="#3b4655" stroke-width="0.9"
       font-family="Arial Narrow, Arial, sans-serif" font-size="34" font-style="italic" font-weight="800"
       letter-spacing="1.2">LOCAL LEAD FORGE</text>
-    <text x="360" y="147" fill="#ff6a00" font-family="Arial, sans-serif" font-size="23" font-weight="700"
-      letter-spacing="0.1">Turn more visitors into booked jobs.</text>
+    <g transform="translate(330 0)">
+      <g transform="scale(0.78 1)">
+        <text x="0" y="151" fill="#ff6a00" font-family="Arial, sans-serif" font-size="30" font-weight="800"
+          letter-spacing="0.15">Turn more visitors into booked jobs.</text>
+      </g>
+    </g>
   </g>
 </svg>
