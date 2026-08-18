@@ -1,0 +1,32 @@
+{
+  "companyName": "A.R. Sims Heating & Air Conditioning Inc.",
+  "shortName": "A.R. Sims Heating & Air",
+  "website": "https://arsimshvac.com",
+  "emailDomain": "arsimshvac.com",
+  "publicEmail": "Arnola@Arsimshvac.com",
+  "phoneDisplay": "770-545-8530",
+  "serviceArea": "Gwinnett County & Metro Atlanta",
+  "demoRoute": "ar-sims-heating-air-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "Heating and air conditioning repair",
+    "HVAC installation and replacement"
+  ],
+  "verifiedHighlights": [
+    "Official site describes A.R. Sims as a family-owned and operated HVAC company in Lawrenceville serving Gwinnett County and Metro Atlanta.",
+    "Official site describes more than 30 years of HVAC industry experience and residential plus commercial service.",
+    "Official site publishes 770-545-8530 and Arnola@Arsimshvac.com and currently uses a conventional contact/scheduling form."
+  ],
+  "opportunity": "Complement the existing contact form with a faster bilingual EN/ES conversational qualification option for website visitors and after-hours inquiries.",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  },
+  "sourceReviewDate": "2026-08-16"
+}
