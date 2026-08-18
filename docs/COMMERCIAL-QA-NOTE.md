@@ -1,0 +1,1 @@
+Commercial QA changes in this branch are limited to readability and documentation. They do not authorize or trigger external contact.
