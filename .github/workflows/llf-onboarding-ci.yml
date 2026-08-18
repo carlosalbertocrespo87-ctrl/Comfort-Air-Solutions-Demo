@@ -45,11 +45,58 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Validate Local Lead Forge
+        id: validate
+        shell: bash
+        run: |
+          set +e
 
-      - name: Typecheck Local Lead Forge
-        run: pnpm --filter @workspace/comfortair-solutions run typecheck
+          pnpm install --frozen-lockfile > llf-ci-install.log 2>&1
+          install_status=$?
 
-      - name: Build Local Lead Forge
-        run: pnpm --filter @workspace/comfortair-solutions run build
+          if [ "$install_status" -eq 0 ]; then
+            pnpm --filter @workspace/comfortair-solutions run typecheck > llf-ci-typecheck.log 2>&1
+            typecheck_status=$?
+            pnpm --filter @workspace/comfortair-solutions run build > llf-ci-build.log 2>&1
+            build_status=$?
+          else
+            typecheck_status=99
+            build_status=99
+            echo "Skipped because dependency installation failed." > llf-ci-typecheck.log
+            echo "Skipped because dependency installation failed." > llf-ci-build.log
+          fi
+
+          {
+            echo "install_status=$install_status"
+            echo "typecheck_status=$typecheck_status"
+            echo "build_status=$build_status"
+          } | tee llf-ci-summary.txt
+
+          echo "install_status=$install_status" >> "$GITHUB_OUTPUT"
+          echo "typecheck_status=$typecheck_status" >> "$GITHUB_OUTPUT"
+          echo "build_status=$build_status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload LLF validation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llf-onboarding-ci-diagnostics
+          path: |
+            llf-ci-install.log
+            llf-ci-typecheck.log
+            llf-ci-build.log
+            llf-ci-summary.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Enforce validation result
+        if: always()
+        shell: bash
+        run: |
+          if [ "${{ steps.validate.outputs.install_status }}" != "0" ] || \
+             [ "${{ steps.validate.outputs.typecheck_status }}" != "0" ] || \
+             [ "${{ steps.validate.outputs.build_status }}" != "0" ]; then
+            echo "LLF validation failed. Download the llf-onboarding-ci-diagnostics artifact for exact logs."
+            exit 1
+          fi
