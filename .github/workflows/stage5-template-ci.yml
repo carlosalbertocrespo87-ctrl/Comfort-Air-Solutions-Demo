@@ -1,0 +1,64 @@
+name: Stage 5 Template CI
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/hvac-prospect-template/**"
+      - "artifacts/prospect-configs/llf-test-hvac.json"
+      - ".github/workflows/stage5-template-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage5:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply intake v3 dry-run configuration
+        run: node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs llf-test-hvac
+
+      - name: Validate intake v3 configuration contract
+        run: node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs llf-test-hvac
+
+      - name: Typecheck configured master
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build configured master
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
+
+      - name: Safety assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="artifacts/hvac-prospect-template/src/App.tsx"
+          grep -q 'LLF Test HVAC LLC' "$APP"
+          grep -q 'clientOperationalConfig' "$APP"
+          grep -q 'Mon-Fri 8:00 AM-6:00 PM' "$APP"
+          grep -q 'info@localleadforge.com' "$APP"
+          grep -q 'AC Repair' "$APP"
+          if grep -Eiq 'href[[:space:]]*=[[:space:]]*.*tel:' "$APP"; then
+            echo "Clickable tel link detected" >&2
+            exit 1
+          fi
+          echo "Stage 5 configuration and safety assertions passed."
