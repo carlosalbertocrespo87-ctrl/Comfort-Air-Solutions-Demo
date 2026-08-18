@@ -1,11 +1,26 @@
 {
   "companyName": "Wade Heating & Air Conditioning",
   "shortName": "Wade Heating & Air",
-  "website": "https://localleadforge.com/wade-demo/",
+  "website": "https://www.wadeheatingandair.com",
   "emailDomain": "wadeheating.com",
   "phoneDisplay": "(470) 412-7106",
   "serviceArea": "Georgia's West Metro Area",
   "demoRoute": "wade-demo",
+  "verifiedServices": [
+    "Air conditioning repair and maintenance",
+    "Heating repair and maintenance",
+    "Heat pumps",
+    "Indoor air quality",
+    "New HVAC installations",
+    "Commercial heating and air services"
+  ],
+  "verifiedHighlights": [
+    "Official site describes Wade Heating & Air Conditioning as a local, family-owned HVAC company established in 1971.",
+    "Official site lists residential and commercial HVAC repair, maintenance and installation services across Georgia's West Metro Area.",
+    "Official site publishes (470) 412-7106, weekday business hours and after-hours emergency service availability."
+  ],
+  "opportunity": "Complement Wade's existing request forms with a concise bilingual conversational qualification flow while preserving the company's established phone and service workflow.",
+  "sourceReviewDate": "2026-08-18",
   "demoRules": {
     "unofficialDemo": true,
     "noindex": true,
