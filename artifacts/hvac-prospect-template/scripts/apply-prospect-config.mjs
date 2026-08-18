@@ -71,6 +71,25 @@ for (const [from, to] of replacements) {
   }
 }
 
+// Intake/config-driven service choices. Existing prospect configs already carry
+// verifiedServices; use up to four verified labels instead of a fixed HVAC list.
+const defaultServices = ["AC not cooling", "Heating issue", "Maintenance", "New system"];
+const configuredServices = Array.isArray(config.verifiedServices) && config.verifiedServices.length
+  ? config.verifiedServices.slice(0, 4).map(String)
+  : defaultServices;
+const defaultServiceLiteral = '["AC not cooling", "Heating issue", "Maintenance", "New system"]';
+const configuredServiceLiteral = JSON.stringify(configuredServices);
+if (source.includes(defaultServiceLiteral)) {
+  source = source.replace(defaultServiceLiteral, configuredServiceLiteral);
+}
+
+// Private sales demos may show a verified public number as text, but must not
+// provide a live call action that could be confused with the prospect's site.
+source = source.replace(
+  /<a href=\{`tel:\$\{prospectConfig\.phoneDisplay\.replace\(\/\[\^\+\\d\]\/g, ""\)\}`\} className="([^"]+)">\s*<MailCheck className="h-3\.5 w-3\.5" \/> Send to \{prospectConfig\.shortName\} Team\s*<\/a>/m,
+  '<div className="$1" aria-label={`Demo lead delivery preview for ${prospectConfig.shortName}`}>\n        <MailCheck className="h-3.5 w-3.5" /> Send to {prospectConfig.shortName} Team\n      </div>'
+);
+
 fs.writeFileSync(appPath, source);
 
 let html = fs.readFileSync(indexPath, "utf8");
@@ -85,3 +104,4 @@ fs.writeFileSync(indexPath, html);
 fs.writeFileSync(robotsPath, "User-agent: *\nDisallow: /\n");
 
 console.log(`Applied private-demo configuration for ${config.companyName} (${slug}).`);
+console.log(`Configured service choices: ${configuredServices.join(" | ")}`);
