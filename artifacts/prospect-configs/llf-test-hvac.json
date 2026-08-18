@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 3,
+  "companyName": "LLF Test HVAC LLC",
+  "shortName": "LLF Test HVAC",
+  "website": "https://example.com",
+  "emailDomain": "example.com",
+  "phoneDisplay": "(470) 555-0101",
+  "serviceArea": "Lawrenceville, Grayson, Snellville & surrounding areas",
+  "sinceYear": "2026",
+  "primaryServices": [
+    "AC Repair",
+    "Heating Repair",
+    "HVAC Maintenance",
+    "System Replacement"
+  ],
+  "businessHours": "Mon-Fri 8:00 AM-6:00 PM; Sat 9:00 AM-2:00 PM; Sun closed",
+  "languages": ["en", "es"],
+  "faqs": [
+    {
+      "question": "Do you offer same-day HVAC service?",
+      "answer": "Same-day availability depends on current technician capacity. The assistant may collect urgency but must not promise an appointment time."
+    },
+    {
+      "question": "Which areas do you serve?",
+      "answer": "Lawrenceville, Grayson, Snellville and nearby approved service areas."
+    }
+  ],
+  "leadRouting": {
+    "primaryEmail": "info@localleadforge.com",
+    "backupEmail": "localleadforgeagency@gmail.com"
+  },
+  "guardrails": {
+    "pricingPromises": false,
+    "appointmentPromises": false,
+    "serviceAvailabilityPromises": false,
+    "emergencyAdvice": "For immediate danger, gas smell, fire, or medical emergency, direct the visitor to 911 or the appropriate emergency service. Do not provide unapproved technical safety instructions."
+  },
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
