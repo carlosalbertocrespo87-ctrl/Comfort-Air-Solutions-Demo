@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 200" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 200" role="img" aria-labelledby="title desc">
   <title id="title">Local Lead Forge</title>
   <desc id="desc">LLF premium logo with orange rocket and the slogan Turn more visitors into booked jobs.</desc>
   <defs>
@@ -42,10 +42,10 @@
       <path d="M49 118 L65 97 L78 112 L60 136 Z" fill="#ff8a00" stroke="#ffbf58" stroke-width="1.8"/>
     </g>
 
-    <text x="374" y="94" fill="url(#silver)" stroke="#3b4655" stroke-width="1"
-      font-family="Arial Narrow, Arial, sans-serif" font-size="39" font-style="italic" font-weight="800"
-      letter-spacing="2">LOCAL LEAD FORGE</text>
-    <text x="378" y="137" fill="#ff6a00" font-family="Arial, sans-serif" font-size="18" font-weight="600"
-      letter-spacing="0.3">Turn more visitors into booked jobs.</text>
+    <text x="358" y="94" fill="url(#silver)" stroke="#3b4655" stroke-width="0.9"
+      font-family="Arial Narrow, Arial, sans-serif" font-size="34" font-style="italic" font-weight="800"
+      letter-spacing="1.2">LOCAL LEAD FORGE</text>
+    <text x="362" y="136" fill="#ff6a00" font-family="Arial, sans-serif" font-size="15" font-weight="600"
+      letter-spacing="0.2">Turn more visitors into booked jobs.</text>
   </g>
 </svg>
