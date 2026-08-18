@@ -55,9 +55,9 @@ jobs:
           install_status=$?
 
           if [ "$install_status" -eq 0 ]; then
-            pnpm --filter @workspace/comfortair-solutions run typecheck > llf-ci-typecheck.log 2>&1
+            pnpm --dir artifacts/local-lead-forge run typecheck > llf-ci-typecheck.log 2>&1
             typecheck_status=$?
-            pnpm --filter @workspace/comfortair-solutions run build > llf-ci-build.log 2>&1
+            pnpm --dir artifacts/local-lead-forge run build > llf-ci-build.log 2>&1
             build_status=$?
           else
             typecheck_status=99
