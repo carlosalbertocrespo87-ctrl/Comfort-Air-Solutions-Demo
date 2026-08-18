@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "business": {
+    "companyName": "LLF Test HVAC LLC",
+    "shortName": "LLF Test HVAC",
+    "website": "https://example.com",
+    "emailDomain": "example.com",
+    "phoneDisplay": "(678) 555-0100",
+    "serviceAreas": ["Lawrenceville, GA", "Gwinnett County, GA"],
+    "sinceYear": "2018"
+  },
+  "brand": {
+    "logoSource": "client-approved",
+    "primaryMessage": "Fast, professional HVAC help for local homeowners.",
+    "approvedClaims": [],
+    "prohibitedClaims": []
+  },
+  "services": {
+    "offered": ["AC repair", "Heating repair", "Maintenance", "System replacement"],
+    "notOffered": [],
+    "priorityServices": ["No cooling", "No heat"],
+    "emergencyDefinition": "Loss of heating or cooling when health or property may be at risk"
+  },
+  "operations": {
+    "businessHours": "Mon-Fri 8:00 AM-6:00 PM",
+    "afterHoursBehavior": "Capture and qualify the lead; do not promise same-day service.",
+    "languages": ["en", "es"],
+    "serviceAreaRule": "Collect city or ZIP and flag requests outside approved service areas."
+  },
+  "assistant": {
+    "collect": ["problem", "cityOrZip", "urgency", "name", "phone", "emailWhenAppropriate"],
+    "allowedActions": ["answer approved FAQs", "qualify lead", "collect contact information", "route lead"],
+    "neverPromise": ["price", "appointment time", "technician availability", "warranty coverage", "financing approval"],
+    "escalationRule": "For safety-critical, uncertain, or unsupported questions, collect contact details and route to the business."
+  },
+  "leadDelivery": {
+    "primaryEmail": "approved-recipient@example.com",
+    "backupEmail": null,
+    "includeFields": ["name", "phone", "email", "problem", "cityOrZip", "urgency", "language", "source"]
+  },
+  "content": {
+    "faqs": [],
+    "promotions": [],
+    "testimonials": [],
+    "notes": []
+  },
+  "privacy": {
+    "clientAuthorizedLeadCollection": true,
+    "sensitiveDataProhibited": ["passwords", "apiKeys", "banking", "ssn", "identityDocuments", "recoveryCodes"]
+  },
+  "deployment": {
+    "mode": "test",
+    "noindex": true,
+    "realPaymentsEnabled": false,
+    "realServiceRequestsEnabled": false
+  }
+}
