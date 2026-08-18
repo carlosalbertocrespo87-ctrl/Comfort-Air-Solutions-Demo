@@ -18,8 +18,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       header a[aria-label="Local Lead Forge home"] {
-        width: 320px;
-        height: 70px;
+        width: 390px;
+        height: 86px;
         flex: 0 0 auto;
         gap: 0 !important;
         background: url("./llf-premium-logo.svg") left center / contain no-repeat;
@@ -27,10 +27,30 @@
       header a[aria-label="Local Lead Forge home"] > * {
         display: none !important;
       }
+      footer a[aria-label="Local Lead Forge home"] {
+        width: 300px;
+        height: 74px;
+        flex: 0 0 auto;
+        gap: 0 !important;
+        background: url("./llf-premium-logo.svg") left center / contain no-repeat;
+      }
+      footer a[aria-label="Local Lead Forge home"] > * {
+        display: none !important;
+      }
+      @media (min-width: 641px) {
+        header > div {
+          min-height: 96px !important;
+        }
+      }
       @media (max-width: 640px) {
         header a[aria-label="Local Lead Forge home"] {
-          width: 225px;
-          height: 58px;
+          width: 235px;
+          height: 62px;
+        }
+        footer a[aria-label="Local Lead Forge home"] {
+          width: 245px;
+          height: 62px;
+          margin-inline: auto;
         }
       }
     </style>
