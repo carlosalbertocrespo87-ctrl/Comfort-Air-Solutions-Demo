@@ -53,7 +53,8 @@ jobs:
         run: pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
 
       - name: Install Chromium
-        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+        timeout-minutes: 10
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
 
       - name: Start built-site server
         shell: bash
