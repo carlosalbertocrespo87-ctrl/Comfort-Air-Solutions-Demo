@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Local Lead Forge</title>
+  <desc id="desc">Turn more visitors into booked jobs with bilingual AI lead capture.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05080d"/>
+      <stop offset="0.58" stop-color="#0b111b"/>
+      <stop offset="1" stop-color="#15100b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="78%" cy="25%" r="62%">
+      <stop offset="0" stop-color="#ff7200" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#ff7200" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ff7200" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff9a20"/>
+      <stop offset="1" stop-color="#f45100"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="32" fill="url(#background)"/>
+  <rect width="1200" height="630" rx="32" fill="url(#glow)"/>
+  <rect x="1.5" y="1.5" width="1197" height="627" rx="30.5" fill="none" stroke="#38404c" stroke-width="3"/>
+  <rect x="72" y="76" width="7" height="478" rx="3.5" fill="url(#line)"/>
+  <image href="llf-premium-logo.svg" x="117" y="82" width="820" height="200"/>
+  <text x="125" y="370" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" letter-spacing="-1.5">AI lead capture that works</text>
+  <text x="125" y="438" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" letter-spacing="-1.5">while you run the business.</text>
+  <text x="125" y="505" fill="#aeb6c2" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="500">Bilingual qualification · Faster follow-up · Streamlined delivery</text>
+  <rect x="867" y="477" width="264" height="58" rx="29" fill="#ff6900"/>
+  <text x="999" y="513" fill="#ffffff" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="800" letter-spacing="0.4">LOCALLEADFORGE.COM</text>
+</svg>
