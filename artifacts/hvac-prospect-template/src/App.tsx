@@ -35,6 +35,7 @@ type Language = "en" | "es";
 
 // These literal defaults are intentionally kept stable: the demo factory replaces
 // them from artifacts/prospect-configs/<slug>.json before each prospect build.
+// Any copy-only change here must remain compatible with the shared prospect injector.
 const prospectConfig = {
   companyName: "PROSPECT HVAC COMPANY",
   shortName: "PROSPECT HVAC",
