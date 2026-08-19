@@ -1,0 +1,59 @@
+name: LLF Production Root Smoke
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/**"
+      - ".github/workflows/llf-production-root-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-root:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Local Lead Forge production root
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          url="https://localleadforge.com/"
+          expected_title='<title>Local Lead Forge | AI Lead Capture for Local Service Businesses</title>'
+          expected_description='Local Lead Forge helps local service businesses capture and qualify website leads with a bilingual AI assistant and streamlined lead delivery.'
+          failures=0
+          ok=0
+
+          for attempt in {1..12}; do
+            echo "Production root check attempt ${attempt}/12"
+            headers=$(mktemp)
+            body=$(mktemp)
+
+            if curl --fail --silent --show-error --location --max-time 20 \
+              --dump-header "$headers" --output "$body" "$url"; then
+              final_code=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}' "$headers")
+              if [ "$final_code" = "200" ] \
+                && grep -Fq "$expected_title" "$body" \
+                && grep -Fq "$expected_description" "$body" \
+                && grep -Fq 'name="robots" content="index, follow"' "$body" \
+                && ! grep -Fqi 'ComfortAir Solutions' "$body" \
+                && ! grep -Fqi 'built on Replit' "$body"; then
+                ok=1
+                rm -f "$headers" "$body"
+                break
+              fi
+            fi
+
+            rm -f "$headers" "$body"
+            sleep 5
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Production root did not converge to the expected LLF metadata and indexable state."
+            exit 1
+          fi
+
+          echo "Production root verified: HTTPS request succeeded, HTTP 200, current LLF title/description present, index/follow present, and stale ComfortAir/Replit metadata absent."
