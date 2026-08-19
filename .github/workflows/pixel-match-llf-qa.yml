@@ -68,7 +68,8 @@ jobs:
         run: pnpm --dir artifacts/hvac-prospect-template run build
 
       - name: Install Chromium for render QA
-        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+        timeout-minutes: 10
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
 
       - name: Capture official desktop and mobile renders
         shell: bash

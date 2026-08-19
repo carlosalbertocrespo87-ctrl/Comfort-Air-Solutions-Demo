@@ -30,7 +30,7 @@ test('generic private demo passes desktop visual and bilingual assistant QA', as
   ).toBeVisible();
   await expect(page.getByText('Captured Lead', { exact: true })).toBeVisible();
   await expect(page.getByText('Founding Client Offer', { exact: true })).toBeVisible();
-  await expect(page.getByText('Your Potential Results with Local Lead Forge')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'See how the lead flow is designed to work.' })).toBeVisible();
 
   const assistant = page.locator('#assistant');
   await expect(assistant).toBeVisible();
