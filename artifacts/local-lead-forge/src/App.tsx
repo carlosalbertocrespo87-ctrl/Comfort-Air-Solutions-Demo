@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 const ORANGE = "#ff6a00";
+const DEMO_REQUEST_URL = "mailto:localleadforceagency@gmail.com?subject=Local%20Lead%20Forge%20Demo%20Request";
 
 const features = [
   {
@@ -271,7 +272,7 @@ export default function App() {
             <a className="transition hover:text-orange-400" href="#about">About</a>
           </nav>
 
-          <OrangeButton href="#pricing">Book a Demo</OrangeButton>
+          <OrangeButton href={DEMO_REQUEST_URL}>Request a Demo</OrangeButton>
         </div>
       </header>
 
@@ -293,7 +294,7 @@ export default function App() {
           <div className="mt-8 flex flex-wrap gap-3">
             <OrangeButton href="#how-it-works">See How It Works</OrangeButton>
             <a href="#solutions" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/[0.14] bg-white/[0.025] px-6 py-3 text-sm font-bold text-slate-200 transition hover:border-orange-500/40 hover:bg-orange-500/[0.05] hover:text-white">
-              <Play className="h-4 w-4 fill-current" /> Watch 90-Second Demo
+              <Play className="h-4 w-4 fill-current" /> Explore the Lead Flow
             </a>
           </div>
 
@@ -373,7 +374,15 @@ export default function App() {
               ))}
             </div>
 
-            <div className="mt-8"><OrangeButton href="#about">Start With Local Lead Forge</OrangeButton></div>
+            <div className="mt-8">
+              <OrangeButton href={DEMO_REQUEST_URL}>Start With Local Lead Forge</OrangeButton>
+              <p className="mt-3 text-[10px] text-slate-500">
+                Questions?{" "}
+                <a className="font-semibold text-orange-400 transition hover:text-orange-300" href="mailto:localleadforceagency@gmail.com">
+                  localleadforceagency@gmail.com
+                </a>
+              </p>
+            </div>
           </article>
 
           <article id="results" className="rounded-2xl border border-white/[0.09] bg-[#07111f]/95 p-7 sm:p-9">
