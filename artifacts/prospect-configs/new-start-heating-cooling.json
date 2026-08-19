@@ -1,0 +1,31 @@
+{
+  "companyName": "New Start Heating & Cooling",
+  "shortName": "New Start Heating & Cooling",
+  "website": "https://www.newstarthvac.com/",
+  "emailDomain": "newstarthvac.com",
+  "phoneDisplay": "(770) 268-0470",
+  "serviceArea": "Greater West Atlanta, including Douglas, Carroll, Coweta, Paulding and Fulton County service areas",
+  "demoRoute": "new-start-heating-cooling-demo",
+  "verifiedServices": [
+    "Residential and commercial HVAC repair and replacement",
+    "HVAC maintenance",
+    "Heating and furnace installation and repair",
+    "Air conditioning installation and repair",
+    "Boiler and hot-water system service"
+  ],
+  "verifiedHighlights": [
+    "The official website states New Start Heating & Air was founded in 2007 and remains under the same ownership.",
+    "The official website identifies the owner as Tom and states that he brings decades of HVAC knowledge and experience.",
+    "The official website publishes phone number 770-268-0470 and describes the company as locally owned, licensed and insured for residential and commercial HVAC work."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
