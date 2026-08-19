@@ -1,0 +1,30 @@
+{
+  "companyName": "Arcadia HVAC",
+  "shortName": "Arcadia HVAC",
+  "website": "https://www.arcadiahvac.com/",
+  "emailDomain": "arcadiahvac.com",
+  "phoneDisplay": "(770) 814-6220",
+  "serviceArea": "Duluth and surrounding North Metro Atlanta communities",
+  "demoRoute": "arcadia-hvac-demo",
+  "verifiedServices": [
+    "Air conditioning",
+    "Heating",
+    "Ductless AC",
+    "Indoor air quality and maintenance"
+  ],
+  "verifiedHighlights": [
+    "The official contact page lists Arcadia HVAC at 3288 Duluth Highway, Duluth, Georgia 30096.",
+    "The official website publishes phone number 770-814-6220 and license number 2017001019.",
+    "The official website lists service areas across North Metro Atlanta including Duluth, Lawrenceville, Grayson, Snellville, Suwanee and nearby communities."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
