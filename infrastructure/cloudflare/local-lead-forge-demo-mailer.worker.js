@@ -169,7 +169,7 @@ function welcomeEmailHtml(customerName, onboardingUrl) {
   <div style="max-width:640px;margin:0 auto;background:#0b1728;border:1px solid #26364b;border-radius:16px;overflow:hidden">
     <div style="padding:28px 30px;border-bottom:2px solid #ff6a00;background:linear-gradient(135deg,#07111f,#0b1728)">
       <div style="font-size:26px;font-weight:800;letter-spacing:.02em"><span style="color:#fff">LLF</span><span style="color:#ff6a00">↗</span> <span style="font-size:16px;font-weight:600;color:#eaf0f7">LOCAL LEAD FORGE</span></div>
-      <div style="margin-top:8px;color:#ff8a34;font-size:14px">Turn more visitors into booked jobs.</div>
+      <div style="margin-top:8px;color:#ff8a34;font-size:14px">Turn more visitors into qualified leads.</div>
     </div>
     <div style="padding:32px 30px">
       <h1 style="margin:0 0 16px;font-size:25px;color:#fff">Welcome to Local Lead Forge</h1>
@@ -520,8 +520,8 @@ async function handleOnboarding(request, env, origin) {
         to: [data.authorizedContactEmail],
         reply_to: "info@localleadforge.com",
         subject: "We Received Your Local Lead Forge Setup Information",
-        text: `Hi ${data.authorizedContactName},\n\nWe received your business intake for ${data.legalBusinessName}. Your project is now moving into review and configuration. If anything essential is missing, we’ll contact you before the production clock starts.\n\nLocal Lead Forge\nTurn more visitors into booked jobs.`,
-        html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172033"><h2 style="color:#0b1728">Information received</h2><p>Hi ${clean(data.authorizedContactName)},</p><p>We received your business intake for <strong>${clean(data.legalBusinessName)}</strong>. Your project is now moving into review and configuration.</p><p>If anything essential is missing, we’ll contact you before the production clock starts.</p><p style="margin-top:28px"><strong>Local Lead Forge</strong><br><span style="color:#ff6a00">Turn more visitors into booked jobs.</span></p></div>`,
+        text: `Hi ${data.authorizedContactName},\n\nWe received your business intake for ${data.legalBusinessName}. Your project is now moving into review and configuration. If anything essential is missing, we’ll contact you before configuration begins.\n\nLocal Lead Forge\nTurn more visitors into qualified leads.`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#172033"><h2 style="color:#0b1728">Information received</h2><p>Hi ${clean(data.authorizedContactName)},</p><p>We received your business intake for <strong>${clean(data.legalBusinessName)}</strong>. Your project is now moving into review and configuration.</p><p>If anything essential is missing, we’ll contact you before configuration begins.</p><p style="margin-top:28px"><strong>Local Lead Forge</strong><br><span style="color:#ff6a00">Turn more visitors into qualified leads.</span></p></div>`,
       },
       `llf-intake-confirmation/v${data.schemaVersion}/${data.authorizedContactEmail}/${data.legalBusinessName}`.slice(0, 256),
     );
