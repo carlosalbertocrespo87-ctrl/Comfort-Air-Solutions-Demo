@@ -1,0 +1,30 @@
+{
+  "companyName": "Allatoona Heating & Cooling, Inc.",
+  "shortName": "Allatoona Heating & Cooling",
+  "website": "https://www.allatoonaheatingandairga.com/",
+  "emailDomain": "gmail.com",
+  "phoneDisplay": "(770) 926-4023",
+  "serviceArea": "Acworth and surrounding Northwest Metro Atlanta communities",
+  "demoRoute": "allatoona-heating-cooling-demo",
+  "verifiedServices": [
+    "AC repair",
+    "Furnace repair and installation",
+    "Heat pump installation",
+    "Indoor air quality services"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Allatoona Heating & Cooling, Inc. as a family-owned and operated HVAC business serving homeowners and business owners in the Atlanta area for 35 years.",
+    "The official website publishes phone number 770-926-4023, email allatoonahvac@gmail.com, Acworth address and Georgia license CR005691.",
+    "The official website lists Acworth, Kennesaw, Woodstock, Canton, Marietta, Cartersville and Roswell among its service areas and notes emergency service availability."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
