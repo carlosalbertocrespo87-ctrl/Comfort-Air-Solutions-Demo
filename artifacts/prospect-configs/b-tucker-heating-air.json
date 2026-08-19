@@ -1,0 +1,30 @@
+{
+  "companyName": "B. Tucker Heating & Air",
+  "shortName": "B. Tucker Heating & Air",
+  "website": "https://www.btuckerhvac.com/",
+  "emailDomain": "gmail.com",
+  "phoneDisplay": "(404) 298-1314",
+  "serviceArea": "Atlanta, Decatur, Peachtree Corners, Norcross and Cumming/Windermere",
+  "demoRoute": "b-tucker-heating-air-demo",
+  "verifiedServices": [
+    "HVAC installation",
+    "HVAC repair",
+    "HVAC maintenance",
+    "Residential and light commercial HVAC"
+  ],
+  "verifiedHighlights": [
+    "The official website describes B. Tucker Heating & Air as a family-owned business serving residential and light commercial systems.",
+    "The official website publishes phone number 404-298-1314 and public contact email btuckerheatingandair@gmail.com.",
+    "The official website lists service areas including Atlanta, Decatur, Peachtree Corners, Norcross and Cumming/Windermere."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
