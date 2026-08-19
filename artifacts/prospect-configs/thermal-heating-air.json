@@ -1,0 +1,31 @@
+{
+  "companyName": "Thermal Heating & Air Conditioning, Inc.",
+  "shortName": "Thermal Heating & Air",
+  "website": "https://www.thermalhvac.org/",
+  "emailDomain": "thermalhvac.org",
+  "phoneDisplay": "(770) 614-9318",
+  "serviceArea": "Lawrenceville, Gwinnett County and surrounding Metro Atlanta communities",
+  "demoRoute": "thermal-heating-air-demo",
+  "verifiedServices": [
+    "Air conditioning repair",
+    "Heating repair",
+    "HVAC installation and replacement",
+    "Preventive maintenance and tune-ups",
+    "Indoor air quality solutions"
+  ],
+  "verifiedHighlights": [
+    "The official website states that Russell Howland founded Thermal Heating & Air Conditioning, Inc. in 2000 and identifies him as Owner/President.",
+    "The official website describes Thermal as family-owned and an authorized Bryant dealer serving Lawrenceville and surrounding Metro Atlanta counties.",
+    "The official website publishes phone number 770-614-9318, email thermalhvac@yahoo.com, a Lawrenceville office, and 24/7 emergency availability."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
