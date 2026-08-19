@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 const ORANGE = "#ff6a00";
+const LLF_CONTACT_EMAIL = "localleadforceagency@gmail.com";
 
 type Language = "en" | "es";
 
@@ -65,8 +66,8 @@ const featureCards = [
   {
     number: "4",
     icon: Gauge,
-    title: "Client Portal & ROI",
-    copy: "Makes lead volume, appointments and revenue easier to track in one place.",
+    title: "Lead Delivery & Visibility",
+    copy: "Organizes qualified lead details through a clear delivery and reporting workflow.",
   },
   {
     number: "5",
@@ -136,6 +137,7 @@ function ChatPreview() {
         title: `${prospectConfig.shortName} AI Assistant`,
         online: "Online now",
         greeting: `Hi! I’m the AI assistant for ${prospectConfig.shortName}. What can we help you with today?`,
+        services: ["AC not cooling", "Heating issue", "Maintenance", "New system"],
         location: "Thanks — what city or ZIP code is the home in?",
         reply: "Lawrenceville, GA 30044",
         next: "Perfect. I can prepare this request for the team. How urgent is the issue?",
@@ -147,6 +149,7 @@ function ChatPreview() {
         title: `Asistente IA de ${prospectConfig.shortName}`,
         online: "En línea",
         greeting: `¡Hola! Soy el asistente IA de ${prospectConfig.shortName}. ¿En qué podemos ayudarte hoy?`,
+        services: ["El aire no enfría", "Problema de calefacción", "Mantenimiento", "Sistema nuevo"],
         location: "Gracias. ¿En qué ciudad o código postal está la propiedad?",
         reply: "Lawrenceville, GA 30044",
         next: "Perfecto. Puedo preparar esta solicitud para el equipo. ¿Qué tan urgente es?",
@@ -166,15 +169,15 @@ function ChatPreview() {
           </div>
         </div>
         <div className="flex rounded-md border border-white/[0.09] bg-black/20 p-0.5 text-[7px] font-black">
-          <button type="button" onClick={() => setLanguage("en")} className={`rounded px-2 py-1 ${language === "en" ? "bg-orange-500 text-white" : "text-slate-500"}`}>EN</button>
-          <button type="button" onClick={() => setLanguage("es")} className={`rounded px-2 py-1 ${language === "es" ? "bg-orange-500 text-white" : "text-slate-500"}`}>ES</button>
+          <button type="button" onClick={() => { setLanguage("en"); setService("AC not cooling"); }} className={`rounded px-2 py-1 ${language === "en" ? "bg-orange-500 text-white" : "text-slate-500"}`}>EN</button>
+          <button type="button" onClick={() => { setLanguage("es"); setService("El aire no enfría"); }} className={`rounded px-2 py-1 ${language === "es" ? "bg-orange-500 text-white" : "text-slate-500"}`}>ES</button>
         </div>
       </div>
 
       <div className="min-h-[278px] space-y-3 p-4 text-[9px] leading-4">
         <div className="max-w-[84%] rounded-xl rounded-tl-sm border border-white/[0.07] bg-white/[0.035] px-3 py-2.5 text-slate-300">{text.greeting}</div>
         <div className="flex flex-wrap gap-1.5">
-          {["AC not cooling", "Heating issue", "Maintenance", "New system"].map((option) => (
+          {text.services.map((option) => (
             <button
               type="button"
               key={option}
@@ -255,14 +258,14 @@ function PotentialDashboard() {
         <div className="border-r border-white/[0.07] bg-[#050b14] p-2.5">
           <Logo compact />
           <div className="mt-5 space-y-1 text-[6px] text-slate-600">
-            {["Overview", "Leads", "Conversations", "Appointments", "ROI Tracking"].map((label, i) => (
+            {["Overview", "Leads", "Conversations", "Appointments", "Delivery Status"].map((label, i) => (
               <div key={label} className={`rounded px-2 py-1.5 ${i === 0 ? "border border-orange-500/15 bg-orange-500/[0.08] text-orange-400" : ""}`}>{label}</div>
             ))}
           </div>
         </div>
         <div className="min-w-0 bg-[#060e1b] p-3">
-          <div className="text-[9px] font-black text-white">Your Potential Results</div>
-          <div className="mt-0.5 text-[6px] text-slate-600">Illustrative performance dashboard</div>
+          <div className="text-[9px] font-black text-white">Lead Capture Workflow Preview</div>
+          <div className="mt-0.5 text-[6px] text-slate-600">Illustrative interface — not actual client results</div>
           <div className="mt-3 grid grid-cols-2 gap-1.5 lg:grid-cols-4">
             {cards.map(([Icon, value, label, delta]) => (
               <div key={label} className="rounded-lg border border-white/[0.075] bg-[#071222] p-2">
@@ -325,7 +328,7 @@ export default function App() {
             <a href="#about" className="transition hover:text-orange-400">About LLF</a>
           </nav>
 
-          <PrimaryButton href="#pricing">Book Your Strategy Call</PrimaryButton>
+          <PrimaryButton href={`mailto:${LLF_CONTACT_EMAIL}?subject=Strategy%20Call%20-%20${encodeURIComponent(prospectConfig.companyName)}`}>Book Your Strategy Call</PrimaryButton>
         </div>
       </header>
 
@@ -396,22 +399,22 @@ export default function App() {
             </div>
 
             <div className="mt-5 space-y-2 text-[9px] text-slate-400">
-              {["Bilingual AI lead assistant", "Custom qualification flow", "Lead delivery to your team", "Hosting & maintenance", "Performance tracking", "Ongoing optimization"].map((item) => (
+              {["Bilingual AI lead assistant", "Custom qualification flow", "Lead delivery to your team", "Hosting & maintenance", "Lead delivery reporting", "Ongoing optimization"].map((item) => (
                 <div key={item} className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-orange-500" />{item}</div>
               ))}
             </div>
 
             <div className="mt-6 rounded-full border border-orange-500/25 bg-orange-500/[0.06] px-3 py-2 text-center text-[7px] font-black uppercase tracking-[.13em] text-orange-400">Limited founding-client availability</div>
-            <div className="mt-5"><PrimaryButton href={`mailto:hello@localleadforge.com?subject=Strategy%20Call%20-%20${encodeURIComponent(prospectConfig.companyName)}`}>Book Your Strategy Call</PrimaryButton></div>
+            <div className="mt-5"><PrimaryButton href={`mailto:${LLF_CONTACT_EMAIL}?subject=Strategy%20Call%20-%20${encodeURIComponent(prospectConfig.companyName)}`}>Book Your Strategy Call</PrimaryButton></div>
           </article>
 
           <article id="results" className="rounded-2xl border border-white/[0.09] bg-[#07111f]/95 p-6 sm:p-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <div className="text-[9px] font-black uppercase tracking-[.18em] text-orange-400">Illustrative Dashboard</div>
-                <h2 className="mt-3 text-[25px] font-black tracking-[-.03em] sm:text-[32px]">Your Potential Results with Local Lead Forge</h2>
+                <h2 className="mt-3 text-[25px] font-black tracking-[-.03em] sm:text-[32px]">See how the lead flow is designed to work.</h2>
               </div>
-              <div className="rounded-full border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[7px] text-slate-600">Sample metrics — not a guarantee</div>
+              <div className="rounded-full border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[7px] text-slate-600">Illustrative sample — not a performance claim</div>
             </div>
 
             <div className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_.65fr]">
@@ -419,7 +422,7 @@ export default function App() {
               <div className="space-y-5">
                 <IconBenefit icon={Zap} title="Instant Response" copy="Engage prospects before they move on to the next contractor." />
                 <IconBenefit icon={Target} title="Better Qualification" copy="Capture the details your team needs before follow-up begins." />
-                <IconBenefit icon={TrendingUp} title="Clearer ROI" copy="Connect lead activity to appointments and closed work." />
+                <IconBenefit icon={TrendingUp} title="Lead Visibility" copy="Keep qualified lead details organized for faster follow-up." />
                 <IconBenefit icon={Clock3} title="After-Hours Coverage" copy="Keep capturing intent when your office is closed." />
               </div>
             </div>
