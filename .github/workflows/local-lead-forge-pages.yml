@@ -154,12 +154,36 @@ jobs:
         uses: actions/deploy-pages@v4
 
   verify-public-routes:
-    name: Verify published generic demo routes
+    name: Verify published LLF and demo routes
     runs-on: ubuntu-latest
     needs: deploy
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Verify live LLF root
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://localleadforge.com/"
+          ok=0
+          for attempt in {1..12}; do
+            html=$(curl --fail --silent --show-error --location --max-time 20 "$url" 2>/tmp/root-error || true)
+            if [ -n "$html" ] \
+              && grep -Fqi '<title>Local Lead Forge | AI Lead Capture for Local Service Businesses</title>' <<<"$html" \
+              && grep -Fqi 'Local Lead Forge helps local service businesses capture and qualify website leads' <<<"$html" \
+              && ! grep -Fqi 'ComfortAir Solutions' <<<"$html" \
+              && ! grep -Fqi 'built on Replit' <<<"$html"; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Public LLF root verification failed at $url"
+            cat /tmp/root-error 2>/dev/null || true
+            exit 1
+          fi
       - name: Verify live demo routes
         shell: bash
         run: |
