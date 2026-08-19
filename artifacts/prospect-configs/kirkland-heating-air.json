@@ -1,0 +1,30 @@
+{
+  "companyName": "Kirkland Heating & Air Conditioning, Inc.",
+  "shortName": "Kirkland Heating & Air",
+  "website": "https://www.kirklandheatandair.com/",
+  "emailDomain": "comcast.net",
+  "phoneDisplay": "(770) 443-2504",
+  "serviceArea": "Northwest Metro Atlanta",
+  "demoRoute": "kirkland-heating-air-demo",
+  "verifiedServices": [
+    "Residential heating and air conditioning service",
+    "Light commercial HVAC service",
+    "New system installation",
+    "Preventive maintenance"
+  ],
+  "verifiedHighlights": [
+    "The official website says Mr. Kirkland entered the HVAC trade in 1982 and started the business in 1989.",
+    "The official website publishes phone number 770-443-2504, email kirklandheatair@comcast.net, and Georgia contractor license CN007591.",
+    "The official website states that the company serves residential and light commercial customers in northwest Metro Atlanta."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
