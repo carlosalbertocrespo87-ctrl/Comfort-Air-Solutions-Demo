@@ -1,0 +1,30 @@
+{
+  "companyName": "Dynasty Heating and Air, Inc.",
+  "shortName": "Dynasty Heating and Air",
+  "website": "https://dynastyheatingandair.com/",
+  "emailDomain": "dynastyheatingandair.com",
+  "phoneDisplay": "(678) 525-9916",
+  "serviceArea": "Decatur, Mableton and surrounding Metro Atlanta areas",
+  "demoRoute": "dynasty-heating-air-demo",
+  "verifiedServices": [
+    "HVAC repair and maintenance",
+    "Air conditioning installation and repair",
+    "Heating and furnace service",
+    "Air duct cleaning"
+  ],
+  "verifiedHighlights": [
+    "The official website identifies Dynasty Heating and Air, Inc. as an HVAC company based in Decatur, Georgia.",
+    "The official website states that the company serves residential and commercial clients and has delivered HVAC services for over 20 years.",
+    "The official contact page publishes phone number 678-525-9916 and lists 24/7 hours seven days a week."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
