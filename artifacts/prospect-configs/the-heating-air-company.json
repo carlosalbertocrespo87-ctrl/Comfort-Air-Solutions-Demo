@@ -1,0 +1,31 @@
+{
+  "companyName": "The Heating & Air Company LLC",
+  "shortName": "The Heating & Air Company",
+  "website": "https://theheatingandaircompany.com/",
+  "emailDomain": "theheatingandaircompany.com",
+  "phoneDisplay": "(678) 732-7370",
+  "serviceArea": "Acworth, Kennesaw, Cartersville, Emerson, Hiram, Dallas and surrounding North Georgia areas",
+  "demoRoute": "the-heating-air-company-demo",
+  "verifiedServices": [
+    "Residential HVAC repair and maintenance",
+    "Commercial HVAC service",
+    "Heating and air conditioning installation",
+    "Ductless mini-split service",
+    "Emergency HVAC repair"
+  ],
+  "verifiedHighlights": [
+    "The official website identifies Sam Colon as the owner of The Heating & Air Company and describes the business as family run.",
+    "The official website publishes phone number 678-732-7370 and public email theheatingandaircompanyllc@gmail.com.",
+    "The official website lists the company in Acworth, Georgia and describes residential and commercial HVAC service across its North Georgia service area."
+  ],
+  "sourceReviewDate": "2026-08-19",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
