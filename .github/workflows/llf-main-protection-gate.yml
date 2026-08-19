@@ -1,0 +1,84 @@
+name: LLF Main Protection Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  llf-main-gate:
+    name: LLF main gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Stage 7 base conversion contract
+        run: node artifacts/hvac-prospect-template/scripts/validate-stage7-conversion.mjs
+
+      - name: Apply Client dry-run configuration
+        run: node artifacts/hvac-prospect-template/scripts/apply-prospect-config.mjs llf-test-hvac
+
+      - name: Validate Stage 5 configuration contract
+        run: node artifacts/hvac-prospect-template/scripts/validate-prospect-demo.mjs llf-test-hvac
+
+      - name: Revalidate Stage 7 after prospect injection
+        run: node artifacts/hvac-prospect-template/scripts/validate-stage7-conversion.mjs
+
+      - name: Typecheck configured master
+        run: pnpm --dir artifacts/hvac-prospect-template run typecheck
+
+      - name: Build configured master
+        env:
+          PORT: 3000
+          BASE_PATH: /
+        run: pnpm --dir artifacts/hvac-prospect-template exec vite build --config vite.config.ts
+
+      - name: Install Chromium
+        run: pnpm dlx playwright@1.55.0 install --with-deps chromium
+
+      - name: Start built-site server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory artifacts/hvac-prospect-template/dist/public > /tmp/llf-main-gate.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/llf-main-gate.log
+          exit 1
+
+      - name: Stage 6 bilingual assistant and mobile functional QA
+        env:
+          PROSPECT_SLUG: llf-test-hvac
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/hvac-prospect-browser-generic.spec.ts --workers=1 --reporter=line
+
+      - name: Assert no clickable prospect phone
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RniE 'href=.*tel:' artifacts/hvac-prospect-template/src artifacts/hvac-prospect-template/dist/public; then
+            echo "Clickable prospect phone detected" >&2
+            exit 1
+          fi
