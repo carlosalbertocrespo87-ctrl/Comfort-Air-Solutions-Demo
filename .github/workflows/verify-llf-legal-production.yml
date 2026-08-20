@@ -1,0 +1,64 @@
+name: Verify LLF Legal Production Routes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/src/**"
+      - ".github/qa/llf-legal-production.spec.ts"
+      - ".github/workflows/verify-llf-legal-production.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/src/**"
+      - ".github/qa/llf-legal-production.spec.ts"
+      - ".github/workflows/verify-llf-legal-production.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-legal-production:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        timeout-minutes: 5
+        run: npx --yes playwright@1.55.0 install chromium
+
+      - name: Verify legal routes in production
+        env:
+          LLF_PRODUCTION_URL: https://localleadforge.com
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p qa-artifacts
+          pnpm dlx @playwright/test@1.55.0 test .github/qa/llf-legal-production.spec.ts --workers=1 --reporter=json | tee qa-artifacts/legal-production-verification.json
+
+      - name: Upload legal production verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legal-production-verification-${{ github.sha }}
+          path: qa-artifacts/legal-production-verification.json
+          if-no-files-found: error
+          retention-days: 30
