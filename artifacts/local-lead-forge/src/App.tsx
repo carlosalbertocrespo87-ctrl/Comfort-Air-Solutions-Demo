@@ -52,8 +52,8 @@ const features = [
   {
     number: "4",
     icon: Gauge,
-    title: "Client Portal & ROI",
-    copy: "See leads, appointments, jobs and revenue in one simple dashboard.",
+    title: "Lead Visibility & Reporting",
+    copy: "See captured leads, follow-up status, and reported outcomes in one simple view.",
   },
   {
     number: "5",
@@ -68,7 +68,7 @@ const dashboardNav = [
   [Users, "Leads", false],
   [MessageSquareText, "Conversations", false],
   [CalendarCheck2, "Appointments", false],
-  [TrendingUp, "ROI Tracking", false],
+  [TrendingUp, "Outcome Tracking", false],
   [MousePointerClick, "Funnels", false],
   [Settings2, "Settings", false],
 ] as const;
@@ -171,9 +171,9 @@ function DashboardMockup() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[11px] font-black text-white">Performance Overview</div>
-                <div className="mt-1 text-[8px] text-slate-600">Live lead and revenue activity</div>
+                <div className="mt-1 text-[8px] text-slate-600">Illustrative lead and outcome activity</div>
               </div>
-              <div className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[7px] text-slate-500">Last 7 Days</div>
+              <div className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[7px] text-slate-500">Sample Data</div>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
@@ -288,7 +288,7 @@ export default function App() {
           </h1>
 
           <p className="mt-7 max-w-[590px] text-[15px] leading-7 text-slate-400 sm:text-[16px]">
-            Local Lead Forge combines bilingual AI, smart automation and high-converting demo pages to help local service businesses capture more opportunities and turn website traffic into measurable revenue.
+            Local Lead Forge combines bilingual AI, smart automation and high-converting demo pages to help local service businesses capture more opportunities and turn website traffic into structured opportunities.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -302,7 +302,7 @@ export default function App() {
             {[
               [Languages, "Bilingual (EN/ES)"],
               [Bot, "AI-Powered"],
-              [MailCheck, "Automated Follow-Up"],
+              [MailCheck, "Structured Lead Delivery"],
               [Wrench, "Built for Local Services"],
             ].map(([Icon, label]) => {
               const I = Icon as React.ComponentType<{ className?: string }>;
@@ -366,7 +366,7 @@ export default function App() {
                 "Bilingual AI assistant",
                 "Lead qualification flow",
                 "Automated lead delivery",
-                "Client reporting & ROI",
+                "Lead reporting & visibility",
                 "Hosting and maintenance",
                 "Ongoing optimization",
               ].map((item) => (
@@ -388,18 +388,20 @@ export default function App() {
           <article id="results" className="rounded-2xl border border-white/[0.09] bg-[#07111f]/95 p-7 sm:p-9">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.19em] text-orange-400">Performance Snapshot</div>
-                <h2 className="mt-3 text-2xl font-black tracking-[-.03em] sm:text-[32px]">Results you can actually see.</h2>
+                <div className="text-[10px] font-black uppercase tracking-[0.19em] text-orange-400">Illustrative Performance Snapshot</div>
+                <h2 className="mt-3 text-2xl font-black tracking-[-.03em] sm:text-[32px]">See how performance can be tracked.</h2>
               </div>
               <BarChart3 className="h-8 w-8 text-orange-500/70" />
             </div>
 
+            <p className="mt-3 text-[10px] leading-5 text-slate-500">Sample dashboard data shown for illustration only. Actual client outcomes depend on traffic, follow-up and business performance.</p>
+
             <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                ["158+", "New Leads", "This Week"],
-                ["32", "Appointments", "Booked"],
-                ["14", "Jobs Closed", "This Week"],
-                ["$28,450", "Revenue", "Generated"],
+                ["158+", "New Leads", "Example"],
+                ["32", "Appointments", "Example"],
+                ["14", "Jobs Closed", "Example"],
+                ["$28,450", "Revenue", "Example"],
               ].map(([value, label, sub]) => (
                 <div key={label} className="rounded-xl border border-white/[0.075] bg-black/20 p-4">
                   <div className="text-[24px] font-black tracking-[-.03em] text-orange-400">{value}</div>
@@ -421,7 +423,7 @@ export default function App() {
               <div className="flex items-center rounded-lg border border-orange-500/15 bg-orange-500/[0.035] p-4">
                 <div>
                   <div className="text-[24px] font-black text-white">18.4%</div>
-                  <div className="mt-1 text-[9px] text-slate-500">average weekly lead growth in this dashboard example</div>
+                  <div className="mt-1 text-[9px] text-slate-500">example weekly lead growth shown for dashboard illustration</div>
                 </div>
               </div>
             </div>
@@ -432,9 +434,9 @@ export default function App() {
       <section id="about" className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:px-12">
         <div className="grid gap-px overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.06] md:grid-cols-4">
           {[
-            [BriefcaseBusiness, "No Long-Term Contracts"],
-            [Clock3, "Cancel Anytime"],
-            [TrendingUp, "100% Focused on ROI"],
+            [BriefcaseBusiness, "Terms Defined in Agreement"],
+            [Clock3, "Flexible Monthly Service"],
+            [TrendingUp, "Focused on Lead Visibility"],
             [Headphones, "U.S.-Based Support"],
           ].map(([Icon, label]) => {
             const I = Icon as React.ComponentType<{ className?: string }>;
