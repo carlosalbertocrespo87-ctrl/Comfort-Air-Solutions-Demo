@@ -12,6 +12,7 @@ import TermsPage from '@/pages/terms';
 import './index.css';
 
 const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
+const isOnboarding = normalizedPath === '/onboarding';
 
 const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
   '/onboarding': {
@@ -46,7 +47,7 @@ const routes: Record<string, { component: React.ComponentType; title: string; de
   },
 };
 
-const route = routes[normalizedPath];
+const route = isOnboarding ? routes['/onboarding'] : routes[normalizedPath];
 const CurrentPage = route?.component ?? App;
 
 if (route) {
