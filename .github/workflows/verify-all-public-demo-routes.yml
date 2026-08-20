@@ -5,6 +5,14 @@ on:
     branches:
       - main
     paths:
+      - "artifacts/prospect-configs/**"
+      - "scripts/verify-published-demo-routes.mjs"
+      - ".github/workflows/verify-all-public-demo-routes.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "artifacts/prospect-configs/**"
       - "scripts/verify-published-demo-routes.mjs"
       - ".github/workflows/verify-all-public-demo-routes.yml"
   workflow_dispatch:
@@ -19,4 +27,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Verify all published demo routes
+        env:
+          LLF_PUBLIC_DEMO_REPORT: qa-artifacts/public-demo-verification.json
         run: node scripts/verify-published-demo-routes.mjs
+      - name: Upload public demo verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-demo-verification-${{ github.sha }}
+          path: qa-artifacts/public-demo-verification.json
+          if-no-files-found: error
+          retention-days: 30
