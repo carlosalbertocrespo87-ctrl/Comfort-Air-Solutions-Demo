@@ -135,6 +135,14 @@ jobs:
           cp -R /tmp/stinos-heating-air-demo/. pages-dist/stinos-heating-air-demo/
           cp -R /tmp/atlanta-north-cooling-heating-demo/. pages-dist/atlanta-north-cooling-heating-demo/
           if [ -d /tmp/llf-generic-pages ]; then cp -R /tmp/llf-generic-pages/. pages-dist/; fi
+      - name: Stage LLF SPA routes for GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in onboarding privacy terms dpa start; do
+            mkdir -p "pages-dist/$route"
+            cp pages-dist/index.html "pages-dist/$route/index.html"
+          done
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload GitHub Pages artifact
