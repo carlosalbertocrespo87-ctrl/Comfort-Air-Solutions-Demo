@@ -135,6 +135,14 @@ jobs:
           cp -R /tmp/stinos-heating-air-demo/. pages-dist/stinos-heating-air-demo/
           cp -R /tmp/atlanta-north-cooling-heating-demo/. pages-dist/atlanta-north-cooling-heating-demo/
           if [ -d /tmp/llf-generic-pages ]; then cp -R /tmp/llf-generic-pages/. pages-dist/; fi
+      - name: Stage LLF SPA routes for GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in onboarding privacy terms dpa start; do
+            mkdir -p "pages-dist/$route"
+            cp pages-dist/index.html "pages-dist/$route/index.html"
+          done
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload GitHub Pages artifact
@@ -220,3 +228,33 @@ jobs:
             echo "Public verification failures: $failures"
             exit 1
           fi
+      - name: Setup pnpm for legal route QA
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node for legal route QA
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies for legal route QA
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium for legal route QA
+        timeout-minutes: 5
+        run: npx --yes playwright@1.55.0 install chromium
+      - name: Verify legal routes in production
+        env:
+          LLF_PRODUCTION_URL: https://localleadforge.com
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p qa-artifacts
+          pnpm dlx @playwright/test@1.55.0 test .github/qa/llf-legal-production.spec.ts --workers=1 --reporter=json | tee qa-artifacts/legal-production-verification.json
+      - name: Upload legal production verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legal-production-verification-${{ github.sha }}
+          path: qa-artifacts/legal-production-verification.json
+          if-no-files-found: error
+          retention-days: 30

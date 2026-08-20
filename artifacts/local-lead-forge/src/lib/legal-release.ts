@@ -1,3 +1,4 @@
+// GitHub Pages stages physical index files for the registered SPA routes below so deep links return HTTP 200 before React applies the legal release gate.
 export const LEGAL_RELEASED = false;
 
 export const LEGAL_VERSION = "DRAFT-2026-08-20";
