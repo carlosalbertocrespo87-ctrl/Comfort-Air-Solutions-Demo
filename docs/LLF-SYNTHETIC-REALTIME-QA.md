@@ -240,3 +240,33 @@ Los avisos de índices sin uso son informativos y se conservarán hasta contar c
 ### Conclusión
 
 Los controles automáticos disponibles sin la PC están aprobados. El único gate pendiente para el PR #94 es el QA humano simultáneo en el preview protegido de Netlify.
+
+
+## 12. Corrección CORS para el preview #94
+
+La revisión sin PC detectó que la Edge Function v7 permitía únicamente:
+
+- `https://localleadforge.com`
+- `https://www.localleadforge.com`
+
+Aunque Netlify autorizara a Carlos y María, el navegador del preview habría recibido `origin_not_allowed` al consultar el backend.
+
+### Corrección
+
+Se añadió exclusivamente:
+
+- `https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app`
+
+No se utilizó `*`, una expresión general de Netlify ni acceso para otros previews. La función actual es `llf-agent-ops` v8 y está `ACTIVE`.
+
+### Verificaciones posteriores
+
+- La versión desplegada contiene exactamente los tres orígenes aprobados.
+- Los orígenes no incluidos continúan recibiendo `origin_not_allowed`.
+- El frontend no contiene `service_role`, `sb_secret_` ni `SUPABASE_SERVICE_ROLE_KEY`.
+- `pnpm audit --prod`: no se encontraron vulnerabilidades conocidas.
+- Security Advisor: sin nuevos avisos; permanece únicamente la protección de contraseñas filtradas no disponible en el plan Free.
+
+### Retiro futuro
+
+El origen del preview #94 debe eliminarse de la lista CORS cuando finalice el QA y deje de utilizarse. No forma parte de la configuración permanente de producción.
