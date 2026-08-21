@@ -5,7 +5,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -23,6 +23,9 @@ Deno.serve(async (req: Request) => {
   if (legalReleaseFlag !== 'true' || !releasedLegalVersion) {
     return json({ error: 'legal_release_not_enabled' }, 503);
   }
+
+  const idempotencyKey = cleanText(req.headers.get('idempotency-key'), 200);
+  if (!idempotencyKey) return json({ error: 'idempotency_key_required' }, 400);
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: 'invalid_json' }, 400); }
@@ -42,6 +45,37 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // Retry-safe path: if this key already exists, return the same acceptance only when the payload still matches.
+  const { data: existing, error: existingError } = await admin
+    .from('llf_legal_acceptances')
+    .select('acceptance_ref,legal_version,accepted_at,customer_name,company_name,customer_email')
+    .eq('idempotency_key', idempotencyKey)
+    .maybeSingle();
+
+  if (existingError) return json({ error: 'acceptance_lookup_failed' }, 500);
+  if (existing) {
+    const samePayload = existing.legal_version === legalVersion &&
+      existing.customer_name === customerName &&
+      (existing.company_name ?? '') === companyName &&
+      (existing.customer_email ?? '') === customerEmail;
+    if (!samePayload) return json({ error: 'idempotency_key_conflict' }, 409);
+
+    const { error: entitlementRetryError } = await admin
+      .from('llf_payment_entitlements')
+      .upsert({ acceptance_ref: existing.acceptance_ref }, { onConflict: 'acceptance_ref', ignoreDuplicates: true });
+    if (entitlementRetryError) return json({ error: 'entitlement_initialize_failed' }, 500);
+
+    return json({
+      ok: true,
+      acceptance_ref: existing.acceptance_ref,
+      legal_version: existing.legal_version,
+      accepted_at: existing.accepted_at,
+      payment_ready: false,
+      onboarding_eligible: false,
+      idempotent_replay: true,
+    }, 200);
+  }
+
   const { data: acceptance, error: acceptanceError } = await admin
     .from('llf_legal_acceptances')
     .insert({
@@ -50,6 +84,7 @@ Deno.serve(async (req: Request) => {
       company_name: companyName || null,
       customer_email: customerEmail || null,
       source: 'server',
+      idempotency_key: idempotencyKey,
     })
     .select('acceptance_ref,legal_version,accepted_at')
     .single();
@@ -58,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
   const { error: entitlementError } = await admin
     .from('llf_payment_entitlements')
-    .insert({ acceptance_ref: acceptance.acceptance_ref });
+    .upsert({ acceptance_ref: acceptance.acceptance_ref }, { onConflict: 'acceptance_ref', ignoreDuplicates: true });
 
   if (entitlementError) return json({ error: 'entitlement_initialize_failed' }, 500);
 
@@ -69,6 +104,7 @@ Deno.serve(async (req: Request) => {
     accepted_at: acceptance.accepted_at,
     payment_ready: false,
     onboarding_eligible: false,
+    idempotent_replay: false,
   }, 201);
 });
 
