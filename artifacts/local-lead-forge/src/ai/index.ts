@@ -6,3 +6,5 @@ export * from "./task-policy";
 export * from "./budget-guard";
 export * from "./agent-permissions";
 export * from "./shadow-agents";
+export * from "./eval-scenarios";
+export * from "./eval-harness";
