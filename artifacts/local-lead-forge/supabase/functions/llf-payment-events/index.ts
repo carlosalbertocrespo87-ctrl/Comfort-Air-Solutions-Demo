@@ -1,12 +1,14 @@
 // LOCAL LEAD FORGE — PAYMENT EVENTS RUNTIME
 // Issue #80. Fail-closed: verifies Stripe signatures, deduplicates events, records audit receipts,
-// and retrieves current Stripe object state before any entitlement mutation.
-// No checkout creation and no direct onboarding trigger.
+// retrieves current Stripe object state, requires one existing durable correlation, and only then
+// applies authoritative entitlement state atomically. No checkout creation and no onboarding trigger.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyStripeSignature } from './stripe-signature.ts';
 import { normalizeStripeEvent, SUPPORTED_EVENT_TYPES } from './event-normalizer.ts';
 import { reconcileStripeObject } from './authoritative-reconciler.ts';
+import { resolveSingleCorrelation, type CorrelationCandidate } from './correlation.ts';
+import { applyAuthoritativeEntitlementState } from './entitlement-mutation.ts';
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -64,17 +66,88 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'authoritative_reconciliation_failed' }, 503);
   }
 
-  // Foundation stop gate: authoritative state may now be observed, but protected entitlement mutation
-  // remains disabled until correlation-to-acceptance and out-of-order mutation tests are complete.
-  await markReceipt(admin, event.id, 'PROCESSED');
-  return json({
-    ok: true,
-    accepted: true,
-    authoritative_state_observed: true,
-    reconciled,
-    state_mutation: 'locked_pending_acceptance_correlation_and_mutation_qa',
+  // Correlation is deliberately bootstrap-closed. This runtime may mutate only when one entitlement
+  // already contains a matching Stripe customer/payment/subscription reference. The future checkout
+  // creation path must establish that durable correlation server-side before first webhook mutation.
+  let candidates: CorrelationCandidate[];
+  try {
+    candidates = await loadCorrelationCandidates(admin, reconciled);
+  } catch {
+    await markReceipt(admin, event.id, 'FAILED');
+    return json({ error: 'correlation_lookup_failed' }, 503);
+  }
+
+  const correlation = resolveSingleCorrelation(candidates, {
+    customerRef: reconciled.stripe_customer_ref ?? null,
+    paymentIntentRef: reconciled.setup_payment_ref ?? null,
+    subscriptionRef: reconciled.subscription_ref ?? null,
   });
+
+  if (!correlation) {
+    await markReceipt(admin, event.id, 'FAILED');
+    return json({
+      error: 'unique_existing_correlation_required',
+      state_mutation: 'blocked',
+    }, 503);
+  }
+
+  const { data: current, error: currentError } = await admin
+    .from('llf_payment_entitlements')
+    .select('setup_status,monthly_status')
+    .eq('acceptance_ref', correlation.acceptance_ref)
+    .maybeSingle();
+  if (currentError || !current) {
+    await markReceipt(admin, event.id, 'FAILED');
+    return json({ error: 'entitlement_state_lookup_failed' }, 503);
+  }
+
+  try {
+    const result = await applyAuthoritativeEntitlementState(admin, {
+      acceptanceRef: correlation.acceptance_ref,
+      eventId: event.id,
+      eventCreatedAt: event.created ? new Date(event.created * 1000).toISOString() : null,
+      stripeCustomerRef: reconciled.stripe_customer_ref ?? correlation.stripe_customer_ref,
+      setupPaymentRef: reconciled.setup_payment_ref ?? correlation.setup_payment_ref,
+      subscriptionRef: reconciled.subscription_ref ?? correlation.subscription_ref,
+      setupStatus: reconciled.setup_status ?? current.setup_status,
+      monthlyStatus: reconciled.monthly_status ?? current.monthly_status,
+    });
+
+    return json({
+      ok: true,
+      accepted: true,
+      authoritative_state_observed: true,
+      state_mutation: result.applied ? 'applied' : 'stale_event_ignored',
+      onboarding_eligible: result.onboardingEligible,
+      onboarding_triggered: false,
+    });
+  } catch {
+    await markReceipt(admin, event.id, 'FAILED');
+    return json({ error: 'entitlement_atomic_apply_failed' }, 503);
+  }
 });
+
+async function loadCorrelationCandidates(admin: any, reconciled: any): Promise<CorrelationCandidate[]> {
+  const refs: Array<[string, string | null | undefined]> = [
+    ['stripe_customer_ref', reconciled.stripe_customer_ref],
+    ['setup_payment_ref', reconciled.setup_payment_ref],
+    ['subscription_ref', reconciled.subscription_ref],
+  ];
+  const byAcceptance = new Map<string, CorrelationCandidate>();
+
+  for (const [column, value] of refs) {
+    if (!value || typeof value !== 'string') continue;
+    const { data, error } = await admin
+      .from('llf_payment_entitlements')
+      .select('acceptance_ref,stripe_customer_ref,setup_payment_ref,subscription_ref')
+      .eq(column, value)
+      .limit(2);
+    if (error) throw new Error('candidate_lookup_failed');
+    for (const row of data ?? []) byAcceptance.set(row.acceptance_ref, row as CorrelationCandidate);
+  }
+
+  return [...byAcceptance.values()];
+}
 
 async function markReceipt(admin: any, eventId: string, status: 'PROCESSED' | 'IGNORED' | 'FAILED') {
   await admin.from('llf_stripe_event_receipts')
