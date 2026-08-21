@@ -19,3 +19,4 @@ export * from "./openai-synthetic-executor";
 export * from "./openai-http-transport";
 export * from "./output-safety";
 export * from "./kill-switch";
+export * from "./adversarial-provider-scenarios";
