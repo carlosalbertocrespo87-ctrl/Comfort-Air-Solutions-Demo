@@ -2,18 +2,17 @@ import { verifyStripeSignature } from './stripe-signature.ts';
 
 export type VerifiedWebhookMode = 'live' | 'test';
 
-export type WebhookEnvironmentResult =
+export type WebhookSignatureModeResult =
   | { ok: true; mode: VerifiedWebhookMode }
-  | { ok: false; error: 'stripe_signature_invalid' | 'environment_mismatch' };
+  | { ok: false; error: 'stripe_signature_invalid' };
 
-export async function verifyWebhookEnvironment(input: {
+export async function verifyWebhookSignatureMode(input: {
   rawBody: string;
   signatureHeader: string;
   liveSecret: string;
   testSecret: string | null;
-  eventLivemode: boolean;
   nowSeconds?: number;
-}): Promise<WebhookEnvironmentResult> {
+}): Promise<WebhookSignatureModeResult> {
   const nowSeconds = input.nowSeconds ?? Math.floor(Date.now() / 1000);
 
   const live = await verifyStripeSignature(
@@ -23,11 +22,7 @@ export async function verifyWebhookEnvironment(input: {
     300,
     nowSeconds,
   );
-  if (live.ok) {
-    return input.eventLivemode
-      ? { ok: true, mode: 'live' }
-      : { ok: false, error: 'environment_mismatch' };
-  }
+  if (live.ok) return { ok: true, mode: 'live' };
 
   if (!input.testSecret) return { ok: false, error: 'stripe_signature_invalid' };
 
@@ -38,9 +33,11 @@ export async function verifyWebhookEnvironment(input: {
     300,
     nowSeconds,
   );
-  if (!test.ok) return { ok: false, error: 'stripe_signature_invalid' };
+  return test.ok
+    ? { ok: true, mode: 'test' }
+    : { ok: false, error: 'stripe_signature_invalid' };
+}
 
-  return input.eventLivemode
-    ? { ok: false, error: 'environment_mismatch' }
-    : { ok: true, mode: 'test' };
+export function webhookModeMatchesEvent(mode: VerifiedWebhookMode, eventLivemode: boolean): boolean {
+  return mode === 'live' ? eventLivemode : !eventLivemode;
 }
