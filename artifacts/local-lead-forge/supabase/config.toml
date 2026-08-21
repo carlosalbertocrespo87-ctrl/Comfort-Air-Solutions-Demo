@@ -1,0 +1,2 @@
+[functions.llf-agent-ops]
+verify_jwt = false
