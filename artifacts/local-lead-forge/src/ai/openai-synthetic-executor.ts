@@ -1,11 +1,13 @@
 import type { AIRequest, AIResult } from "./contracts";
 import { SpendGuard } from "./provider-budget";
+import { executeOpenAIResponses } from "./openai-http-transport";
 
 export type OpenAISyntheticExecutorConfig = {
   apiKey?: string;
   model: string;
   enabled: boolean;
   spendGuard: SpendGuard;
+  maxOutputTokens?: number;
 };
 
 export function createOpenAISyntheticExecutor(config: OpenAISyntheticExecutorConfig) {
@@ -19,7 +21,26 @@ export function createOpenAISyntheticExecutor(config: OpenAISyntheticExecutorCon
     const budget = config.spendGuard.canStart(requestCap);
     if (!budget.allowed) return blocked(request, config.model, budget.reason, started);
 
-    return blocked(request, config.model, "HTTP_TRANSPORT_NOT_WIRED_IN_PA02", started);
+    const result = await executeOpenAIResponses<T>(request, {
+      apiKey: config.apiKey,
+      model: config.model,
+      maxOutputTokens: config.maxOutputTokens ?? 128,
+    });
+
+    if (result.usage?.estimatedCostUsd != null) {
+      config.spendGuard.record(result.usage.estimatedCostUsd);
+    }
+
+    if ((result.usage?.estimatedCostUsd ?? 0) > requestCap) {
+      return {
+        ...result,
+        ok: false,
+        output: undefined,
+        error: { code: "POLICY_BLOCK", message: "ACTUAL_COST_EXCEEDED_REQUEST_CAP", retryable: false },
+      };
+    }
+
+    return result;
   };
 }
 
