@@ -1,18 +1,24 @@
 -- LOCAL LEAD FORGE — CONVERSATION INTELLIGENCE FOUNDATION
 -- INTERNAL / FAIL-CLOSED
 
-create type if not exists llf_conversation_topic as enum (
-  'PRICING',
-  'IMPLEMENTATION',
-  'CONTRACT_TERMS',
-  'LEAD_DELIVERY',
-  'REPORTING',
-  'SUPPORT',
-  'SECURITY_PRIVACY',
-  'BILINGUAL_SUPPORT',
-  'INTEGRATIONS',
-  'OTHER'
-);
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'llf_conversation_topic') then
+    create type llf_conversation_topic as enum (
+      'PRICING',
+      'IMPLEMENTATION',
+      'CONTRACT_TERMS',
+      'LEAD_DELIVERY',
+      'REPORTING',
+      'SUPPORT',
+      'SECURITY_PRIVACY',
+      'BILINGUAL_SUPPORT',
+      'INTEGRATIONS',
+      'OTHER'
+    );
+  end if;
+end
+$$;
 
 create table if not exists llf_conversation_signals (
   id uuid primary key default gen_random_uuid(),
