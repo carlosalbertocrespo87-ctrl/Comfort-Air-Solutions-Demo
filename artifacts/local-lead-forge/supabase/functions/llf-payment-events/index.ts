@@ -10,6 +10,7 @@ import { resolveSingleCorrelation, type CorrelationCandidate } from './correlati
 import { applyAuthoritativeEntitlementState } from './entitlement-mutation.ts';
 import { loadPaymentEventRuntimeConfig, stripeRuntimeKeyForMode } from './runtime-config.ts';
 import { verifyWebhookSignatureMode, webhookModeMatchesEvent } from './webhook-environment.ts';
+import { decideDuplicateReceipt } from './receipt-retry.ts';
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -23,7 +24,6 @@ Deno.serve(async (req: Request) => {
   const rawBody = await req.text();
   if (!rawBody) return json({ error: 'empty_payload' }, 400);
 
-  // Verify the raw signed bytes before parsing JSON. Try live first, then the optional test endpoint secret.
   const signatureMode = await verifyWebhookSignatureMode({
     rawBody,
     signatureHeader: signature,
@@ -41,7 +41,6 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'environment_mismatch' }, 400);
   }
 
-  // Stripe live/test object retrieval must use a credential from the same mode as the verified webhook.
   const stripeRuntimeKey = stripeRuntimeKeyForMode(config, signatureMode.mode);
   if (!stripeRuntimeKey) {
     return json({ error: signatureMode.mode === 'test' ? 'stripe_test_runtime_key_missing' : 'stripe_runtime_key_missing' }, 503);
@@ -62,10 +61,40 @@ Deno.serve(async (req: Request) => {
   });
 
   if (receiptError) {
-    if ((receiptError as any).code === '23505') {
-      return json({ ok: true, duplicate: true, mode: signatureMode.mode });
+    if ((receiptError as any).code !== '23505') {
+      return json({ error: 'event_receipt_insert_failed' }, 500);
     }
-    return json({ error: 'event_receipt_insert_failed' }, 500);
+
+    const { data: existing, error: existingError } = await admin
+      .from('llf_stripe_event_receipts')
+      .select('stripe_event_id,processing_status')
+      .eq('stripe_event_id', event.id)
+      .maybeSingle();
+    if (existingError || !existing) {
+      return json({ error: 'duplicate_receipt_state_unavailable' }, 503);
+    }
+
+    const decision = decideDuplicateReceipt(existing.processing_status);
+    if (decision === 'ack_terminal') {
+      return json({ ok: true, duplicate: true, terminal: true, mode: signatureMode.mode });
+    }
+    if (decision === 'retry_later') {
+      return json({ error: 'duplicate_receipt_in_progress' }, 503);
+    }
+    if (decision === 'fail_closed') {
+      return json({ error: 'duplicate_receipt_state_invalid' }, 503);
+    }
+
+    const { data: claimed, error: claimError } = await admin
+      .from('llf_stripe_event_receipts')
+      .update({ processing_status: 'RECEIVED', processed_at: null })
+      .eq('stripe_event_id', event.id)
+      .eq('processing_status', 'FAILED')
+      .select('stripe_event_id');
+    if (claimError) return json({ error: 'failed_receipt_retry_claim_failed' }, 503);
+    if (!Array.isArray(claimed) || claimed.length !== 1) {
+      return json({ error: 'failed_receipt_retry_claim_lost' }, 503);
+    }
   }
 
   if (!SUPPORTED_EVENT_TYPES.has(event.type)) {
@@ -82,9 +111,6 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'authoritative_reconciliation_failed' }, 503);
   }
 
-  // Correlation is deliberately bootstrap-closed. This runtime may mutate only when one entitlement
-  // already contains a matching Stripe customer/payment/subscription reference. Checkout orchestration
-  // must establish durable customer correlation server-side before first webhook mutation.
   let candidates: CorrelationCandidate[];
   try {
     candidates = await loadCorrelationCandidates(admin, reconciled);
@@ -128,6 +154,9 @@ Deno.serve(async (req: Request) => {
       setupStatus: reconciled.setup_status ?? current.setup_status,
       monthlyStatus: reconciled.monthly_status ?? current.monthly_status,
     });
+
+    const receiptMarked = await markReceipt(admin, event.id, 'PROCESSED');
+    if (!receiptMarked) return json({ error: 'event_receipt_update_failed' }, 503);
 
     return json({
       ok: true,
