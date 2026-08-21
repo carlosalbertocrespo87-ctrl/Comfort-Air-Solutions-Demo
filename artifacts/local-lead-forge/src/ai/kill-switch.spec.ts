@@ -1,3 +1,5 @@
+import type { AIRequest } from "./contracts";
+import { GatedLiveProviderAdapter } from "./live-provider-adapter";
 import { DEFAULT_KILL_SWITCH_STATE, engageGlobalKillSwitch, evaluateKillSwitch, rollbackToSafeDefault } from "./kill-switch";
 
 if (!evaluateKillSwitch("openai", "tenant-a", DEFAULT_KILL_SWITCH_STATE).allowed) throw new Error("default clear state should allow evaluation");
@@ -14,3 +16,20 @@ if (!evaluateKillSwitch("openai", "tenant-b", tenantBlocked).allowed) throw new 
 
 const rollback = rollbackToSafeDefault();
 if (!rollback.globalDisabled || evaluateKillSwitch("openai", "tenant-a", rollback).allowed) throw new Error("rollback must land in disabled safe state");
+
+const request: AIRequest = { task: "lead_classification", input: "synthetic", tenantId: "tenant-a", correlationId: "pa06-1", metadata: { synthetic: true } };
+let executorCalled = false;
+const adapter = new GatedLiveProviderAdapter(
+  "openai",
+  "synthetic-model",
+  [{ task: "lead_classification", enabled: true }],
+  async () => {
+    executorCalled = true;
+    throw new Error("executor must not be reached while kill switch is engaged");
+  },
+  { liveProviderEnabled: true, allowedProviders: ["openai"], allowedTraffic: ["synthetic"], requireSyntheticMarker: true },
+  "synthetic",
+  global,
+);
+const result = await adapter.execute(request);
+if (result.ok || result.error?.message !== "GLOBAL_KILL_SWITCH" || executorCalled) throw new Error("adapter must fail before executor when kill switch is engaged");
