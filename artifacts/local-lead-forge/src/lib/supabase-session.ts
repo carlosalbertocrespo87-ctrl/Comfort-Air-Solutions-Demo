@@ -31,6 +31,10 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+async function getCurrentDeviceHash(): Promise<string> {
+  return sha256Hex(getOrCreateDeviceInstallId());
+}
+
 function describeDevice(): { deviceLabel: string; platform: string; browser: string } {
   const ua = navigator.userAgent;
   const platform = navigator.platform || 'Web';
@@ -99,8 +103,7 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
       return 'error';
     }
 
-    const installId = getOrCreateDeviceInstallId();
-    const deviceHash = await sha256Hex(installId);
+    const deviceHash = await getCurrentDeviceHash();
     const description = describeDevice();
     const deviceResult = await callWithToken<{
       ok: boolean;
@@ -146,9 +149,11 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
 export async function callAgentOps<T = unknown>(body: Record<string, unknown>): Promise<T> {
   const session = getStoredAgentSession();
   if (!session) throw new Error('authentication_required');
+  if (session.deviceTrustStatus !== 'TRUSTED') throw new Error('trusted_device_required');
 
   try {
-    return await callWithToken<T>(session.accessToken, body);
+    const deviceHash = await getCurrentDeviceHash();
+    return await callWithToken<T>(session.accessToken, { ...body, device_hash: deviceHash });
   } catch (error) {
     if (error instanceof Error && (error.message.endsWith('_401') || error.message.endsWith('_403'))) clearStoredAgentSession();
     throw error;
