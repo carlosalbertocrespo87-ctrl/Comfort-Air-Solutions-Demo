@@ -1,0 +1,75 @@
+name: HVAC COMP 03 Prospect Demo Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/prospect/**'
+      - 'src/demo/**'
+      - 'src/quality/**'
+      - 'src/sales/**'
+      - 'docs/hvac-comp/batch-03-progress.md'
+      - '.github/workflows/hvac-comp-03-prospect-demo-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - feature/hvac-comp-batch-03-prospect-demo
+    paths:
+      - 'src/prospect/**'
+      - 'src/demo/**'
+      - 'src/quality/**'
+      - 'src/sales/**'
+      - 'docs/hvac-comp/batch-03-progress.md'
+      - '.github/workflows/hvac-comp-03-prospect-demo-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prospect-demo-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck executable Batch 03 contract surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler src/prospect/batch-03.spec.ts
+
+      - name: Run executable Batch 03 contracts
+        run: pnpm dlx tsx@4.20.6 src/prospect/batch-03.spec.ts
+
+      - name: Enforce fail-closed prospect and demo boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "readyForPublish:false" src/demo/demo-readiness.ts
+          grep -F "publishAuthorized:false" src/quality/demo-qa.ts
+          grep -F "externalActionAuthorized:false" src/prospect/prospect-demo-pipeline.ts
+          grep -F "externalActionAuthorized:false" src/sales/next-best-action.ts
+          grep -F "Cross-tenant prospect access denied." src/prospect/tenant-scope.ts
+          grep -F "No public evidence source supports this claim." src/demo/claim-guard.ts
+          ! grep -R -E '(sendRealOutreach|publishLiveDemo|writeLiveCrm|chargeRealCustomer|activateProduction)[[:space:]]*\(' \
+            src/prospect src/demo src/quality src/sales

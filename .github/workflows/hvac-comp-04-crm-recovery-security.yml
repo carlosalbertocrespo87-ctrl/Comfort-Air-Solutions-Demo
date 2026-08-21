@@ -1,0 +1,67 @@
+name: HVAC COMP 04 CRM Recovery Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/crm/**'
+      - 'src/recovery/**'
+      - 'docs/hvac-comp/batch-04-progress.md'
+      - '.github/workflows/hvac-comp-04-crm-recovery-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - feature/hvac-comp-batch-04-crm-recovery
+    paths:
+      - 'src/crm/**'
+      - 'src/recovery/**'
+      - 'docs/hvac-comp/batch-04-progress.md'
+      - '.github/workflows/hvac-comp-04-crm-recovery-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crm-recovery-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck executable Batch 04 contract surface
+        run: pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler src/recovery/batch-04.spec.ts
+
+      - name: Run executable Batch 04 contracts
+        run: pnpm dlx tsx@4.20.6 src/recovery/batch-04.spec.ts
+
+      - name: Enforce fail-closed CRM and recovery boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'externalMutationAuthorized:false' src/crm/crm-state.ts
+          grep -F 'communicationAuthorized:false' src/recovery/missed-call-recovery.ts
+          grep -F 'communicationAuthorized:false' src/recovery/follow-up-eligibility.ts
+          grep -F 'externalActionAuthorized:false' src/recovery/recovery-queue.ts
+          grep -F 'External recovery action requires recorded approval.' src/recovery/recovery-audit.ts
+          ! grep -R -E '(writeLiveCrm|sendRealSms|sendRealEmail|placeRealCall|chargeRealCustomer|activateProduction)[[:space:]]*\(' \
+            src/crm src/recovery
