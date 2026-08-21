@@ -37,23 +37,65 @@ Deno.serve(async (req: Request) => {
   const action = String(body.action ?? '');
 
   if (action === 'session_info') {
-    return json({
-      ok: true,
-      agent: {
-        user_id: agent.user_id,
-        display_name: agent.display_name,
-        role_label: agent.role_label,
-        availability: agent.availability,
-      },
-    });
+    return json({ ok: true, agent: { user_id: agent.user_id, display_name: agent.display_name, role_label: agent.role_label, availability: agent.availability } });
+  }
+
+  if (action === 'register_device') {
+    const deviceHash = typeof body.device_hash === 'string' ? body.device_hash.toLowerCase() : '';
+    if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json({ error: 'invalid_device_hash' }, 400);
+    const deviceLabel = cleanText(body.device_label, 120);
+    const platform = cleanText(body.platform, 80);
+    const browser = cleanText(body.browser, 80);
+    const now = new Date().toISOString();
+
+    const { data: existing, error: lookupError } = await admin
+      .from('llf_trusted_devices')
+      .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at')
+      .eq('agent_user_id', user.id)
+      .eq('device_fingerprint_hash', deviceHash)
+      .maybeSingle();
+    if (lookupError) return json({ error: 'device_lookup_failed' }, 500);
+
+    if (existing) {
+      const { data: updated, error } = await admin
+        .from('llf_trusted_devices')
+        .update({ device_label: deviceLabel || existing.device_label, platform: platform || existing.platform, browser: browser || existing.browser, last_seen_at: now })
+        .eq('id', existing.id)
+        .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at,last_seen_at')
+        .single();
+      if (error) return json({ error: 'device_update_failed' }, 500);
+      await admin.from('llf_device_security_events').insert({ agent_user_id: user.id, trusted_device_id: existing.id, event_type: 'DEVICE_SEEN', metadata: { trust_status: existing.trust_status } });
+      return json({ ok: true, device: updated });
+    }
+
+    const { data: created, error } = await admin
+      .from('llf_trusted_devices')
+      .insert({ agent_user_id: user.id, device_fingerprint_hash: deviceHash, device_label: deviceLabel || null, platform: platform || null, browser: browser || null, trust_status: 'PENDING', first_seen_at: now, last_seen_at: now })
+      .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at,last_seen_at')
+      .single();
+    if (error) return json({ error: 'device_registration_failed' }, 500);
+    await admin.from('llf_device_security_events').insert({ agent_user_id: user.id, trusted_device_id: created.id, event_type: 'DEVICE_REGISTERED', metadata: { trust_status: 'PENDING' } });
+    await audit(admin, null, user.id, 'REGISTER_DEVICE', { trusted_device_id: created.id, trust_status: 'PENDING' });
+    return json({ ok: true, device: created });
+  }
+
+  if (action === 'device_status') {
+    const deviceHash = typeof body.device_hash === 'string' ? body.device_hash.toLowerCase() : '';
+    if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json({ error: 'invalid_device_hash' }, 400);
+    const { data: device, error } = await admin
+      .from('llf_trusted_devices')
+      .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at,last_seen_at')
+      .eq('agent_user_id', user.id)
+      .eq('device_fingerprint_hash', deviceHash)
+      .maybeSingle();
+    if (error) return json({ error: 'device_lookup_failed' }, 500);
+    return json({ ok: true, device: device ?? null });
   }
 
   if (action === 'set_availability') {
     const availability = String(body.availability ?? '');
     if (!['AVAILABLE','BUSY','OFFLINE'].includes(availability)) return json({ error: 'invalid_availability' }, 400);
-    const { error } = await admin.from('llf_agent_profiles')
-      .update({ availability, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id);
+    const { error } = await admin.from('llf_agent_profiles').update({ availability, updated_at: new Date().toISOString() }).eq('user_id', user.id);
     if (error) return json({ error: 'availability_update_failed' }, 500);
     await audit(admin, null, user.id, 'SET_AVAILABILITY', { availability });
     return json({ ok: true, availability });
@@ -66,30 +108,17 @@ Deno.serve(async (req: Request) => {
     const now = new Date().toISOString();
     const { data: claimed, error } = await admin.from('llf_conversations')
       .update({ status: 'AGENT_ACTIVE', assigned_agent_user_id: user.id, claimed_at: now, updated_at: now })
-      .eq('id', conversationId)
-      .eq('status', 'WAITING_FOR_AGENT')
-      .is('assigned_agent_user_id', null)
-      .select('id,status,assigned_agent_user_id,claimed_at,audience,channel')
-      .maybeSingle();
+      .eq('id', conversationId).eq('status', 'WAITING_FOR_AGENT').is('assigned_agent_user_id', null)
+      .select('id,status,assigned_agent_user_id,claimed_at,audience,channel').maybeSingle();
     if (error) return json({ error: 'claim_failed' }, 500);
     if (!claimed) return json({ error: 'conversation_not_claimable' }, 409);
     await audit(admin, conversationId, user.id, 'CLAIM_CONVERSATION', {});
-    await admin.from('llf_interaction_ledger').insert({
-      conversation_id: conversationId,
-      audience: claimed.audience,
-      channel: claimed.channel,
-      interaction_type: 'CLAIM',
-      actor_type: 'AGENT',
-      actor_user_id: user.id,
-      actor_label: agent.display_name,
-    });
+    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: claimed.audience, channel: claimed.channel, interaction_type: 'CLAIM', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name });
     return json({ ok: true, conversation: claimed });
   }
 
   const { data: conversation, error: conversationError } = await admin.from('llf_conversations')
-    .select('id,status,assigned_agent_user_id,audience,channel')
-    .eq('id', conversationId)
-    .maybeSingle();
+    .select('id,status,assigned_agent_user_id,audience,channel').eq('id', conversationId).maybeSingle();
   if (conversationError) return json({ error: 'conversation_lookup_failed' }, 500);
   if (!conversation) return json({ error: 'conversation_not_found' }, 404);
   if (conversation.assigned_agent_user_id !== user.id) return json({ error: 'conversation_not_owned_by_agent' }, 403);
@@ -98,59 +127,33 @@ Deno.serve(async (req: Request) => {
     if (conversation.status !== 'AGENT_ACTIVE') return json({ error: 'conversation_not_agent_active' }, 409);
     const message = typeof body.message === 'string' ? body.message.trim() : '';
     if (!message || message.length > 10000) return json({ error: 'invalid_message' }, 400);
-    const { data: row, error } = await admin.from('llf_conversation_messages').insert({
-      conversation_id: conversationId,
-      author: 'AGENT',
-      author_user_id: user.id,
-      author_label: `${agent.display_name} · LLF Specialist`,
-      body: message,
-    }).select('id,created_at').single();
+    const { data: row, error } = await admin.from('llf_conversation_messages').insert({ conversation_id: conversationId, author: 'AGENT', author_user_id: user.id, author_label: `${agent.display_name} · LLF Specialist`, body: message }).select('id,created_at').single();
     if (error) return json({ error: 'message_insert_failed' }, 500);
-    await admin.from('llf_interaction_ledger').insert({
-      conversation_id: conversationId,
-      audience: conversation.audience,
-      channel: conversation.channel,
-      interaction_type: 'AGENT_MESSAGE',
-      actor_type: 'AGENT',
-      actor_user_id: user.id,
-      actor_label: agent.display_name,
-      message_id: row.id,
-    });
+    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: conversation.audience, channel: conversation.channel, interaction_type: 'AGENT_MESSAGE', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, message_id: row.id });
     await audit(admin, conversationId, user.id, 'SEND_AGENT_MESSAGE', { message_id: row.id });
     return json({ ok: true, message_id: row.id, created_at: row.created_at });
   }
 
   if (action === 'resolve') {
     const now = new Date().toISOString();
-    const { error } = await admin.from('llf_conversations')
-      .update({ status: 'RESOLVED', resolved_at: now, updated_at: now })
-      .eq('id', conversationId)
-      .eq('assigned_agent_user_id', user.id);
+    const { error } = await admin.from('llf_conversations').update({ status: 'RESOLVED', resolved_at: now, updated_at: now }).eq('id', conversationId).eq('assigned_agent_user_id', user.id);
     if (error) return json({ error: 'resolve_failed' }, 500);
     await audit(admin, conversationId, user.id, 'RESOLVE_CONVERSATION', {});
-    await admin.from('llf_interaction_ledger').insert({
-      conversation_id: conversationId,
-      audience: conversation.audience,
-      channel: conversation.channel,
-      interaction_type: 'RESOLUTION',
-      actor_type: 'AGENT',
-      actor_user_id: user.id,
-      actor_label: agent.display_name,
-      outcome: 'RESOLVED',
-    });
+    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: conversation.audience, channel: conversation.channel, interaction_type: 'RESOLUTION', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, outcome: 'RESOLVED' });
     return json({ ok: true, resolved_at: now });
   }
 
   return json({ error: 'unsupported_action' }, 400);
 });
 
+function cleanText(value: unknown, max: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
+}
+
 async function audit(admin: ReturnType<typeof createClient>, conversationId: string | null, agentUserId: string, action: string, metadata: Record<string, unknown>) {
   await admin.from('llf_agent_audit_log').insert({ conversation_id: conversationId, agent_user_id: agentUserId, action, metadata });
 }
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
