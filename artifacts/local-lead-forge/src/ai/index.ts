@@ -10,3 +10,5 @@ export * from "./eval-scenarios";
 export * from "./eval-harness";
 export * from "./telemetry";
 export * from "./voice-realtime";
+export * from "./failure-providers";
+export * from "./resilience";
