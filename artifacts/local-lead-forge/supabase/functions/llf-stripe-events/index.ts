@@ -4,10 +4,8 @@ import Stripe from "https://esm.sh/stripe@18?target=denonext";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
-  headers: { "content-type": "application/json" },
+  headers: { "content-type": "application/json", "cache-control": "no-store" },
 });
-
-type MetadataCarrier = { metadata?: Record<string, string> | null };
 
 type StripeObject = {
   id?: string;
@@ -25,11 +23,12 @@ function idOf(value: string | { id?: string } | null | undefined): string | null
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  const liveSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  const testSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET_TEST");
   const stripeKey = Deno.env.get("STRIPE_RESTRICTED_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!webhookSecret || !stripeKey || !supabaseUrl || !serviceRoleKey) {
+  if (!liveSecret || !stripeKey || !supabaseUrl || !serviceRoleKey) {
     return json({ error: "runtime_not_configured" }, 503);
   }
 
@@ -38,18 +37,35 @@ Deno.serve(async (req: Request) => {
 
   const rawBody = await req.text();
   const stripe = new Stripe(stripeKey, { apiVersion: "2026-06-24.dahlia" });
-  let event: Stripe.Event;
+  let event: Stripe.Event | null = null;
+  let verifiedMode: "live" | "test" | null = null;
+
   try {
-    event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(rawBody, signature, liveSecret);
+    verifiedMode = "live";
   } catch {
-    return json({ error: "invalid_signature" }, 400);
+    if (testSecret) {
+      try {
+        event = await stripe.webhooks.constructEventAsync(rawBody, signature, testSecret);
+        verifiedMode = "test";
+      } catch {
+        return json({ error: "invalid_signature" }, 400);
+      }
+    } else {
+      return json({ error: "invalid_signature" }, 400);
+    }
+  }
+
+  if (!event || !verifiedMode) return json({ error: "invalid_signature" }, 400);
+  if ((verifiedMode === "live" && !event.livemode) || (verifiedMode === "test" && event.livemode)) {
+    return json({ error: "environment_mismatch" }, 400);
   }
 
   const db = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const object = event.data.object as StripeObject & MetadataCarrier;
+  const object = event.data.object as StripeObject;
   const eventCreatedAt = new Date(event.created * 1000).toISOString();
 
   const { error: ledgerError } = await db.from("llf_stripe_event_ledger").insert({
@@ -60,7 +76,7 @@ Deno.serve(async (req: Request) => {
     processing_status: "RECEIVED",
   });
 
-  if (ledgerError?.code === "23505") return json({ received: true, duplicate: true });
+  if (ledgerError?.code === "23505") return json({ received: true, duplicate: true, mode: verifiedMode });
   if (ledgerError) return json({ error: "ledger_write_failed" }, 500);
 
   const acceptanceRef = object.metadata?.llf_acceptance_ref ?? null;
@@ -68,7 +84,7 @@ Deno.serve(async (req: Request) => {
     await db.from("llf_stripe_event_ledger")
       .update({ processing_status: "IGNORED", processed_at: new Date().toISOString() })
       .eq("stripe_event_id", event.id);
-    return json({ received: true, processed: false, reason: "missing_acceptance_ref" });
+    return json({ received: true, processed: false, mode: verifiedMode, reason: "missing_acceptance_ref" });
   }
 
   const { data: transitionRows, error: transitionError } = await db.rpc("llf_apply_first_sale_stripe_event", {
@@ -92,15 +108,13 @@ Deno.serve(async (req: Request) => {
   const transition = Array.isArray(transitionRows) ? transitionRows[0] : transitionRows;
   const processed = Boolean(transition?.processed);
   await db.from("llf_stripe_event_ledger")
-    .update({
-      processing_status: processed ? "PROCESSED" : "IGNORED",
-      processed_at: new Date().toISOString(),
-    })
+    .update({ processing_status: processed ? "PROCESSED" : "IGNORED", processed_at: new Date().toISOString() })
     .eq("stripe_event_id", event.id);
 
   return json({
     received: true,
     processed,
+    mode: verifiedMode,
     onboarding_ready: Boolean(transition?.onboarding_ready),
     reason: transition?.reason ?? "no_transition_result",
   });
