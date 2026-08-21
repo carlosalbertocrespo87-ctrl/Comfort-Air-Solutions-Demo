@@ -1,316 +1,225 @@
 # LLF — Consola Realtime sintética: despliegue y QA
 
-**Fecha:** 21 de agosto de 2026  
+**Fecha de reconciliación:** 21 de agosto de 2026  
 **PR:** #94  
-**Estado:** DESPLEGADO PARA QA / NO APROBADO PARA PRODUCCIÓN REAL
+**Estado:** DESPLEGADO PARA QA SINTÉTICO / HOLD PARA MERGE / NO APROBADO PARA PRODUCCIÓN REAL
 
 ## 1. Objetivo
 
-Validar la consola móvil de agentes con persistencia y sincronización Realtime entre Carlos (PC) y María (iPhone), sin utilizar clientes reales, sin enviar mensajes y sin activar notificaciones push.
+Validar la Consola del Agente con persistencia y sincronización Realtime entre Carlos (PC) y María (iPhone), usando únicamente datos sintéticos. Este gate no autoriza mensajes reales, notificaciones push, conversaciones reales ni tráfico de clientes.
 
-## 2. Alcance implementado
+## 2. Estado autoritativo actual
 
-- Dos conversaciones QA persistidas en Supabase con `is_synthetic = true`.
-- Cuatro mensajes QA sintéticos.
-- Lectura de conversaciones mediante la Edge Function `llf-agent-ops`.
-- Canal privado Realtime: `llf-agent-console-synthetic`.
-- Acciones permitidas durante esta fase:
-  - cambiar disponibilidad;
-  - consultar escenarios sintéticos;
-  - reclamar una conversación sintética;
-  - resolver una conversación sintética.
-- Edge Function desplegada: `llf-agent-ops` versión 7.
+Lecturas frescas de Supabase confirman:
 
-## 3. Controles de seguridad
+- proyecto `Local-Lead-Forge`: `ACTIVE_HEALTHY`;
+- Edge Function desplegada `llf-agent-ops`: **v11 ACTIVE**;
+- conversaciones sintéticas: **2**;
+- conversaciones reales: **0**;
+- mensajes sintéticos: **4**;
+- dispositivos `TRUSTED`: **2**;
+- dispositivos `PENDING`: **0**;
+- RLS en `llf_conversations`: **activo**;
+- RLS en `llf_conversation_messages`: **activo**;
+- `REALTIME_CONVERSATIONS`: **BLOCKED**;
+- `SECURE_IPHONE_PUSH`: **BLOCKED**.
 
-### Autenticación y dispositivo
+Las referencias anteriores a v7 y v8 corresponden a checkpoints históricos del mismo trabajo. **v11 es el runtime desplegado vigente en este registro.**
+
+## 3. Superficie permitida
+
+Durante QA solo se permite:
+
+- iniciar sesión como agente LLF activo;
+- registrar/consultar el dispositivo;
+- cambiar disponibilidad desde un dispositivo confiable;
+- listar conversaciones `is_synthetic = true`;
+- reclamar una conversación sintética;
+- resolver una conversación sintética;
+- recibir una señal privada Realtime de actualización sin contenido de conversación.
+
+No se permite:
+
+- enviar mensajes;
+- devolver conversaciones a IA;
+- habilitar push;
+- consultar/modificar conversaciones reales;
+- saltar el control de dispositivo confiable;
+- publicar el preview de forma abierta para facilitar el QA.
+
+## 4. Controles de seguridad vigentes
+
+### Sesión y dispositivo
 
 La Edge Function:
 
-1. valida el token con Supabase Auth;
-2. confirma que el usuario tenga un perfil LLF activo;
-3. calcula/recibe el identificador de instalación;
-4. exige que el dispositivo figure como `TRUSTED`;
+1. valida el bearer token con Supabase Auth;
+2. exige perfil LLF activo;
+3. registra/consulta un fingerprint hash de instalación;
+4. exige `TRUSTED` para acciones protegidas;
 5. actualiza `last_seen_at`;
-6. registra acciones relevantes en la auditoría.
+6. registra acciones relevantes en auditoría.
 
-Carlos tiene registrado Windows/Chrome. María tiene registrado iPhone/Safari.
+### Separación sintética
 
-### Separación de datos
+- La ruta protegida lista solo `is_synthetic = true`.
+- Claim y resolve incluyen filtro `is_synthetic = true`.
+- Un ID no sintético no puede resolverse mediante esta ruta QA.
+- `send_message` devuelve `messaging_capability_blocked`.
+- El frontend mantiene Reply/Send y Return to AI deshabilitados.
 
-- Las consultas del navegador no leen directamente las tablas de conversaciones.
-- `anon` no tiene permiso `SELECT` en:
-  - `public.llf_conversations`;
-  - `public.llf_conversation_messages`.
-- La función devuelve exclusivamente conversaciones con `is_synthetic = true`.
-- Claim y resolve también exigen `is_synthetic = true`.
-- El canal Realtime transmite únicamente una señal `refresh` con el tipo de entidad y operación. No transmite nombres, correos, teléfonos ni contenido del mensaje.
-- La política del canal privado permite recepción solamente a usuarios autenticados con perfil LLF activo.
+### Realtime
 
-### Funciones bloqueadas
+- Canal privado: `llf-agent-console-synthetic`.
+- La señal contiene únicamente motivo/entidad de refresh; no transmite nombre, teléfono, correo ni mensaje.
+- La conversación se vuelve a consultar mediante el backend protegido.
 
-- Mensajería real: BLOQUEADA.
-- Notificaciones push: BLOQUEADAS.
-- Retorno de conversación a IA: BLOQUEADO durante QA.
-- Conversaciones reales: no existen en esta base al momento de la validación.
-- La capacidad `REALTIME_CONVERSATIONS` permanece `BLOCKED` hasta completar QA en dos dispositivos.
-- La capacidad `SECURE_IPHONE_PUSH` permanece `BLOCKED`.
+### CORS
 
-## 4. Evidencia automática
-
-Ejecutado correctamente antes de publicar el PR:
-
-```bash
-pnpm --dir artifacts/local-lead-forge typecheck
-pnpm --dir artifacts/local-lead-forge build
-```
-
-Resultado de base de datos:
-
-- conversaciones sintéticas: 2;
-- conversaciones no sintéticas: 0;
-- mensajes sintéticos: 4;
-- lectura anónima de conversaciones: denegada;
-- lectura anónima de mensajes: denegada.
-
-Estado observado del PR:
-
-- Netlify Deploy Preview: correcto;
-- LLF Main Protection Gate: correcto;
-- LLF Onboarding CI: correcto;
-- LLF Pixel Match QA: pendiente al redactar este registro;
-- hilos de revisión: ninguno;
-- revisiones solicitando cambios: ninguna.
-
-## 5. Avisos conocidos
-
-Supabase Security Advisor mantiene un aviso: **Leaked Password Protection Disabled**. Esta protección no está disponible en el plan Free actual. No se considera resuelto y debe revisarse antes de ampliar el acceso o cambiar de plan.
-
-Los avisos de índices sin uso son informativos en esta etapa y no justifican eliminar índices antes de obtener tráfico y métricas reales.
-
-## 6. Prueba manual PC–iPhone
-
-### Preparación
-
-1. Carlos abre el preview del PR #94 en su PC usando Chrome.
-2. María abre el mismo preview en su iPhone usando Safari.
-3. Cada uno inicia sesión con su propia identidad.
-4. Ambos verifican que la consola diga `trusted device`.
-5. Ambos mantienen abierta la lista de conversaciones QA.
-
-### Caso A — Sincronización inicial
-
-1. Confirmar que ambos ven exactamente dos conversaciones identificadas con `[QA]`.
-2. Confirmar que la consola muestra `Private Realtime connected · synthetic data only`.
-3. Confirmar que no aparece información de clientes reales.
-
-**Aprobación:** ambos dispositivos muestran el mismo estado sin recargar manualmente.
-
-### Caso B — Bloqueo de reclamación simultánea
-
-1. Carlos y María seleccionan la misma conversación `[QA]`.
-2. Ambos presionan **Take** casi al mismo tiempo.
-3. Solo una solicitud debe ganar.
-4. El segundo agente debe ver la asignación actualizada y no debe poder reclamar ni responder.
-
-**Aprobación:** existe un solo agente asignado en la base de datos y en ambas pantallas.
-
-### Caso C — Resolución sincronizada
-
-1. El agente propietario presiona **Resolve**.
-2. El estado debe cambiar a `Resolved` en ambos dispositivos.
-3. El agente que no es propietario no debe poder ejecutar la resolución.
-
-**Aprobación:** ambas pantallas reflejan la resolución y la auditoría registra al agente correcto.
-
-### Caso D — Capacidades bloqueadas
-
-1. Verificar que el cuadro de respuesta esté deshabilitado.
-2. Verificar que **Send** permanezca deshabilitado.
-3. Verificar que **Return to AI** permanezca deshabilitado.
-4. Confirmar que no se genera correo, SMS, WhatsApp ni push.
-
-**Aprobación:** no existe salida hacia sistemas externos.
-
-### Caso E — Dispositivo no confiable
-
-1. Abrir la consola desde un navegador/dispositivo nuevo.
-2. Completar el inicio de sesión.
-3. Intentar cargar o modificar una conversación antes de aprobar el dispositivo.
-
-**Aprobación:** el backend responde `trusted_device_required` y registra `UNTRUSTED_DEVICE_BLOCKED`.
-
-## 7. Criterio de fusión
-
-El PR #94 solo debe marcarse listo para revisión y fusionarse cuando:
-
-- todos los controles automáticos estén en verde;
-- Casos A–D hayan sido completados por Carlos y María;
-- el bloqueo de reclamación simultánea esté confirmado;
-- no haya datos reales ni entregas externas;
-- mensajes y push continúen bloqueados;
-- cualquier fallo encontrado esté corregido y nuevamente validado.
-
-El Caso E es una comprobación de seguridad adicional recomendada antes de habilitar acceso a más agentes.
-
-## 8. Rollback
-
-Si el QA falla:
-
-1. mantener `REALTIME_CONVERSATIONS = BLOCKED`;
-2. no fusionar el PR;
-3. conservar mensajes y push bloqueados;
-4. deshabilitar la suscripción Realtime del frontend;
-5. revertir la Edge Function a su versión anterior si el fallo está en el backend;
-6. retirar solamente los registros con `is_synthetic = true` si es necesario reiniciar el escenario;
-7. conservar los registros de auditoría para investigación.
-
-## 9. Decisión actual
-
-El sistema está listo para **QA autenticado con datos sintéticos**, pero todavía no está autorizado para mensajería real, notificaciones push ni tráfico de clientes.
-
-
-## 10. Bloqueo observado en el preview
-
-Después de completar los checks automáticos se verificó directamente el Deploy Preview:
-
-- URL: https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app
-- Netlify reporta el despliegue como correcto.
-- La navegación sin una sesión Netlify autorizada redirige a `Team protection`.
-- Mensaje observado: `This site is private — Sign in with an invited Netlify account to view it.`
-
-### Impacto
-
-El código y el despliegue automático están correctos, pero la prueba Carlos PC ↔ María iPhone no puede considerarse completada hasta que ambos dispositivos puedan abrir el mismo preview. No se debe fusionar únicamente para evitar esta protección.
-
-### Opciones seguras
-
-1. Carlos inicia sesión en Netlify desde la PC y confirma acceso al preview.
-2. Invitar a María como usuaria autorizada de Netlify si el plan y la política de acceso lo permiten.
-3. Crear posteriormente un entorno QA temporal protegido por autenticación LLF, sin exponer datos reales.
-4. Mantener el PR en borrador hasta escoger y completar una de estas rutas.
-
-No se modificó la protección de Netlify ni se publicó el preview de forma abierta.
-
-
-## 11. Auditoría automática sin PC
-
-Se ejecutó una revisión adicional del backend y la base de datos mientras la prueba visual PC–iPhone permanece aplazada.
-
-### Resultado
-
-| Control | Resultado |
-|---|---:|
-| Conversaciones sintéticas | 2 |
-| Conversaciones no sintéticas | 0 |
-| Mensajes sintéticos | 4 |
-| Mensajes con conversación inexistente | 0 |
-| RLS en conversaciones | Activo |
-| RLS en mensajes | Activo |
-| Lectura anónima de conversaciones | Denegada |
-| Lectura anónima de mensajes | Denegada |
-| Ejecución pública de la función trigger | Denegada |
-| Triggers sintéticos instalados | 2 |
-| Política privada Realtime | 1 |
-| Dispositivos confiables | 2 |
-| Dispositivos pendientes o revocados | 0 |
-| REALTIME_CONVERSATIONS | BLOCKED |
-| SECURE_IPHONE_PUSH | BLOCKED |
-| Edge Function llf-agent-ops | v7 ACTIVE |
-
-### Revisión de plataforma
-
-La documentación vigente de Supabase confirma que:
-
-- los canales privados deben usar autorización RLS en `realtime.messages`;
-- `realtime.send` es apropiado para emitir notificaciones personalizadas y filtradas;
-- el cliente debe eliminar la suscripción al desmontar el componente;
-- una clave publicable puede utilizarse en el frontend, pero una clave secreta o `service_role` nunca debe exponerse.
-
-El changelog de julio de 2026 informa que el esquema `realtime` está bloqueado contra modificaciones generales, aunque las políticas RLS en `realtime.messages` continúan admitidas. La política de LLF ya existe y fue validada.
-
-### Advisors
-
-El único aviso de seguridad permanece:
-
-- `Leaked Password Protection Disabled`: limitación conocida del plan Free actual.
-
-Los avisos de índices sin uso son informativos y se conservarán hasta contar con tráfico real suficiente para decidir con evidencia.
-
-### Conclusión
-
-Los controles automáticos disponibles sin la PC están aprobados. El único gate pendiente para el PR #94 es el QA humano simultáneo en el preview protegido de Netlify.
-
-
-## 12. Corrección CORS para el preview #94
-
-La revisión sin PC detectó que la Edge Function v7 permitía únicamente:
+El runtime v11 allowlista exactamente:
 
 - `https://localleadforge.com`
 - `https://www.localleadforge.com`
-
-Aunque Netlify autorizara a Carlos y María, el navegador del preview habría recibido `origin_not_allowed` al consultar el backend.
-
-### Corrección
-
-Se añadió exclusivamente:
-
 - `https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app`
 
-No se utilizó `*`, una expresión general de Netlify ni acceso para otros previews. La función actual es `llf-agent-ops` v8 y está `ACTIVE`.
+No se usa `Access-Control-Allow-Origin: *`.
 
-### Verificaciones posteriores
+El origen del preview es temporal y debe retirarse cuando deje de ser necesario.
 
-- La versión desplegada contiene exactamente los tres orígenes aprobados.
-- Los orígenes no incluidos continúan recibiendo `origin_not_allowed`.
-- El frontend no contiene `service_role`, `sb_secret_` ni `SUPABASE_SERVICE_ROLE_KEY`.
-- `pnpm audit --prod`: no se encontraron vulnerabilidades conocidas.
-- Security Advisor: sin nuevos avisos; permanece únicamente la protección de contraseñas filtradas no disponible en el plan Free.
+## 5. Gate automático
 
-### Retiro futuro
+Workflow: `.github/workflows/agent-console-security.yml`.
 
-El origen del preview #94 debe eliminarse de la lista CORS cuando finalice el QA y deje de utilizarse. No forma parte de la configuración permanente de producción.
+El gate ejecuta invariantes fail-closed, typecheck y build. A partir de esta reconciliación también vigila que la documentación operativa no declare falsamente completado el QA físico.
 
+La suite está diseñada para detectar, entre otros:
 
-## 13. Requisito de autenticación para el preview
+- pérdida de allowlist exacta;
+- introducción de CORS wildcard;
+- pérdida de filtros sintéticos;
+- habilitación accidental de mensajería o Return to AI;
+- pérdida del gate de dispositivo confiable;
+- documentación que vuelva a marcar como PASS una prueba física aún no observada.
 
-La sesión LLF se guarda en `sessionStorage`. Los navegadores aíslan este almacenamiento por origen, por lo que una sesión creada en `https://localleadforge.com` no existe en el dominio del Deploy Preview.
+Los checks automáticos son necesarios, pero **no sustituyen** la prueba PC ↔ iPhone.
 
-### Consecuencia
+## 6. Bloqueos del Deploy Preview
 
-Aunque Carlos o María puedan superar la protección privada de Netlify, el preview mostrará `Authentication required` hasta que cada agente complete un magic link cuyo callback termine en el origen exacto del preview.
+El preview de PR #94 está protegido por Netlify Team Protection. Esto es deseado; no se debe hacer público solo para facilitar el QA.
 
-No se debe copiar el fragmento de acceso, el JWT ni ningún token desde producción hacia el preview. Esa práctica expondría credenciales y anularía la separación entre orígenes.
+Además, el preview tiene un origen distinto a `localleadforge.com`, por lo que:
 
-### Paso pendiente en PC
+- `sessionStorage` no comparte la sesión de producción;
+- `localStorage` no comparte el identificador de dispositivo de producción;
+- cada agente necesita autenticación propia para el preview;
+- cada navegador del preview crea un registro de dispositivo independiente.
 
-1. En Supabase Auth, agregar temporalmente el callback exacto del preview #94 a las Redirect URLs permitidas.
-2. Mantener `https://localleadforge.com` como Site URL principal.
-3. Generar enlaces de acceso nuevos y separados para Carlos y María con redirect al preview.
-4. Abrir cada enlace directamente en el dispositivo que se probará.
-5. Verificar nuevamente el estado `TRUSTED`.
-6. Al finalizar el QA, retirar el callback temporal del preview junto con su origen CORS.
+## 7. Preparación del QA físico
 
-Este requisito se suma a la autorización de Netlify; ambos controles deben superarse para completar el QA PC–iPhone.
+Antes de iniciar la prueba:
 
+1. Carlos abre el mismo Deploy Preview en Chrome/PC.
+2. María abre el mismo Deploy Preview en Safari/iPhone.
+3. Ambos superan la protección privada de Netlify con acceso autorizado.
+4. Si Supabase Auth aún no permite ese callback, agregar temporalmente la URL exacta del preview a Redirect URLs.
+5. Mantener `https://localleadforge.com` como Site URL principal.
+6. Generar magic links separados cuyo redirect termine en el preview exacto.
+7. Abrir cada enlace directamente en el dispositivo correspondiente.
+8. No copiar JWT, fragmentos de URL, access tokens ni sessionStorage entre dominios.
+9. Aprobar únicamente los nuevos registros de dispositivo que correspondan a la PC de Carlos y al iPhone de María.
+10. Confirmar `trusted device` en ambos.
 
-## 14. Registro de dispositivos dentro del preview
+## 8. Prueba manual PC ↔ iPhone
 
-El identificador de instalación LLF se guarda en `localStorage`, que también está aislado por origen. Por esta razón:
+### Caso A — Sincronización inicial
 
-- la PC confiable en `localleadforge.com` no hereda automáticamente esa confianza en el dominio del preview;
-- el iPhone confiable en `localleadforge.com` tampoco la hereda;
-- cada navegador del preview se registrará como un dispositivo independiente con estado inicial `PENDING`.
+1. Ambos deben ver exactamente dos conversaciones `[QA]`.
+2. Ambos deben ver Realtime privado conectado.
+3. No debe aparecer información de clientes reales.
 
-### Procedimiento
+**PASS físico:** ambas pantallas muestran el mismo estado sin recarga manual necesaria para converger.
 
-1. Carlos abre su magic link del preview desde Chrome en la PC.
-2. Confirmar que aparece `Device approval required`.
-3. Aprobar únicamente el nuevo registro que coincida con su plataforma y navegador.
-4. María abre su magic link del preview desde Safari en el iPhone.
-5. Confirmar el registro pendiente separado.
-6. Aprobar únicamente el registro correspondiente a María.
-7. Recargar ambos dispositivos y comprobar `trusted device`.
-8. Revocar o eliminar estos registros temporales después del QA, según la política de conservación que se adopte.
+### Caso B — Claim simultáneo
 
-No se debe reutilizar manualmente el identificador local de producción ni transferirlo entre navegadores.
+1. Ambos seleccionan la misma conversación `[QA]` en espera.
+2. Ambos presionan Take lo más simultáneamente posible.
+3. Exactamente una solicitud gana.
+4. El segundo agente recibe rechazo o ve el propietario actualizado.
+5. Ambas pantallas convergen en un solo propietario.
+
+**PASS físico:** no existe doble ownership ni acción posterior del agente perdedor.
+
+### Caso C — Resolución sincronizada
+
+1. El propietario presiona Resolve.
+2. Ambos dispositivos deben reflejar `Resolved`.
+3. El no propietario no puede resolver la conversación.
+
+**PASS físico:** estado consistente + auditoría del agente correcto.
+
+### Caso D — Capacidades bloqueadas
+
+1. Reply/Send permanece deshabilitado.
+2. Return to AI permanece deshabilitado.
+3. No se genera email, SMS, WhatsApp ni push.
+
+**PASS físico:** cero salida externa.
+
+### Caso E — Dispositivo no confiable
+
+1. Abrir la consola desde un navegador/dispositivo no aprobado.
+2. Autenticar sin aprobar ese dispositivo.
+3. Intentar listar o ejecutar una acción protegida.
+
+**PASS:** `trusted_device_required`; cuando corresponde debe registrarse `UNTRUSTED_DEVICE_BLOCKED`.
+
+## 9. Evidencia que debe guardarse
+
+Para cada caso físico:
+
+- fecha/hora;
+- agente;
+- dispositivo/navegador;
+- conversación QA usada;
+- resultado esperado;
+- resultado real;
+- PASS/FAIL;
+- captura sin credenciales, tokens ni datos sensibles;
+- incidente/fix y retest si falla.
+
+No usar una confirmación verbal como sustituto de evidencia.
+
+## 10. Limpieza posterior
+
+Cuando termine el QA:
+
+1. retirar el callback temporal del preview si ya no se utilizará;
+2. retirar el origen CORS temporal cuando deje de ser necesario;
+3. revocar/eliminar los dispositivos temporales del preview que ya no sean necesarios;
+4. conservar auditoría útil para evidencia;
+5. mantener mensajería, push y conversaciones reales bloqueados hasta un gate de producción separado.
+
+## 11. Criterio de merge
+
+PR #94 puede pasar de DRAFT/HOLD a revisión únicamente cuando:
+
+- todos los checks automáticos del head final estén en verde;
+- Casos A–D tengan evidencia física PASS;
+- claim simultáneo tenga un solo ganador;
+- resolve sincronice en ambos dispositivos;
+- no exista salida externa;
+- no aparezcan datos reales;
+- cualquier fallo haya sido corregido y revalidado.
+
+Caso E es seguridad adicional recomendada antes de ampliar acceso a más agentes y puede ejecutarse durante la misma sesión si resulta práctico.
+
+## 12. Decisión actual
+
+**HOLD.** Backend, datos sintéticos, RLS, capability blocks y runtime v11 están preparados para QA autenticado. Falta observar la conducta simultánea real de Carlos PC ↔ María iPhone y capturar evidencia. Hasta entonces:
+
+- PR #94 permanece Draft;
+- no se fusiona por conveniencia;
+- no se habilita mensajería;
+- no se habilita push;
+- no se habilitan conversaciones reales;
+- `REALTIME_CONVERSATIONS` y `SECURE_IPHONE_PUSH` permanecen `BLOCKED`.
