@@ -21,8 +21,6 @@ export type LeadShadowOutput = {
   needsHumanReview?: boolean;
 };
 
-export type QA ShadowOutput = never;
-
 export type QAShadowOutput = {
   passed?: boolean;
   severity?: "info" | "warning" | "critical";
