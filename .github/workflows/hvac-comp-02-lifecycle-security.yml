@@ -1,0 +1,83 @@
+name: HVAC COMP 02 Lifecycle Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/hvac-comp-01-revenue-attribution
+    paths:
+      - 'src/lifecycle/**'
+      - 'src/quality/**'
+      - 'src/integrations/field-service-adapter.ts'
+      - 'docs/hvac-comp/batch-02-progress.md'
+      - '.github/workflows/hvac-comp-02-lifecycle-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - feature/hvac-comp-batch-02-lifecycle-quality
+    paths:
+      - 'src/lifecycle/**'
+      - 'src/quality/**'
+      - 'src/integrations/field-service-adapter.ts'
+      - 'docs/hvac-comp/batch-02-progress.md'
+      - '.github/workflows/hvac-comp-02-lifecycle-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck Batch 02 contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler \
+            src/lifecycle/customer-lifecycle.ts \
+            src/lifecycle/review-policy.ts \
+            src/lifecycle/seasonal-recall.ts \
+            src/lifecycle/renewal.ts \
+            src/lifecycle/cross-sell.ts \
+            src/lifecycle/returning-customer.ts \
+            src/lifecycle/reactivation.ts \
+            src/quality/technical-readiness.ts \
+            src/quality/ai-geo-readiness.ts \
+            src/integrations/field-service-adapter.ts \
+            src/lifecycle/batch-02.spec.ts
+
+      - name: Run executable Batch 02 contracts
+        run: pnpm dlx tsx@4.20.6 src/lifecycle/batch-02.spec.ts
+
+      - name: Enforce fail-closed lifecycle boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R -F 'communicationAuthorized:false' src/lifecycle
+          grep -F 'pricingProvided:false' src/lifecycle/cross-sell.ts
+          grep -F 'guaranteesRanking: false' src/quality/ai-geo-readiness.ts
+          grep -F 'liveWritesEnabled: false' src/integrations/field-service-adapter.ts
+          ! grep -R -E '(sendRealOutreach|sendLiveCustomerMessage|writeLiveCrm|chargeRealCustomer|activateProduction)[[:space:]]*\(' \
+            src/lifecycle src/quality src/integrations/field-service-adapter.ts
