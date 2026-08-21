@@ -1,62 +1,56 @@
 # Local Lead Forge — Agent Console Static QA Result
 
 Date: 2026-08-21
-Branch: `feature/synthetic-realtime-console-v2`
-Replacement PR: **#148**
+Merge candidate: PR #148 / `feature/synthetic-realtime-console-v2`
+Physical QA carrier: PR #94 synchronized / head `72b028287b45ee19eb4d1188405bcee7b5741dd8`
 Release posture: **HOLD / SYNTHETIC ONLY**
 
-## Port checkpoint
+## Hosted evidence
 
-The clean current-main port commit `e998a97211561f39fa90917ad432854c30e91ee5` completed hosted `Agent Console Security Gate` run **#18** successfully.
+Clean-port checkpoint on PR #148:
 
-That job passed:
+- Agent Console Security Gate run #18: success;
+- static fail-closed validation: success;
+- TypeScript typecheck: success;
+- application build: success.
 
-- static fail-closed Agent Console assertions;
-- TypeScript typecheck;
-- production application build.
+Synchronized PR #94 QA carrier head:
 
-This checkpoint proves the original #94 safety surface survived the clean port to current `main`. Any later commit must obtain a fresh hosted PASS before review or merge.
+- 0 commits behind current `main`;
+- Agent Console Security Gate run #20: success;
+- LLF Main Protection Gate: success;
+- LLF Onboarding CI: success;
+- LLF Pixel Match QA: success;
+- triggered HVAC COMP security gates: success.
+
+Every later PR #148 head still requires its own fresh hosted PASS.
+
+## Executable equivalence checkpoint
+
+Byte-identical blobs between synchronized #94 and #148 were verified for:
+
+- Agent Console page: `2985a29a6c189b9ba1e7921684a0149886e7c5ca`;
+- private synthetic Realtime client: `fd406d2ff3f555447e70e4309de1bec5ff9ec02f`;
+- Local Lead Forge package manifest: `48a4ce250e30e6d56f847698b41dafe415195105`;
+- lockfile: `94f70247f8ec1bd390eddc1854acfa762b29a3a3`;
+- synthetic Realtime SQL foundation: `6ef4cd3ebc29b662792bb6edf147f48bf00b3b50`.
+
+PR #148 also uses the same hardened Edge Function source blob as synchronized #94 / observed v11 source: `339e4a35aac08c666b14e22f40ee6c3c063762bb`.
+
+See `docs/PR148-PHYSICAL-QA-EQUIVALENCE.md`.
 
 ## Current static assertions
 
-The replacement gate verifies that:
+The gate verifies explicit origins/no wildcard, active-agent and trusted-device requirements, synthetic-only reads/mutations, blocked outbound messaging, private refresh-only Realtime, blocked Reply/Return-to-AI/live notification transport, `PENDING_PHYSICAL` evidence posture, HOLD merge gate and the selected PR #94 QA-carrier equivalence record.
 
-1. production origins are explicitly allowlisted;
-2. the current PR #148 preview origin is prepared in source control;
-3. CORS wildcard remains absent;
-4. an active agent profile is required;
-5. a trusted device is required for protected actions;
-6. synthetic conversation listing is filtered by `is_synthetic = true`;
-7. protected mutations retain synthetic-only filtering;
-8. outbound agent messaging fails closed;
-9. Realtime uses a private broadcast-only topic;
-10. Realtime payload is a fixed refresh signal, not conversation content;
-11. Realtime capability remains gated pending two-device QA;
-12. reply UI remains disabled;
-13. Return-to-AI UI remains disabled;
-14. live notification transport remains disabled;
-15. María's protocol points to replacement PR #148;
-16. physical QA remains explicitly `PENDING_PHYSICAL`;
-17. the merge gate remains `HOLD` pending QA físico;
-18. the runbook distinguishes source preparation from a production deployment authorization.
+## Runtime checkpoint
 
-## Runtime/source distinction
+Observed Supabase `llf-agent-ops` v11 is ACTIVE and already allowlists the protected PR #94 preview origin. Therefore physical QA can use the synchronized #94 preview without deploying a new PR #148 CORS variant.
 
-Fresh platform evidence established that Supabase `llf-agent-ops` v11 is ACTIVE with the hardened behavior from the original QA implementation. The currently deployed v11 runtime allowlists production + the legacy PR #94 preview origin. PR #148 source additionally prepares the replacement preview origin, but **that source change is not deployed by this PR**.
-
-Therefore a physical QA session against the PR #148 preview remains blocked until the necessary preview callback/CORS runtime access is explicitly authorized and applied through the production-change process.
+If the existing Supabase Auth redirect configuration does not accept the PR #94 preview during the actual session, stop and obtain separate authorization before changing Auth configuration.
 
 ## Physical evidence still required
 
-Automated PASS cannot replace the real PC ↔ iPhone evidence. Before release review, verify at minimum:
+Automated PASS cannot replace PC ↔ iPhone evidence. Verify authenticated/trusted devices, only `[QA]` conversations, one-winner simultaneous claim, synchronized resolve, blocked Reply/Send/Return-to-AI, zero external delivery, untrusted-device rejection and expected audit/security/interaction records.
 
-- authenticated Carlos PC and María iPhone on the same protected PR #148 preview;
-- trusted-device enforcement;
-- only `[QA]` synthetic conversations visible;
-- simultaneous claim produces exactly one owner;
-- resolve converges on both devices;
-- reply, Send and Return to AI stay blocked;
-- no email/SMS/WhatsApp/push or other external delivery occurs;
-- expected audit/security/interaction records exist.
-
-Until that evidence exists, PR #148 remains `DRAFT / HOLD` and all real messaging/customer traffic capabilities remain blocked.
+Until that evidence exists, PR #148 remains `DRAFT / HOLD`; PR #94 remains QA evidence carrier only, not the merge target.

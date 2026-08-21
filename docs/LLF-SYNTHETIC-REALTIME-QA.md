@@ -1,148 +1,106 @@
 # LLF — Consola Realtime sintética: despliegue y QA
 
 **Fecha de reconciliación:** 21 de agosto de 2026  
-**PR operativo actual:** #148  
-**Rama:** `feature/synthetic-realtime-console-v2`  
+**Merge candidate:** PR #148  
+**QA carrier físico:** PR #94 sincronizado  
 **Estado:** DRAFT / HOLD / QA SINTÉTICO SOLAMENTE
 
 ## 1. Objetivo
 
-Validar la Consola del Agente con persistencia y sincronización Realtime entre PC e iPhone usando únicamente datos sintéticos. Este gate no autoriza mensajes reales, notificaciones push, conversaciones reales, tráfico de clientes ni cambios comerciales.
+Validar la Consola del Agente entre PC e iPhone usando solo datos sintéticos. Este gate no autoriza producción, mensajes reales, push, conversaciones reales, customer traffic ni acciones comerciales/financieras.
 
-## 2. Reconciliación de integración
+## 2. Estado de integración
 
-El PR original #94 quedó 101 commits detrás de `main`. En lugar de fusionar esa historia stale, el contenido útil se volvió a portar sobre el `main` actual en PR #148.
+PR #94 estuvo 101 commits detrás de `main`. PR #147 sincronizó `main` hacia esa rama de QA y quedó fusionado únicamente en `feature/synthetic-realtime-console`. Después de esa sincronización:
 
-Evidencia del port inicial:
+- PR #94 está 0 behind de `main`;
+- head QA: `72b028287b45ee19eb4d1188405bcee7b5741dd8`;
+- Agent Console Security Gate run #20: PASS;
+- Main Protection, Onboarding, Pixel Match y los security gates HVAC COMP disparados: PASS.
 
-- base: `main` `1605497ede639f97e85430604ae1659504ef27ac`;
-- port inicial: 1 commit ahead / 0 behind;
-- 15 paths intencionales;
-- los cinco archivos modificados existentes se verificaron sin cambios en `main` desde el merge base de #94 antes de portarlos;
-- Agent Console Security Gate run #18: PASS;
-- typecheck: PASS;
-- build: PASS.
+PR #148 sigue siendo el merge candidate limpio, construido directamente desde el mismo `main`.
 
-El PR de sincronización #147 ya no es el camino operativo; PR #148 reemplaza esa necesidad al partir directamente del `main` vigente.
+## 3. Equivalencia para QA físico
 
-## 3. Estado autoritativo de plataforma observado
+Se verificó equivalencia byte-a-byte de los blobs ejecutables críticos entre #94 sincronizado y #148. La evidencia detallada está en `docs/PR148-PHYSICAL-QA-EQUIVALENCE.md`.
 
-La lectura de Supabase realizada durante la reconciliación confirmó:
+Por ello, el preview protegido de PR #94 puede funcionar como carrier de QA físico para PR #148 mientras esos hashes no cambien. PR #94 no se convierte por eso en merge target.
 
-- proyecto `Local-Lead-Forge`: `ACTIVE_HEALTHY`;
-- Edge Function `llf-agent-ops`: **v11 ACTIVE**;
-- 2 conversaciones sintéticas;
-- 0 conversaciones reales;
+## 4. Estado autoritativo de plataforma observado
+
+- Supabase `Local-Lead-Forge`: `ACTIVE_HEALTHY`;
+- `llf-agent-ops`: v11 ACTIVE;
+- 2 conversaciones sintéticas y 0 reales en el checkpoint;
 - 4 mensajes sintéticos;
-- 2 dispositivos `TRUSTED`;
-- 0 dispositivos `PENDING` en ese checkpoint;
-- RLS activo en conversaciones y mensajes;
+- 2 dispositivos `TRUSTED`, 0 `PENDING` en el checkpoint;
+- RLS activo en conversaciones/mensajes;
 - `REALTIME_CONVERSATIONS = BLOCKED`;
 - `SECURE_IPHONE_PUSH = BLOCKED`.
 
-La v11 desplegada exige agente activo, dispositivo confiable, filtros `is_synthetic = true` y bloquea `send_message`.
+La v11 exige agente activo, dispositivo confiable, `is_synthetic = true` y bloquea `send_message`.
 
-## 4. Separación fuente ↔ runtime
+## 5. CORS / preview
 
-Estado del origen de preview de PR #148: **SOURCE_ONLY_NOT_DEPLOYED**.
-
-El source control de PR #148 prepara:
+El runtime v11 ya allowlista:
 
 - `https://localleadforge.com`;
 - `https://www.localleadforge.com`;
-- origen legacy temporal de preview #94;
-- `https://deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app`.
+- `https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app`.
 
-La v11 activa observada en Supabase todavía corresponde al runtime anterior que allowlista el preview #94, no el nuevo preview #148. Este PR **no autoriza desplegar** la variante de source, cambiar CORS/Auth en producción ni modificar la Edge Function activa.
+PR #148 conserva ese mismo source endurecido. **No requiere desplegar** una variante nueva de CORS solo para hacer el QA físico.
 
-Por lo tanto, el QA físico del preview #148 no debe comenzar hasta que el acceso exacto del preview haya sido autorizado y aplicado por separado, con rollback claro y sin habilitar tráfico real.
+La configuración de Supabase Auth Redirect URLs debe verificarse durante la sesión. Si el callback de PR #94 ya está permitido, no cambiar nada. Si no está permitido, detenerse y pedir autorización separada antes de modificar Auth.
 
-## 5. Superficie permitida durante QA
+## 6. Superficie permitida
 
-Solo se permite:
+Solo iniciar sesión como agente LLF activo, registrar/consultar dispositivo, cambiar disponibilidad desde trusted device, listar/claim/resolve conversaciones sintéticas y recibir refresh Realtime privado.
 
-- iniciar sesión como agente LLF activo;
-- registrar/consultar dispositivo;
-- cambiar disponibilidad desde dispositivo confiable;
-- listar conversaciones `is_synthetic = true`;
-- reclamar conversación sintética;
-- resolver conversación sintética;
-- recibir señal privada Realtime de refresh sin contenido de conversación.
-
-No se permite:
-
-- enviar mensajes;
-- Return to AI;
-- push live;
-- consultar/modificar conversaciones reales;
-- saltar trusted-device;
-- publicar el preview abiertamente;
-- habilitar customer traffic;
-- cambiar CRM/rutas/precios/pagos/legal/credenciales desde esta fase.
-
-## 6. Controles de seguridad
-
-La Edge Function valida bearer token, exige perfil LLF activo y dispositivo `TRUSTED` para acciones protegidas. List, claim y resolve permanecen sintéticos. Un ID no sintético no puede operarse por esta ruta. `send_message` devuelve `messaging_capability_blocked`.
-
-Realtime usa el canal privado `llf-agent-console-synthetic`. La señal contiene únicamente motivo/entidad de refresh; los datos se vuelven a consultar por el backend protegido.
+No se permite enviar mensajes, Return to AI, push, conversaciones reales, saltar trusted-device, publicar el preview, habilitar customer traffic ni cambiar CRM/rutas/precios/pagos/legal/credenciales.
 
 ## 7. Gate automático
 
-Workflow: `.github/workflows/agent-console-security.yml`.
+`.github/workflows/agent-console-security.yml` verifica invariantes fail-closed, typecheck y build. Cualquier cambio posterior exige nuevo PASS en el head vigente.
 
-El gate actual verifica 18 invariantes fail-closed más typecheck y build. Cualquier cambio posterior al checkpoint run #18 requiere un PASS nuevo en el head vigente.
+## 8. Preparación física
 
-## 8. Preparación del QA físico PR #148
+1. Usar el preview protegido de PR #94 sincronizado.
+2. Confirmar head `72b028287b45ee19eb4d1188405bcee7b5741dd8` o revalidar equivalencia si cambió.
+3. Confirmar checks verdes.
+4. Carlos abre el preview en PC; María en iPhone.
+5. Verificar el callback de Auth sin cambiar configuración si ya funciona.
+6. Autenticaciones separadas; nunca copiar JWT/tokens entre dispositivos.
+7. Aprobar solo los registros de dispositivo correctos.
+8. Mantener todo tráfico real y salida externa bloqueados.
 
-Antes de iniciar:
-
-1. Confirmar Deploy Preview #148 protegido y accesible por ambos dispositivos autorizados.
-2. Autorizar, si corresponde, el callback exacto del preview en Supabase Auth mediante el proceso de cambio controlado.
-3. Autorizar, si corresponde, el origen exacto #148 en el runtime de `llf-agent-ops`; preparar source no equivale a desplegar.
-4. No copiar JWT, fragmentos, access tokens ni `sessionStorage` entre dominios.
-5. Generar autenticaciones separadas para PC e iPhone.
-6. Aprobar únicamente los dispositivos temporales correctos.
-7. Mantener mensajería, push, real conversations y customer traffic bloqueados.
-
-## 9. Casos físicos obligatorios
+## 9. Casos obligatorios
 
 ### A — Sincronización inicial
-Ambos dispositivos deben mostrar exactamente las conversaciones `[QA]`, Realtime privado y cero datos reales.
+Ambos ven solo `[QA]`, Realtime privado conectado y cero datos reales.
 
 ### B — Claim simultáneo
-Ambos intentan reclamar la misma conversación. Exactamente uno gana y ambos convergen en un solo propietario.
+Ambos reclaman la misma conversación; exactamente uno gana y ambos convergen en un propietario.
 
 ### C — Resolve sincronizado
 Solo el propietario resuelve y ambos dispositivos reflejan `Resolved`.
 
 ### D — Capacidades bloqueadas
-Reply/Send y Return to AI permanecen deshabilitados; no se genera email, SMS, WhatsApp, push ni webhook externo.
+Reply/Send/Return to AI siguen deshabilitados; cero email/SMS/WhatsApp/push/webhook externo.
 
 ### E — Dispositivo no confiable
-Un navegador/dispositivo no aprobado recibe `trusted_device_required` y no accede a datos protegidos.
+Acceso protegido falla con `trusted_device_required`.
 
 ## 10. Evidencia mínima
 
-Guardar fecha/hora, agente, dispositivo/navegador, conversación QA, esperado, actual, PASS/FAIL, captura sin credenciales y cualquier incidente/fix/retest. Una confirmación verbal no sustituye evidencia.
+Registrar fecha/hora, agente, dispositivo/navegador, head exacto, conversación QA, esperado, actual, PASS/FAIL, captura sin secretos y cualquier incidente/retest.
 
-## 11. Limpieza posterior
+## 11. Regla de equivalencia
 
-Después del QA, retirar callbacks/orígenes temporales que ya no sean necesarios y revocar dispositivos temporales sin afectar producción. Conservar auditoría útil. Mensajería, push y conversaciones reales permanecen bloqueados hasta un gate posterior separado.
+Si cambia cualquiera de los hashes ejecutables documentados, la equivalencia expira y el QA físico debe repetirse contra una superficie reconciliada.
 
-## 12. Criterio de revisión/merge
+## 12. Limpieza
 
-PR #148 solo puede salir de HOLD cuando:
-
-- todos los checks del head final estén verdes;
-- el preview/runtime autorizado corresponda al código evaluado;
-- Casos A–D tengan evidencia física PASS;
-- claim simultáneo tenga un solo ganador;
-- resolve sincronice en ambos dispositivos;
-- no exista salida externa ni datos reales;
-- cualquier fallo haya sido corregido y revalidado.
-
-Caso E debe ejecutarse durante la misma sesión si resulta práctico y, en cualquier caso, antes de ampliar acceso a más agentes.
+Retirar solo callbacks/dispositivos temporales que realmente hayan sido creados para la sesión. No hacer limpieza destructiva innecesaria. Conservar auditoría útil.
 
 ## 13. Decisión actual
 
-**HOLD.** La integración stale ya fue sustituida por PR #148 y el port automatizado inicial pasó. El siguiente límite real es el QA físico en el preview #148, que requiere autorización separada para cualquier cambio temporal de Auth/CORS/runtime. Este documento no autoriza producción, merge, mensajes reales ni activación de capacidades.
+**HOLD.** Ya no existe un blocker de CORS que obligue a desplegar una variante nueva para #148. El siguiente trabajo real es el QA físico usando PR #94 sincronizado como carrier equivalente. Este documento **no autoriza producción**, merge, mensajes reales ni activación de capacidades.

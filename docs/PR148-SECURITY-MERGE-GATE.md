@@ -1,93 +1,82 @@
 # PR #148 — Security and Merge Gate
 
 Date: 2026-08-21
-Branch: `feature/synthetic-realtime-console-v2`
-Scope: authenticated, trusted-device, synthetic-only Agent Console QA.
+Merge candidate: `feature/synthetic-realtime-console-v2`
+Physical QA carrier: synchronized PR #94 / `feature/synthetic-realtime-console`
 Release posture: **HOLD**.
 
-## Why PR #148 exists
+## Integration decision
 
-PR #94 contained the intended Agent Console safety work but became 101 commits behind protected `main`. PR #147 was opened as a temporary main→feature synchronization path. The cleaner resolution was to port the intended PR #94 surface directly onto current `main` as PR #148.
+PR #148 is the clean current-main merge candidate. PR #94 is retained only as the physical-QA carrier because its protected Deploy Preview is already present in the active v11 CORS allowlist.
 
-Port evidence:
+PR #147 synchronized current `main` into the legacy PR #94 branch and was merged only into that feature branch. It did not modify protected `main`.
 
-- base commit: `1605497ede639f97e85430604ae1659504ef27ac`;
-- initial port commit: `e998a97211561f39fa90917ad432854c30e91ee5`;
-- initial comparison: 1 commit ahead / 0 behind;
-- intended diff: 15 files;
-- existing modified files were confirmed unchanged in main since the original merge base before porting.
+Current QA carrier evidence:
 
-PR #147 is therefore superseded as an integration strategy. PR #94 is historical/source evidence only and must not be merged in place of #148.
+- PR #94 head: `72b028287b45ee19eb4d1188405bcee7b5741dd8`;
+- base `main`: `1605497ede639f97e85430604ae1659504ef27ac`;
+- comparison to main: 0 commits behind;
+- Agent Console Security Gate run #20: success;
+- LLF Main Protection Gate: success;
+- LLF Onboarding CI: success;
+- LLF Pixel Match QA: success;
+- triggered HVAC COMP security gates: success.
 
-## Automated evidence
+## Executable equivalence
 
-On the clean port checkpoint, Agent Console Security Gate run #18 completed successfully, including:
+`docs/PR148-PHYSICAL-QA-EQUIVALENCE.md` records byte-identical hashes for the critical browser/runtime-adjacent surfaces between synchronized #94 and #148, including the Agent Console page, private Realtime client, package manifest, lockfile and synthetic Realtime SQL foundation.
 
-- fail-closed static validation;
-- TypeScript typecheck;
-- application build.
+PR #148 also uses the exact hardened `llf-agent-ops` source blob represented by synchronized #94 and the observed v11 source:
 
-A new hosted PASS is required after every later code/evidence change before this PR can advance.
+`339e4a35aac08c666b14e22f40ee6c3c063762bb`
+
+This allows physical evidence from the synchronized #94 preview to be attached to PR #148 while the documented hashes remain unchanged. Any executable change invalidates the equivalence and requires fresh reconciliation/QA.
+
+## Runtime state and CORS
+
+Observed Supabase runtime `llf-agent-ops` v11 is ACTIVE and already allowlists:
+
+- `https://localleadforge.com`;
+- `https://www.localleadforge.com`;
+- `https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app`.
+
+Therefore PR #148 does **not** require a new Edge Function/CORS deployment merely to perform physical QA. No production deployment is authorized by this gate.
+
+Supabase Auth Redirect URL behavior must still be confirmed when the physical session begins. If the PR #94 preview callback already works, no configuration should be changed. If it does not work, stop and obtain separate authorization before modifying Auth configuration.
 
 ## Security controls preserved
 
-- Supabase bearer token validated server-side.
-- Active LLF agent profile required.
-- Protected actions require a `TRUSTED` device.
-- List, claim and resolve require `is_synthetic = true`.
-- Claim uses status/owner conditions to prevent double ownership.
-- `send_message` fails closed with `messaging_capability_blocked`.
-- Reply/Send and Return to AI remain disabled in the UI.
-- Private Realtime publishes refresh signals only; conversation data is re-fetched through protected backend logic.
-- Capability registry remains gated pending two-device QA.
+- bearer token validated server-side;
+- active LLF agent required;
+- `TRUSTED` device required for protected actions;
+- list/claim/resolve restricted to `is_synthetic = true`;
+- claim uses owner/status guards;
+- `send_message` fails closed with `messaging_capability_blocked`;
+- Reply/Send and Return to AI remain disabled;
+- Realtime is private and refresh-only;
+- real conversations, push and customer traffic remain blocked.
 
-## Runtime checkpoint
+## Physical QA still required
 
-Observed production/runtime evidence during reconciliation:
+Before review/merge, collect evidence for:
 
-- Supabase project healthy;
-- `llf-agent-ops` v11 ACTIVE;
-- 2 synthetic conversations, 0 real conversations, 4 synthetic messages at the checkpoint;
-- RLS active on conversation/message tables;
-- `REALTIME_CONVERSATIONS = BLOCKED`;
-- `SECURE_IPHONE_PUSH = BLOCKED`.
-
-The active v11 runtime already reflects the hardened synthetic-only behavior, but its CORS allowlist was observed with the legacy PR #94 preview origin.
-
-## Current source-only preview preparation
-
-PR #148 source adds its expected Deploy Preview origin to the Edge Function allowlist while retaining the legacy preview temporarily:
-
-`https://deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app`
-
-That source edit is **not deployed by this PR**. No Supabase deployment, Auth callback change, CORS runtime change or capability activation has been authorized.
-
-## Remaining gate — QA físico PC ↔ iPhone
-
-Before the physical session:
-
-1. Confirm the protected PR #148 Deploy Preview exists and both authorized devices can open it.
-2. If required, separately authorize the exact preview callback in Supabase Auth.
-3. If required, separately authorize/deploy the exact PR #148 CORS origin in `llf-agent-ops` without changing synthetic-only/messaging blocks.
-4. Approve only the temporary QA device registrations corresponding to the intended PC and iPhone.
-
-Then verify:
-
-1. both devices show only `[QA]` conversations;
-2. private Realtime connects;
-3. simultaneous claim produces exactly one owner;
-4. both devices converge on the same owner;
-5. owner resolve converges on both devices;
-6. Reply/Send/Return to AI remain blocked;
-7. no email/SMS/WhatsApp/push/webhook is emitted;
-8. untrusted device access fails closed;
-9. expected audit/device/interaction records exist;
-10. final GitHub checks on the exact tested head are green.
+1. authenticated Carlos PC and María iPhone on the same protected synchronized PR #94 preview;
+2. trusted-device enforcement;
+3. only `[QA]` conversations visible;
+4. simultaneous claim with exactly one winner and convergence on both devices;
+5. owner-only resolve reflected on both devices;
+6. Reply/Send/Return to AI blocked;
+7. zero email/SMS/WhatsApp/push/webhook delivery;
+8. untrusted-device rejection;
+9. expected audit/device/interaction records;
+10. green CI on the exact PR #148 head proposed for review.
 
 ## Merge decision
 
-**HOLD — not ready to merge.** Current-main reconciliation and initial automated validation are complete, but physical two-device evidence is still missing. In addition, any temporary production-side Auth/CORS preparation required for the PR #148 preview remains a separately authorized action.
+**HOLD — not ready to merge.** Integration freshness, QA-carrier selection and automated equivalence are prepared, but physical two-device evidence is still missing.
+
+PR #94 is **QA CARRIER ONLY — DO NOT MERGE**. PR #148 remains the merge candidate and must remain DRAFT/HOLD until the physical evidence is complete and final CI is green.
 
 ## Production activation decision
 
-Even after a future merge, live messaging, push, real conversations and customer traffic remain blocked until a separate production-readiness gate explicitly authorizes them. PR #148 never authorizes payments/refunds, legal/credential changes, outreach, CRM writes, pricing commitments or production AI/voice activation.
+Nothing in PR #148 or the QA-carrier arrangement authorizes production messaging, push, real conversations, customer traffic, outreach, CRM writes, pricing commitments, payments/refunds, legal/credential changes, production AI traffic or production voice activation.

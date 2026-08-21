@@ -8,12 +8,14 @@ const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts',
 const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md', import.meta.url), 'utf8');
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
+const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
 
-const currentPreviewOrigin = 'https://deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app';
+const qaPreviewOrigin = 'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app';
 
 const checks = [
   ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
-  ['current PR148 preview origin prepared in source', edge.includes(`'${currentPreviewOrigin}'`)],
+  ['synchronized QA carrier origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+  ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
   ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'") && !edge.includes('"Access-Control-Allow-Origin": "*"')],
   ['active agent required', edge.includes(".eq('is_active', true)")],
   ['trusted device required', edge.includes("trustedDevice.trust_status !== 'TRUSTED'")],
@@ -26,10 +28,11 @@ const checks = [
   ['reply UI disabled', page.includes('Real sending remains disabled during authenticated QA.')],
   ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
   ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
-  ['Maria protocol points to replacement PR148', mariaProtocol.includes('PR #148')],
+  ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
   ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL') && mariaProtocol.includes('Segundo reclamo simultáneo bloqueado: `PENDING_PHYSICAL`')],
   ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('QA físico')],
-  ['runbook keeps production mutation separate', qaRunbook.includes('SOURCE_ONLY_NOT_DEPLOYED') && qaRunbook.includes('no autoriza desplegar')],
+  ['runbook keeps production mutation blocked', qaRunbook.includes('no requiere desplegar') && qaRunbook.includes('no autoriza producción')],
+  ['equivalence evidence explicitly selects PR94 as QA carrier', equivalence.includes('QA_CARRIER_PR_94') && equivalence.includes('72b028287b45ee19eb4d1188405bcee7b5741dd8')],
 ];
 
 for (const [name, passed] of checks) {
