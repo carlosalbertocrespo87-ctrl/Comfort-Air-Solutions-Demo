@@ -49,8 +49,10 @@ function DeviceTrustRequired({ status }: { status: 'PENDING' | 'REVOKED' }) {
 async function bootstrap() {
   const authResult = await consumeSupabaseAuthHash();
   if (authResult === 'consumed') {
-    window.location.replace('/agent-demo');
-    return;
+    // GitHub Pages does not provide SPA rewrite rules. Keep navigation client-side
+    // so the authenticated session is preserved and /agent-demo renders without
+    // issuing a network request that would otherwise return the static 404 page.
+    history.replaceState({}, document.title, '/agent-demo');
   }
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
