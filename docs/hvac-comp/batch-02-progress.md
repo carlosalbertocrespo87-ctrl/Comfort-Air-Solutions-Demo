@@ -22,6 +22,12 @@ Cost target: $0 additional infrastructure. Communication and external writes rem
 17. AI/GEO readiness score with no ranking guarantee.
 18. Provider-neutral CRM/field-service adapter contract.
 
+## Executable verification added 21 Aug 2026
+- `src/lifecycle/batch-02.spec.ts` executes lifecycle, DNC, cross-sell, returning-customer, reactivation, technical-readiness, AI/GEO and adapter safety contracts.
+- `HVAC COMP 02 Lifecycle Security Gate` typechecks the Batch 02 surface, runs the executable spec, and enforces fail-closed invariants.
+- First dedicated gate run completed SUCCESS before the final main-target revalidation commit.
+- Batch 01 / PR #105 is merged; Batch 02 is the next ordered landing unit.
+
 ## Deferred / gated
 19. Real ServiceTitan/Jobber/Housecall Pro/HubSpot/GoHighLevel adapters: DEFERRED until client demand, API feasibility, credentials, cost and release review.
 20. Real lifecycle outreach (review, renewal, seasonal recall, reactivation, cross-sell): DEFERRED until consent/compliance/channel-cost approval and explicit autonomy/release gate.
