@@ -52,7 +52,7 @@ jobs:
       - name: Run payment event tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-events/*.test.ts
       - name: Typecheck authoritative payment event runtime
-        run: deno check artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
+        run: deno check --node-modules-dir=auto artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
       - name: Run checkout orchestration tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-checkout-orchestration/*.test.ts
       - name: Guard restricted-key and environment isolation
