@@ -5,3 +5,4 @@ export * from "./policy";
 export * from "./task-policy";
 export * from "./budget-guard";
 export * from "./agent-permissions";
+export * from "./shadow-agents";
