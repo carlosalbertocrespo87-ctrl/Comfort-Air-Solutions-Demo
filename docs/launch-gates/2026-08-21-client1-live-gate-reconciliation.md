@@ -9,65 +9,67 @@ Branch: `feature/client1-live-gate-reconciliation`
 | Gate | Status | Evidence / next action |
 |---|---|---|
 | iPostal1 business address | PENDING | Ticket #3038643. Support escalation is not final approval. Do not update customer-facing, payment, legal or business records until explicit approved/activated + allowed-use evidence exists. |
-| Stripe webhook runtime | BLOCKED-OWNER — NARROW FOLLOW-UP | Owner approved and Phase A grants were applied: ledger INSERT/UPDATE and payment-state SELECT/UPDATE. A rollback-only permission probe found one additional least-privilege requirement: SELECT on ledger predicate column `stripe_event_id`. This follow-up has NOT been applied and requires a new explicit approval. |
+| Stripe webhook runtime permissions | PERMISSION PROBE PASS / TEST EVENT PENDING | Owner approved Phase A and the narrow column-level follow-up. Ledger INSERT/UPDATE, payment-state SELECT/UPDATE, and SELECT only on ledger `stripe_event_id` are now applied. Rollback-only runtime-shape probe passed. |
 | Stripe restricted key | EVIDENCE PRESENT / VERIFY-ONLY | Stripe confirmed restricted key `LLF Supabase Webhook Runtime`; deployed function reads `STRIPE_RESTRICTED_KEY`. No rotation/deletion authorized. |
-| Stripe event ledger | PARTIAL FIX / STILL BLOCKED | INSERT/UPDATE now granted to `service_role`, but UPDATE with `WHERE stripe_event_id=...` requires SELECT on that predicate column. Probe failed before any row persisted. |
+| Stripe event ledger | PERMISSION PROBE PASS | service_role can insert a receipt and update processing status using `WHERE stripe_event_id=...`. Probe transaction rolled back; zero synthetic rows persisted. Table-wide ledger SELECT remains denied. |
 | First-sale payment state RPC | PERMISSION PROBE PASS | SECURITY INVOKER RPC executed as `service_role`; unknown synthetic acceptance ref returned `processed=false`, `onboarding_ready=false`, reason `unknown_acceptance_ref`. |
+| Stripe signed TEST event | PENDING / BLOCKED-BY-TEST-CHANNEL | Not sent. Connected Stripe tool context currently exposes Local Lead Forge in livemode only. Do not generate a live event merely for validation. |
 | PR #94 two-device QA | BLOCKED-PC / OWNER | Draft PR remains open; physical Carlos PC ↔ María iPhone QA still pending. Real messaging/push/conversations remain blocked. |
-| Stripe signed TEST event | PENDING | Not sent. Connected Stripe tool context currently exposes Local Lead Forge in livemode only; do not switch or generate a live event. Test event remains pending until an authenticated test-mode channel is available and the ledger SELECT-column gate is approved/repaired. |
 | Real payment / payout validation | PENDING | No real charge, refund, payout or customer activation authorized. |
 | Production provider activation | HOLD | Separate production gates remain required. |
 | Prospect/customer outreach | HOLD | No live email/SMS/calls/postal outreach authorized. |
 
-## Applied Phase A permission change
+## Applied permission changes
 
-Applied 21 Aug 2026 after explicit owner approval:
+Applied 21 Aug 2026 after explicit owner approvals:
 
 ```sql
 grant insert, update on table public.llf_stripe_event_ledger to service_role;
 grant select, update on table public.llf_first_sale_payment_state to service_role;
+grant select (stripe_event_id) on table public.llf_stripe_event_ledger to service_role;
 ```
 
-No DELETE, schema-wide privileges, anon/authenticated grants, legal mutations or payment-creation authority were added.
+Verification confirms:
+- table-wide SELECT on `llf_stripe_event_ledger`: false
+- column SELECT on `stripe_event_id`: true
+- DELETE on event ledger: false
+- DELETE on first-sale payment state: false
+
+No schema-wide privileges, anon/authenticated grants, legal mutations or payment-creation authority were added.
 
 ## Validation result
 
-Effective grants were re-read successfully. A rollback-only service-role probe then attempted the exact ledger shape used by the runtime: insert receipt row, then update processing status using `WHERE stripe_event_id=...`.
+A rollback-only service-role probe matched the runtime ledger path:
+1. insert synthetic receipt row;
+2. update processing status using `WHERE stripe_event_id=...`;
+3. rollback transaction;
+4. verify zero probe rows persisted.
 
-PostgreSQL rejected the UPDATE with permission denied and specifically required SELECT on `public.llf_stripe_event_ledger`. The probe transaction persisted zero rows.
+Result: PASS.
 
-The payment-state RPC was tested separately under `service_role` using an unknown synthetic UUID and passed the intended fail-closed behavior:
+The payment-state RPC was also tested separately under `service_role` using an unknown synthetic UUID and passed intended fail-closed behavior:
 - processed: false
 - onboarding_ready: false
 - reason: `unknown_acceptance_ref`
 
-## Narrowest follow-up prepared — NOT applied
+Supabase security advisor was re-run. Existing notices remain: RLS enabled/no policy on the three private runtime tables and leaked-password protection disabled. No new advisory was introduced by this narrow permission change.
 
-Current runtime only needs to read the predicate column used by the UPDATE filter. Proposed next permission:
+## Remaining Stripe validation
 
-```sql
-grant select (stripe_event_id)
-on table public.llf_stripe_event_ledger
-to service_role;
-```
+The permission blocker is repaired at database level, but the end-to-end Stripe webhook gate is not fully cleared until one Stripe TEST-mode signed event can be sent through an authenticated test-mode channel.
 
-This is intentionally narrower than table-wide SELECT. It requires a new explicit owner approval before execution.
+Connected Stripe tools currently expose the account in livemode only, so no live event will be generated for this validation.
 
-See `docs/launch-gates/STRIPE-WEBHOOK-01-proposed.sql` for the current staged patch and validation plan.
-
-## Next validation after follow-up approval
-
-1. Apply only column-level SELECT on `stripe_event_id`.
-2. Repeat the ledger insert/update probe inside a transaction and roll it back.
-3. Confirm zero probe rows persist.
-4. Send one Stripe TEST-mode signed event through an authenticated test-mode channel only.
-5. Expect HTTP 200 and verify ledger write.
-6. Confirm missing/unknown `llf_acceptance_ref` fails closed / is ignored.
-7. Re-run Supabase security advisor and inspect Edge Function logs.
-8. Keep live charges, refunds, payouts, subscriptions and production release disabled.
+Remaining steps:
+1. obtain authenticated Stripe test-mode channel;
+2. send one signed TEST event;
+3. expect HTTP 200 and verify ledger write;
+4. confirm missing/unknown `llf_acceptance_ref` fails closed / is ignored;
+5. inspect Edge Function logs;
+6. keep real charges, refunds, payouts, subscriptions and production release disabled.
 
 ## Release decision
 
 **NO-GO for production / real customer traffic.**
 
-Safe internal preparation can continue. Real-world gates remain separate and fail closed.
+The database-permission sub-gate is now validated. Safe internal preparation can continue while iPostal1, Stripe test-event validation, PR #94 physical QA and remaining external release gates stay fail-closed.
