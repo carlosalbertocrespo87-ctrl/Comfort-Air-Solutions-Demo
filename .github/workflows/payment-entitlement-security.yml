@@ -85,6 +85,11 @@ jobs:
           create extension if not exists pgcrypto;
           create schema if not exists auth;
           create or replace function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
+          do $$ begin
+            if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+            if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+            if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin; end if;
+          end $$;
           SQL
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/012_payment_entitlement_foundation.sql
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.sql
