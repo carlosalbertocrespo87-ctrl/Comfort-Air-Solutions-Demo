@@ -1,6 +1,6 @@
 # PAYMENT-RUNTIME-BRIDGE-01 — Authoritative Stripe Runtime Bridge
 
-Status: INTERNAL PREP COMPLETE / PRODUCTION CHANGES GATED
+Status: STAGE B COMPLETE / STAGE C GATED
 Date: 21 Aug 2026
 Cost target: $0
 Issue: #136
@@ -8,109 +8,98 @@ Draft PR: #137
 
 ## Why this bridge exists
 
-The live Supabase project and protected source control currently represent two payment-runtime generations.
+The live Supabase project and protected source control represented two payment-runtime generations. Stage B has now added the hardened database foundation without cutting over the deployed legacy webhook.
 
-### Live production evidence
+### Current live production evidence
 
-Present in `public`:
+Preserved legacy objects:
 - `llf_legal_acceptances`
-- `llf_first_sale_payment_state` (legacy payment state)
-- `llf_stripe_event_ledger` (legacy event ledger)
+- `llf_first_sale_payment_state`
+- `llf_stripe_event_ledger`
 
-Not currently present:
+Hardened objects added during approved Stage B:
 - `llf_payment_entitlements`
 - `llf_stripe_event_receipts`
+- `llf_recompute_onboarding_eligibility(uuid)`
+- `llf_apply_payment_entitlement_state(uuid,text,timestamptz,text,text,text,text,text)`
+- `llf_bootstrap_payment_correlation(uuid,text,text,text)`
 
-Current preflight row counts are all zero:
-- `llf_legal_acceptances`: 0
-- `llf_first_sale_payment_state`: 0
-- `llf_stripe_event_ledger`: 0
+No legacy table was dropped, renamed, truncated or backfilled. The two new hardened tables contain zero rows after migration.
 
-The deployed `llf-stripe-events` function uses the legacy state/ledger plus `llf_apply_first_sale_stripe_event(...)`. Its database permission blocker has been repaired and the service-role runtime-shape permission probe passes. That proves database authorization for the legacy path; it does **not** make the legacy state transition authoritative enough for final release.
+The deployed legacy function path remains separate. Current database definition of `llf_apply_first_sale_stripe_event(...)` still derives state from event type/object references. It is therefore **not** evidence of authoritative Stripe-state reconciliation and must not be used as the final production release path.
 
 ### Protected source-control evidence
 
-Merged PR #95 already contains the hardened design:
+Merged PR #95 contains the hardened design:
 - migration 012: durable acceptance/payment-entitlement/event-receipt foundation;
 - migration 013: atomic authoritative entitlement application;
 - migration 014: immutable payment-correlation bootstrap;
 - `llf-payment-events`: verifies Stripe signature, records a receipt hash, retrieves current Stripe object state, requires one existing durable correlation, then atomically applies entitlement state;
 - no checkout creation and no onboarding trigger.
 
-## Security corrections prepared in this branch
+This bridge branch adds:
+- `STRIPE_RESTRICTED_KEY` as the required runtime key instead of a general-purpose secret key;
+- migration 015 with explicit least-privilege service-role grants;
+- staged canary/cutover controls;
+- Stage B evidence.
 
-### 1. Restricted Stripe key only
+## Stripe restricted-key policy
 
-The hardened runtime previously expected `STRIPE_SECRET_KEY`. This bridge branch changes it to require `STRIPE_RESTRICTED_KEY` only.
+The hardened runtime must **not** require a general-purpose live secret key merely to read current Stripe payment state.
 
-Policy: the payment-events runtime must **not** require a general-purpose live secret key merely to read current Stripe payment state.
-
-Required Stripe restricted-key capabilities before any canary deployment:
+Required restricted-key capabilities before any canary deployment:
 - READ Payment Intents;
 - READ Charges;
 - READ Subscriptions;
 - READ Invoices.
 
-No Stripe write permission is required by the authoritative webhook runtime itself.
+No Stripe write permission is required by the authoritative webhook runtime itself. Exact restricted-key permissions must be verified before deployment.
 
-Exact restricted-key permissions must be verified in Stripe before deployment. Do not assume the currently created key already has all four reads.
+## Stage B — completed with explicit owner approval
 
-### 2. Explicit service-role least privilege
+Applied successfully in production, in order:
+1. `012_payment_entitlement_foundation`
+2. `013_payment_entitlement_atomic_apply`
+3. `014_payment_correlation_bootstrap`
+4. `015_payment_runtime_service_role_least_privilege`
 
-A second source audit found an important deployment prerequisite: migrations 013/014 revoke function EXECUTE from PUBLIC but do not explicitly grant the hardened server-only functions to `service_role`. The Edge Function calls the atomic apply RPC as service_role, so deployment without an explicit grant could fail closed at runtime.
+Verification after apply:
+- RLS enabled on all five payment/legal runtime tables;
+- new hardened tables remain empty;
+- `service_role` has receipt INSERT plus only the required status/timestamp UPDATE and predicate-column SELECT;
+- `service_role` has only the required entitlement read columns and no direct INSERT/UPDATE/DELETE;
+- hardened atomic-apply and bootstrap RPC EXECUTE granted to `service_role`;
+- `anon` and `authenticated` remain denied from entitlement SELECT and atomic-apply EXECUTE;
+- receipt table-wide SELECT and DELETE remain denied;
+- no backfill performed.
 
-This branch therefore adds migration 015:
-`artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql`
+Supabase Security Advisor after Stage B reports INFO notices for RLS-enabled/no-policy private tables and the pre-existing Auth warning that leaked-password protection is disabled. No policy was added because these runtime tables are intentionally private/server-only and anonymous/authenticated access is denied.
 
-Migration 015 is designed to:
-- give `service_role` INSERT + constrained status UPDATE on `llf_stripe_event_receipts`;
-- give column-only SELECT on receipt `stripe_event_id` for PostgREST predicate filtering;
-- give read-only correlation/current-state columns on `llf_payment_entitlements`;
-- explicitly grant EXECUTE on `llf_apply_payment_entitlement_state(...)` and `llf_bootstrap_payment_correlation(...)`;
-- keep DELETE/TRUNCATE, entitlement direct UPDATE, table-wide receipt SELECT and anon/authenticated access denied.
+Canonical evidence:
+`docs/launch-gates/PAYMENT-RUNTIME-STAGE-B-EVIDENCE.md`
 
-Migration 015 is source prep only and has **not** been applied to production.
+## Stage A — completed safely
 
-## Production compatibility observations
+1. Diagnosed live/source-control mismatch.
+2. Repaired least-privilege legacy runtime database permissions with explicit owner approvals.
+3. Verified rollback-only legacy runtime-shape probe.
+4. Verified unknown acceptance fails closed.
+5. Prepared restricted-key-only source change.
+6. Audited hardened service-role access path and prepared migration 015.
+7. Confirmed affected live tables were empty before Stage B.
 
-The existing production `llf_legal_acceptances` table exists and contains zero rows, but its columns are not byte-for-byte identical to the `create table if not exists` definition in migration 012. Therefore migration 012 must be treated as **additive schema bootstrap**, not as permission to replace/drop the live acceptance table.
+## Stage C — requires a new explicit owner approval
 
-The missing hardened tables can be introduced additively:
-- `llf_payment_entitlements` references existing `llf_legal_acceptances(acceptance_ref)`;
-- `llf_stripe_event_receipts` is a separate audit/idempotency ledger;
-- legacy `llf_first_sale_payment_state` and `llf_stripe_event_ledger` remain untouched during canary.
+Stage C has **not** been executed.
 
-Migrations 013 and 014 create the hardened server-side functions; migration 015 then applies the explicit service-role runtime grants. No legacy table drop, rename, data delete or endpoint replacement is required for the canary stage.
-
-## Staged bridge sequence
-
-### Stage A — completed safely
-1. Diagnose live/source-control mismatch.
-2. Repair least-privilege legacy runtime database permissions with explicit owner approvals.
-3. Verify rollback-only legacy runtime-shape probe.
-4. Verify payment-state RPC unknown acceptance fails closed.
-5. Verify Stripe account/banking payout destination readiness read-only.
-6. Prepare restricted-key-only source change for hardened runtime.
-7. Audit hardened service-role access path and prepare explicit migration 015 grants.
-8. Confirm affected live tables currently contain zero rows.
-
-### Stage B — requires explicit owner approval before production DDL
-1. Snapshot schema metadata and row counts again immediately before change.
-2. Apply only the missing additive hardened schema/function pieces from migrations 012–014.
-3. Apply migration 015 least-privilege service-role grants.
-4. Do not drop or mutate legacy state/ledger data.
-5. Verify RLS/revokes, column/table privileges and function EXECUTE privileges.
-6. Verify new hardened tables start empty; no backfill is needed while all legacy rows remain zero.
-7. Re-run Supabase security advisor.
-
-### Stage C — requires explicit owner approval before Stripe key-scope or Edge Function changes
-1. Verify the runtime restricted key has only the four required Stripe READ capabilities plus no unnecessary write access.
+1. Verify the runtime restricted key has only the four required Stripe READ capabilities and no unnecessary write access.
 2. Configure `STRIPE_RESTRICTED_KEY` for a **new canary function**, not the legacy function.
 3. Deploy hardened runtime under a separate slug, suggested: `llf-payment-events-canary`.
 4. Keep the existing `llf-stripe-events` endpoint unchanged.
-5. Do not repoint a live Stripe webhook yet.
+5. Do not repoint a live Stripe webhook.
 
-### Stage D — TEST mode evidence only
+## Stage D — TEST-mode evidence only
+
 1. Obtain an authenticated Stripe test-mode channel.
 2. Create a test-only durable legal acceptance + entitlement correlation context.
 3. Deliver signed TEST events to the canary endpoint.
@@ -122,30 +111,28 @@ Migrations 013 and 014 create the hardened server-side functions; migration 015 
 9. Confirm event receipt/audit evidence.
 10. Confirm no live Stripe object, customer, charge, payout or subscription is touched.
 
-### Stage E — explicit go/no-go cutover decision
+## Stage E — explicit go/no-go cutover decision
+
 Cutover must be a new approval. Required evidence:
 - TEST-mode canary passes;
 - restricted-key scope verified;
 - database/security advisors acceptable;
 - rollback plan documented;
-- iPostal/legal/entity release gates satisfied where applicable;
+- external legal/entity release gates satisfied where applicable;
 - final checkout/acceptance QA complete.
 
 Only then may LLF consider repointing the real Stripe webhook or replacing the legacy function.
 
 ## Rollback design
 
-During canary, rollback is simple because the legacy runtime stays intact:
+The legacy runtime remains intact during the canary path. Rollback therefore does not require destructive schema changes:
 - stop using the canary endpoint;
 - leave hardened additive tables/functions dormant;
-- do not drop evidence tables during incident response;
+- preserve evidence tables;
 - keep checkout/onboarding release fail-closed.
 
-A destructive rollback (dropping tables/functions) is neither required nor authorized.
+## Explicitly not authorized by Stage B
 
-## Explicitly not authorized by this document
-
-- production DDL execution;
 - Edge Function deployment;
 - Stripe restricted-key permission changes;
 - webhook endpoint changes;
@@ -153,10 +140,11 @@ A destructive rollback (dropping tables/functions) is neither required nor autho
 - charges, refunds, payouts or subscription changes;
 - legal/address changes;
 - customer/prospect outreach;
-- onboarding release.
+- onboarding release;
+- destructive rollback or legacy table deletion.
 
 ## Current decision
 
 **NO-GO for production cutover.**
 
-Internal bridge preparation is ready. The next security-sensitive action is Stage B: additive production schema/functions plus migration 015 least-privilege grants. That stage requires explicit owner approval before execution.
+Stage B is complete. The next security-sensitive action is Stage C restricted-key verification + isolated canary deployment, which requires a separate explicit owner approval.
