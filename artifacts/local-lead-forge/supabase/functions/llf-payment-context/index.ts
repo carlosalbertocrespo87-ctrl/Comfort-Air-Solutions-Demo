@@ -3,13 +3,15 @@
 // Does NOT create a Stripe Checkout Session or charge a customer.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { APPROVED_OFFER } from './offer-verifier.ts';
+import { APPROVED_OFFER, verifyApprovedOffer } from './offer-verifier.ts';
+import { fetchStripePrice } from './stripe-price-client.ts';
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
   const setupPriceId = Deno.env.get('LLF_STRIPE_SETUP_PRICE_ID');
   const monthlyPriceId = Deno.env.get('LLF_STRIPE_MONTHLY_PRICE_ID');
   const paymentRelease = Deno.env.get('LLF_PAYMENT_RELEASED') === 'true';
@@ -31,12 +33,11 @@ Deno.serve(async (req: Request) => {
   if (acceptanceError) return json({ error: 'acceptance_lookup_failed' }, 500);
   if (!acceptance) return json({ error: 'acceptance_not_found' }, 404);
 
-  // Never accept browser-provided price IDs, amounts, discounts, trial flags, or entitlement state as authoritative.
   if (!setupPriceId || !monthlyPriceId) {
     return json({ error: 'approved_price_configuration_missing' }, 503);
   }
 
-  // Keep release separate from configuration. This foundation never returns a checkout URL.
+  // Keep release separate from configuration. No Stripe API call is needed while payment release is locked.
   if (!paymentRelease) {
     return json({
       ok: true,
@@ -47,9 +48,35 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Next implementation must retrieve both configured Price objects from Stripe server-side and pass
-  // normalized snapshots to verifyApprovedOffer(). Until that authoritative retrieval exists, fail closed.
-  return json({ error: 'stripe_price_retrieval_verification_and_checkout_not_implemented' }, 503);
+  // Even when payment release is toggled, require a server-held Stripe secret and verify both configured prices.
+  if (!stripeSecretKey) return json({ error: 'stripe_server_secret_missing' }, 503);
+
+  try {
+    const [setupPrice, monthlyPrice] = await Promise.all([
+      fetchStripePrice(setupPriceId, stripeSecretKey),
+      fetchStripePrice(monthlyPriceId, stripeSecretKey),
+    ]);
+
+    if (setupPrice.id !== setupPriceId || monthlyPrice.id !== monthlyPriceId) {
+      return json({ error: 'stripe_price_identity_mismatch' }, 503);
+    }
+
+    const verification = verifyApprovedOffer(setupPrice, monthlyPrice);
+    if (!verification.ok) {
+      return json({ error: 'approved_offer_verification_failed', details: verification.errors }, 503);
+    }
+
+    // Price verification can succeed, but Checkout remains intentionally unavailable in this foundation.
+    return json({
+      ok: true,
+      released: false,
+      acceptance_ref: acceptance.acceptance_ref,
+      offer: APPROVED_OFFER,
+      state: 'STRIPE_PRICES_VERIFIED_CHECKOUT_NOT_IMPLEMENTED',
+    }, 503);
+  } catch {
+    return json({ error: 'stripe_price_verification_unavailable' }, 503);
+  }
 });
 
 function json(body: unknown, status = 200) {
