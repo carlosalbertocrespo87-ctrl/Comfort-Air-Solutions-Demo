@@ -1,0 +1,36 @@
+name: Client Operations Security Gate
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/local-lead-forge/client-ops/**"
+      - "docs/LLF-CLIENT-OPERATIONS-*.md"
+      - ".github/workflows/client-operations-security.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/client-ops/**"
+      - "docs/LLF-CLIENT-OPERATIONS-*.md"
+      - ".github/workflows/client-operations-security.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run lifecycle guards
+        run: deno test artifacts/local-lead-forge/client-ops/*.test.ts
+      - name: Guard live capabilities
+        run: |
+          ! grep -R "checkout.sessions.create" artifacts/local-lead-forge/client-ops
+          ! grep -R "paymentLinks.create" artifacts/local-lead-forge/client-ops
+          ! grep -R "onboarding_triggered: true" artifacts/local-lead-forge/client-ops
+          ! grep -R "send.*push" artifacts/local-lead-forge/client-ops
