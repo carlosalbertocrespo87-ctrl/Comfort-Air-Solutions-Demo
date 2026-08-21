@@ -12,11 +12,9 @@ export type ExistingCorrelation = {
   subscriptionRef: string | null;
 };
 
-export type CorrelationPatch = {
-  acceptanceRef: string;
-  stripeCustomerRef: string;
-  setupPaymentRef?: string | null;
-  subscriptionRef?: string | null;
+export type CheckoutSessionResult = {
+  sessionRef: string;
+  url: string;
 };
 
 export type CheckoutOrchestrationDeps = {
@@ -24,16 +22,19 @@ export type CheckoutOrchestrationDeps = {
   loadCorrelation(acceptanceRef: string): Promise<ExistingCorrelation | null>;
   verifyApprovedOffer(): Promise<{ ok: boolean; errors: string[] }>;
   createCustomer(acceptance: DurableAcceptance, idempotencyKey: string): Promise<string>;
-  persistCorrelation(patch: CorrelationPatch): Promise<void>;
-  createSetupPayment(customerRef: string, acceptanceRef: string, idempotencyKey: string): Promise<string>;
-  createSubscription(customerRef: string, acceptanceRef: string, idempotencyKey: string): Promise<string>;
+  persistCustomerCorrelation(acceptanceRef: string, customerRef: string): Promise<void>;
+  createHostedCheckoutSession(
+    customerRef: string,
+    acceptanceRef: string,
+    idempotencyKey: string,
+  ): Promise<CheckoutSessionResult>;
 };
 
 export type CheckoutOrchestrationInput = {
   acceptanceRef: string;
   idempotencyKey: string;
   legalReleased: boolean;
-  paymentObjectCreationReleased: boolean;
+  checkoutCreationReleased: boolean;
   releasedLegalVersion: string;
 };
 
@@ -41,8 +42,8 @@ export type CheckoutOrchestrationResult = {
   ok: true;
   acceptanceRef: string;
   stripeCustomerRef: string;
-  setupPaymentRef: string;
-  subscriptionRef: string;
+  checkoutSessionRef: string;
+  checkoutUrl: string;
   setupStatus: 'PENDING';
   monthlyStatus: 'PENDING';
   onboardingEligible: false;
@@ -52,14 +53,20 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const CUSTOMER = /^cus_[A-Za-z0-9_]+$/;
 const PAYMENT_INTENT = /^pi_[A-Za-z0-9_]+$/;
 const SUBSCRIPTION = /^sub_[A-Za-z0-9_]+$/;
+const CHECKOUT_SESSION = /^cs_(test_|live_)?[A-Za-z0-9_]+$/;
 
 /**
- * Trusted server-side orchestration only.
+ * Trusted server-side sequencing for a future hosted Stripe Checkout release.
  *
- * This function deliberately does not accept browser-supplied price IDs,
- * amounts, Stripe customer IDs, payment state, or redirect state. Provider
- * references are persisted as correlation evidence only. Webhook reconciliation
- * remains authoritative for PAID/ACTIVE state and onboarding eligibility.
+ * Browser input supplies only an opaque acceptance reference plus an idempotency
+ * key. Price IDs, amounts, customer IDs, payment state and redirect state are
+ * never accepted as authority. The durable acceptance <-> Stripe Customer link
+ * must exist before a Checkout Session may be created.
+ *
+ * A subscription-mode Checkout Session can contain the one-time setup price plus
+ * the recurring monthly price. PaymentIntent/subscription references are learned
+ * from authoritative Stripe events/retrieval and filled by the webhook path;
+ * this function never marks setup PAID or monthly ACTIVE from session creation.
  */
 export async function orchestrateCheckout(
   input: CheckoutOrchestrationInput,
@@ -70,7 +77,7 @@ export async function orchestrateCheckout(
   if (!input.legalReleased || !clean(input.releasedLegalVersion, 120)) {
     throw new Error('legal_release_disabled');
   }
-  if (!input.paymentObjectCreationReleased) throw new Error('payment_object_creation_release_disabled');
+  if (!input.checkoutCreationReleased) throw new Error('checkout_creation_release_disabled');
 
   const acceptance = await deps.loadAcceptance(input.acceptanceRef);
   if (!acceptance || acceptance.acceptanceRef !== input.acceptanceRef) {
@@ -87,56 +94,36 @@ export async function orchestrateCheckout(
   if (!correlation) throw new Error('entitlement_not_found');
   validateExistingCorrelation(correlation);
 
+  // If provider payment/subscription refs already exist, the caller must rely on
+  // authoritative reconciliation instead of creating another checkout flow.
+  if (correlation.setupPaymentRef || correlation.subscriptionRef) {
+    throw new Error('existing_payment_objects_require_reconciliation');
+  }
+
   const customerRef = correlation.stripeCustomerRef ?? await deps.createCustomer(
     acceptance,
     `${input.idempotencyKey}:customer`,
   );
   if (!CUSTOMER.test(customerRef)) throw new Error('invalid_stripe_customer_ref');
 
-  // Mandatory ordering invariant: customer correlation is durable before any
-  // setup PaymentIntent or Subscription can be created.
-  await deps.persistCorrelation({
-    acceptanceRef: input.acceptanceRef,
-    stripeCustomerRef: customerRef,
-  });
+  // Critical ordering invariant: this persistence must succeed before Checkout
+  // can create any downstream invoice/PaymentIntent/subscription objects.
+  await deps.persistCustomerCorrelation(input.acceptanceRef, customerRef);
 
-  let setupPaymentRef = correlation.setupPaymentRef;
-  if (!setupPaymentRef) {
-    setupPaymentRef = await deps.createSetupPayment(
-      customerRef,
-      input.acceptanceRef,
-      `${input.idempotencyKey}:setup`,
-    );
-    if (!PAYMENT_INTENT.test(setupPaymentRef)) throw new Error('invalid_setup_payment_ref');
-    await deps.persistCorrelation({
-      acceptanceRef: input.acceptanceRef,
-      stripeCustomerRef: customerRef,
-      setupPaymentRef,
-    });
-  }
-
-  let subscriptionRef = correlation.subscriptionRef;
-  if (!subscriptionRef) {
-    subscriptionRef = await deps.createSubscription(
-      customerRef,
-      input.acceptanceRef,
-      `${input.idempotencyKey}:subscription`,
-    );
-    if (!SUBSCRIPTION.test(subscriptionRef)) throw new Error('invalid_subscription_ref');
-    await deps.persistCorrelation({
-      acceptanceRef: input.acceptanceRef,
-      stripeCustomerRef: customerRef,
-      subscriptionRef,
-    });
-  }
+  const session = await deps.createHostedCheckoutSession(
+    customerRef,
+    input.acceptanceRef,
+    `${input.idempotencyKey}:checkout`,
+  );
+  if (!CHECKOUT_SESSION.test(session.sessionRef)) throw new Error('invalid_checkout_session_ref');
+  if (!isHttpsUrl(session.url)) throw new Error('invalid_checkout_url');
 
   return {
     ok: true,
     acceptanceRef: input.acceptanceRef,
     stripeCustomerRef: customerRef,
-    setupPaymentRef,
-    subscriptionRef,
-    // Never infer entitlement from object creation responses.
+    checkoutSessionRef: session.sessionRef,
+    checkoutUrl: session.url,
     setupStatus: 'PENDING',
     monthlyStatus: 'PENDING',
     onboardingEligible: false,
@@ -155,6 +142,14 @@ function validateExistingCorrelation(correlation: ExistingCorrelation): void {
   }
   if ((correlation.setupPaymentRef || correlation.subscriptionRef) && !correlation.stripeCustomerRef) {
     throw new Error('incomplete_existing_correlation');
+  }
+}
+
+function isHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
   }
 }
 
