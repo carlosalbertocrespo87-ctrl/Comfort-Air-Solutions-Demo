@@ -30,8 +30,8 @@ const checks = [
   ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
   ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
   ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL') && mariaProtocol.includes('Segundo reclamo simultáneo bloqueado: `PENDING_PHYSICAL`')],
-  ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('QA físico')],
-  ['runbook keeps production mutation blocked', qaRunbook.includes('no requiere desplegar') && qaRunbook.includes('no autoriza producción')],
+  ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('## Physical QA still required')],
+  ['runbook keeps production mutation blocked', qaRunbook.includes('No requiere desplegar') && qaRunbook.includes('no autoriza producción')],
   ['equivalence evidence explicitly selects PR94 as QA carrier', equivalence.includes('QA_CARRIER_PR_94') && equivalence.includes('72b028287b45ee19eb4d1188405bcee7b5741dd8')],
 ];
 
