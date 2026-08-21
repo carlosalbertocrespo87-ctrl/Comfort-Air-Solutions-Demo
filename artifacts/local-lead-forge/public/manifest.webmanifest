@@ -1,12 +1,15 @@
 {
-  "name": "Local Lead Forge",
-  "short_name": "LLF",
-  "description": "Local Lead Forge web experience and internal agent-console shell.",
-  "start_url": "/",
+  "id": "/agent-demo/",
+  "name": "Local Lead Forge Agent Console",
+  "short_name": "LLF Agent",
+  "description": "Secure internal Local Lead Forge agent-console shell. Customer messaging and push transport remain gated until authenticated security controls are verified.",
+  "start_url": "/agent-demo/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#020711",
   "theme_color": "#030914",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/favicon.svg",
