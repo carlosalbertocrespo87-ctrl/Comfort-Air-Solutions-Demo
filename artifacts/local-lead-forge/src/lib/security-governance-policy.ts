@@ -27,9 +27,9 @@ const injectionPatterns = [
 ];
 
 const sensitivePatterns = [
-  /\b(?:\d[ -]*?){13,19}\b/g,
-  /\b\d{3,4}\b/g,
-  /(?:api[_ -]?key|secret|password|passcode|token|private key)\s*[:=]/gi,
+  /\b(?:\d[ -]*?){13,19}\b/,
+  /\b\d{3,4}\b/,
+  /(?:api[_ -]?key|secret|password|passcode|token|private key)\s*[:=]/i,
 ];
 
 export function inspectSecurityInput(message: string): SecurityDecision {
