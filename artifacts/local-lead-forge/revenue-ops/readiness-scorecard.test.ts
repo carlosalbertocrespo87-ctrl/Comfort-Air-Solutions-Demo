@@ -1,0 +1,2 @@
+import{readinessPercent,readinessComplete}from'./readiness-scorecard.ts';
+Deno.test('readiness requires every gate',()=>{const p={qualification:true,demo:true,replyOps:true,discovery:true,proposal:true,payment:true,handoff:true,postPayment:true,ci:true,physicalQa:true};if(readinessPercent(p)!==100||!readinessComplete(p))throw new Error('complete readiness not recognized');if(readinessComplete({...p,physicalQa:false}))throw new Error('missing physical QA hidden');if(readinessPercent({...p,postPayment:false})!==90)throw new Error('scorecard calculation incorrect');});

@@ -1,0 +1,2 @@
+export interface PipelineItem{stage:string;ownerId?:string|null;nextAction?:string|null;dueAt?:string|null;replyWaiting:boolean;proposalStalled:boolean;paymentException:boolean;deliveryMismatch:boolean;}
+export function needsRevenueAttention(x:PipelineItem):boolean{return !x.ownerId?.trim()||!x.nextAction?.trim()||!x.dueAt?.trim()||x.replyWaiting||x.proposalStalled||x.paymentException||x.deliveryMismatch;}

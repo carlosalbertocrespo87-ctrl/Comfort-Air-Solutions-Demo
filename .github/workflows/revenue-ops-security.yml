@@ -1,0 +1,22 @@
+name: Revenue Operations Security Gate
+on:
+  pull_request:
+    paths:
+      - 'artifacts/local-lead-forge/revenue-ops/**'
+      - 'docs/LLF-REVENUE-OPS-READINESS.md'
+      - '.github/workflows/revenue-ops-security.yml'
+  push:
+    branches: ['feature/revenue-ops-readiness']
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run revenue ops tests
+        run: deno test artifacts/local-lead-forge/revenue-ops/*.test.ts
+      - name: Enforce pre-launch boundaries
+        run: |
+          ! grep -R -E "(sendRealOutreach|chargeRealCustomer|activateProduction|sendLiveCustomerMessage)[[:space:]]*\(" artifacts/local-lead-forge/revenue-ops
