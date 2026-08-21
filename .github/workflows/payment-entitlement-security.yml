@@ -51,8 +51,16 @@ jobs:
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-context/*.test.ts
       - name: Run payment event tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-events/*.test.ts
+      - name: Typecheck authoritative payment event runtime
+        run: deno check artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
       - name: Run checkout orchestration tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-checkout-orchestration/*.test.ts
+      - name: Guard restricted-key and environment isolation
+        run: |
+          ! grep -R "STRIPE_SECRET_KEY" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts artifacts/local-lead-forge/supabase/functions/llf-payment-events/runtime-config.ts
+          grep -q "STRIPE_RESTRICTED_KEY" artifacts/local-lead-forge/supabase/functions/llf-payment-events/runtime-config.ts
+          grep -q "STRIPE_RESTRICTED_KEY_TEST" artifacts/local-lead-forge/supabase/functions/llf-payment-events/runtime-config.ts
+          grep -q "environment_mismatch" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
       - name: Guard accidental checkout/onboarding activation
         run: |
           ! grep -R "onboarding_triggered: true" artifacts/local-lead-forge/supabase/functions
