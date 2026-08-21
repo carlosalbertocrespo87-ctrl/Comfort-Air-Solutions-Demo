@@ -30,3 +30,6 @@ const overBudget = evaluateResilience(base({
   budget: { maxLatencyMs: 1000, maxCostUsd: 0.01, withinLatencyBudget: false, withinCostBudget: false },
 }));
 if (overBudget.status !== "human_review" || overBudget.safe) throw new Error("over-budget result must not auto-pass");
+
+const toolFailure = evaluateResilience(base({ error: { code: "PROVIDER_ERROR", message: "downstream tool failed; update not confirmed", retryable: false } }));
+if (toolFailure.status !== "human_review" || toolFailure.safe) throw new Error("tool failure must not be represented as successful action");
