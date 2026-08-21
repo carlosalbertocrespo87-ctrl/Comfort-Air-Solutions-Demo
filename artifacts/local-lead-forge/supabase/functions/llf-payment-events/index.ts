@@ -1,7 +1,8 @@
 // LOCAL LEAD FORGE — PAYMENT EVENTS RUNTIME
-// Issue #80. Fail-closed: verifies Stripe signatures, deduplicates events, records audit receipts,
-// retrieves current Stripe object state, requires one existing durable correlation, and only then
-// applies authoritative entitlement state atomically. No checkout creation and no onboarding trigger.
+// Issue #80 / PAYMENT-RUNTIME-BRIDGE-01. Fail-closed: verifies Stripe signatures, deduplicates events,
+// records audit receipts, retrieves current Stripe object state with a least-privilege restricted key,
+// requires one existing durable correlation, and only then applies authoritative entitlement state
+// atomically. No checkout creation and no onboarding trigger.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyStripeSignature } from './stripe-signature.ts';
@@ -16,8 +17,10 @@ Deno.serve(async (req: Request) => {
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-  const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!url || !serviceRoleKey || !webhookSecret || !stripeSecretKey) {
+  // Production bridge policy: authoritative Stripe reads must use a restricted runtime key,
+  // never a general-purpose live secret key. Exact Stripe read permissions are a release gate.
+  const stripeRestrictedKey = Deno.env.get('STRIPE_RESTRICTED_KEY');
+  if (!url || !serviceRoleKey || !webhookSecret || !stripeRestrictedKey) {
     return json({ error: 'server_configuration_error' }, 500);
   }
 
@@ -60,7 +63,7 @@ Deno.serve(async (req: Request) => {
 
   let reconciled;
   try {
-    reconciled = await reconcileStripeObject(event.objectRef, stripeSecretKey);
+    reconciled = await reconcileStripeObject(event.objectRef, stripeRestrictedKey);
   } catch {
     await markReceipt(admin, event.id, 'FAILED');
     return json({ error: 'authoritative_reconciliation_failed' }, 503);
