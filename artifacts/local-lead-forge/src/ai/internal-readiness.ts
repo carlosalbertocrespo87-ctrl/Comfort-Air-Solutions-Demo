@@ -45,21 +45,5 @@ export function evaluateInternalReadiness(evidence: InternalReadinessEvidence): 
   };
 }
 
-// PA-10 evidence review (21 Aug 2026): repository CI is green, but PA-04 has not run.
-// Until a real synthetic provider test succeeds, liveProviderSyntheticTestPassed MUST remain false.
-export const PA10_CURRENT_EVIDENCE: InternalReadinessEvidence = {
-  syntheticTrafficOnly: true,
-  customerTrafficHardBlocked: true,
-  tenantIsolationTested: true,
-  piiRedactionTested: true,
-  secretLeakageBlocked: true,
-  telemetryStoresNoPromptOrResponse: true,
-  killSwitchTested: true,
-  spendCapsTested: true,
-  structuredOutputGateTested: true,
-  humanApprovalBoundariesDocumented: true,
-  ciGreen: true,
-  liveProviderSyntheticTestPassed: false,
-};
-
-export const PA10_CURRENT_DECISION = evaluateInternalReadiness(PA10_CURRENT_EVIDENCE);
+// PA-10 evidence review: PA-04 has not run. Keep this blocker explicit.
+export const PA10_LIVE_SYNTHETIC_TEST_PASSED = false as const;
