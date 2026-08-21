@@ -1,0 +1,2 @@
+export interface PostPaymentExperience{paymentReceiptConfirmed:boolean;welcomeReady:boolean;onboardingLinkReady:boolean;scopeSummaryReady:boolean;timelineReady:boolean;supportPathReady:boolean;clientStatusPathReady:boolean;deliveryOwnerReady:boolean;noLiveAutomationRequired:boolean;}
+export function postPaymentExperiencePass(x:PostPaymentExperience):boolean{return Object.values(x).every(Boolean);}

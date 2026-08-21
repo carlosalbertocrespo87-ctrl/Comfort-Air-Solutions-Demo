@@ -1,0 +1,2 @@
+import{classifyRevenueException,exceptionNeedsAttention}from'./exception-queue.ts';
+Deno.test('critical revenue exceptions are P1',()=>{const none={payment:false,legal:false,deliveryMismatch:false,replyUnowned:false,proposalStalled:false,overdueNextAction:false};if(exceptionNeedsAttention(none))throw new Error('empty queue flagged');if(classifyRevenueException({...none,payment:true})!=='P1')throw new Error('payment exception not P1');if(classifyRevenueException({...none,replyUnowned:true})!=='P2')throw new Error('unowned reply not P2');});
