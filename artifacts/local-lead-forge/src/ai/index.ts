@@ -18,3 +18,4 @@ export * from "./provider-budget";
 export * from "./openai-synthetic-executor";
 export * from "./openai-http-transport";
 export * from "./output-safety";
+export * from "./kill-switch";
