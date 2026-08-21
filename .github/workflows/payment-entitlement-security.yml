@@ -8,6 +8,8 @@ on:
       - "artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.test.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.test.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.test.sql"
       - "artifacts/local-lead-forge/supabase/functions/llf-legal-acceptance/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-context/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-events/**"
@@ -22,6 +24,8 @@ on:
       - "artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.test.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.test.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.test.sql"
       - "artifacts/local-lead-forge/supabase/functions/llf-legal-acceptance/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-context/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-events/**"
@@ -106,7 +110,10 @@ jobs:
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/012_payment_entitlement_foundation.sql
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.sql
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.sql
+          psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql
       - name: Run atomic apply regression
         run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.test.sql
       - name: Run correlation bootstrap regression
         run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.test.sql
+      - name: Run least-privilege regression
+        run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.test.sql
