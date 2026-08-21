@@ -168,3 +168,26 @@ Si el QA falla:
 ## 9. Decisión actual
 
 El sistema está listo para **QA autenticado con datos sintéticos**, pero todavía no está autorizado para mensajería real, notificaciones push ni tráfico de clientes.
+
+
+## 10. Bloqueo observado en el preview
+
+Después de completar los checks automáticos se verificó directamente el Deploy Preview:
+
+- URL: https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app
+- Netlify reporta el despliegue como correcto.
+- La navegación sin una sesión Netlify autorizada redirige a `Team protection`.
+- Mensaje observado: `This site is private — Sign in with an invited Netlify account to view it.`
+
+### Impacto
+
+El código y el despliegue automático están correctos, pero la prueba Carlos PC ↔ María iPhone no puede considerarse completada hasta que ambos dispositivos puedan abrir el mismo preview. No se debe fusionar únicamente para evitar esta protección.
+
+### Opciones seguras
+
+1. Carlos inicia sesión en Netlify desde la PC y confirma acceso al preview.
+2. Invitar a María como usuaria autorizada de Netlify si el plan y la política de acceso lo permiten.
+3. Crear posteriormente un entorno QA temporal protegido por autenticación LLF, sin exponer datos reales.
+4. Mantener el PR en borrador hasta escoger y completar una de estas rutas.
+
+No se modificó la protección de Netlify ni se publicó el preview de forma abierta.
