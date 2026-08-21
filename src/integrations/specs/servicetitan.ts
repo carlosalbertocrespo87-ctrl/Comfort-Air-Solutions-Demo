@@ -1,0 +1,1 @@
+export const serviceTitanAdapterSpec={provider:'SERVICETITAN',status:'SPEC_ONLY',required:['tenant auth isolation','customer/lead read mapping','job/appointment read mapping','idempotent write contract','audit mapping','rate-limit handling'],liveWritesEnabled:false,costApproved:false} as const;

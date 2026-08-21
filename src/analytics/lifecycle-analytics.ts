@@ -1,0 +1,4 @@
+export type LifecycleAnalytics={customers:number;returningCustomers:number;renewalsDue:number;renewalsCompleted:number;reviewRequests:number;publishedReviews:number;crossSellOpportunities:number};
+export function summarizeLifecycle(rows:LifecycleAnalytics[]):LifecycleAnalytics{
+ return rows.reduce((a,r)=>({customers:a.customers+r.customers,returningCustomers:a.returningCustomers+r.returningCustomers,renewalsDue:a.renewalsDue+r.renewalsDue,renewalsCompleted:a.renewalsCompleted+r.renewalsCompleted,reviewRequests:a.reviewRequests+r.reviewRequests,publishedReviews:a.publishedReviews+r.publishedReviews,crossSellOpportunities:a.crossSellOpportunities+r.crossSellOpportunities}),{customers:0,returningCustomers:0,renewalsDue:0,renewalsCompleted:0,reviewRequests:0,publishedReviews:0,crossSellOpportunities:0});
+}

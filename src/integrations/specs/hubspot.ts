@@ -1,0 +1,1 @@
+export const hubSpotAdapterSpec={provider:'HUBSPOT',status:'SPEC_ONLY',required:['tenant auth isolation','contact/deal mapping','pipeline-stage mapping','idempotent write contract','webhook/event mapping','audit mapping'],liveWritesEnabled:false,costApproved:false} as const;

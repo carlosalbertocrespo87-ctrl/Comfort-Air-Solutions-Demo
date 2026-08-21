@@ -1,0 +1,1 @@
+export const housecallProAdapterSpec={provider:'HOUSECALL_PRO',status:'SPEC_ONLY',required:['tenant auth isolation','customer/job mapping','schedule mapping','idempotent write contract','webhook/event mapping','audit mapping'],liveWritesEnabled:false,costApproved:false} as const;
