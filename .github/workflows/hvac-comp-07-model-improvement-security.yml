@@ -1,0 +1,73 @@
+name: HVAC COMP 07 Model Improvement Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/optimization/**'
+      - 'src/benchmark/**'
+      - 'src/improvement/**'
+      - 'src/reports/model-improvement-report.ts'
+      - 'docs/hvac-comp/batch-07-progress.md'
+      - '.github/workflows/hvac-comp-07-model-improvement-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - feature/hvac-comp-batch-07-model-improvement
+    paths:
+      - 'src/optimization/**'
+      - 'src/benchmark/**'
+      - 'src/improvement/**'
+      - 'src/reports/model-improvement-report.ts'
+      - 'docs/hvac-comp/batch-07-progress.md'
+      - '.github/workflows/hvac-comp-07-model-improvement-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  model-improvement-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck executable Batch 07 contract surface
+        run: pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler src/optimization/batch-07.spec.ts
+
+      - name: Run executable Batch 07 contracts
+        run: pnpm dlx tsx@4.20.6 src/optimization/batch-07.spec.ts
+
+      - name: Enforce fail-closed model-improvement boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'syntheticOnly:true' src/optimization/model-candidate.ts
+          grep -F 'spendAuthorized:false' src/optimization/benchmark-budget.ts
+          grep -F 'approvedForCustomer:false' src/optimization/model-change-gate.ts
+          grep -F 'requiresHumanReview:true' src/optimization/routing-recommendation.ts
+          grep -F 'contentStored:false' src/benchmark/benchmark-observation.ts
+          grep -F 'externalActionsAuthorized:false' src/improvement/continuous-loop.ts
+          grep -F 'customerActivationAuthorized:false' src/reports/model-improvement-report.ts
+          ! grep -R -E '(sendReal|activateCustomer|writeLiveCrm|chargeRealCustomer|createRealCheckout|executePaidBenchmark|activateProduction)[[:space:]]*\(' \
+            src/optimization src/benchmark src/improvement src/reports/model-improvement-report.ts

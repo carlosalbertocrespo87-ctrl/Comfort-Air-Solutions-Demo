@@ -1,0 +1,2 @@
+export interface HandoffReadiness{paymentVerified:boolean;legalVerified:boolean;scopeLocked:boolean;clientDataComplete:boolean;deliveryOwnerAssigned:boolean;nextActionDefined:boolean;postPaymentPass:boolean;openP1:number;}
+export function handoffReady(x:HandoffReadiness):boolean{return x.paymentVerified&&x.legalVerified&&x.scopeLocked&&x.clientDataComplete&&x.deliveryOwnerAssigned&&x.nextActionDefined&&x.postPaymentPass&&x.openP1===0;}

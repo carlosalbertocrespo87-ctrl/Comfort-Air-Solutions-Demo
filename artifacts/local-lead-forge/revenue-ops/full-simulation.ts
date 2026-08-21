@@ -1,0 +1,3 @@
+export interface FullSimulationEvidence{qualification:boolean;demo:boolean;replyHandling:boolean;discovery:boolean;proposal:boolean;verbalYes:boolean;paymentVerified:boolean;legalVerified:boolean;postPaymentPass:boolean;handoff:boolean;auditTrail:boolean;rollbackReady:boolean;openP1:number;}
+export function syntheticRevenueSimulationPass(x:FullSimulationEvidence):boolean{return x.qualification&&x.demo&&x.replyHandling&&x.discovery&&x.proposal&&x.verbalYes&&x.paymentVerified&&x.legalVerified&&x.postPaymentPass&&x.handoff&&x.auditTrail&&x.rollbackReady&&x.openP1===0;}
+export function productionRevenueActionsAllowed():boolean{return false;}
