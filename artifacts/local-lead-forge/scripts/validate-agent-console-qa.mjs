@@ -6,13 +6,14 @@ const sql = await readFile(new URL('../backend/012_synthetic_realtime_console.sq
 const page = await readFile(new URL('../src/pages/agent-mobile-demo.tsx', import.meta.url), 'utf8');
 const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts', import.meta.url), 'utf8');
 const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md', import.meta.url), 'utf8');
-const mergeGate = await readFile(new URL('../../../docs/PR94-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
+const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
+const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
 
-const previewOrigin = 'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app';
+const currentPreviewOrigin = 'https://deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app';
 
 const checks = [
   ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
-  ['exact PR94 preview origin allowlisted', edge.includes(`'${previewOrigin}'`)],
+  ['current PR148 preview origin prepared in source', edge.includes(`'${currentPreviewOrigin}'`)],
   ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'") && !edge.includes('"Access-Control-Allow-Origin": "*"')],
   ['active agent required', edge.includes(".eq('is_active', true)")],
   ['trusted device required', edge.includes("trustedDevice.trust_status !== 'TRUSTED'")],
@@ -25,9 +26,10 @@ const checks = [
   ['reply UI disabled', page.includes('Real sending remains disabled during authenticated QA.')],
   ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
   ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
-  ['Maria protocol references PR94 only', mariaProtocol.includes('PR #94') && !mariaProtocol.includes('PR #93')],
+  ['Maria protocol points to replacement PR148', mariaProtocol.includes('PR #148')],
   ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL') && mariaProtocol.includes('Segundo reclamo simultáneo bloqueado: `PENDING_PHYSICAL`')],
   ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('QA físico')],
+  ['runbook keeps production mutation separate', qaRunbook.includes('SOURCE_ONLY_NOT_DEPLOYED') && qaRunbook.includes('no autoriza desplegar')],
 ];
 
 for (const [name, passed] of checks) {

@@ -4,6 +4,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://localleadforge.com',
   'https://www.localleadforge.com',
   'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app',
+  'https://deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app',
 ]);
 
 function corsHeaders(req: Request): Record<string, string> {
