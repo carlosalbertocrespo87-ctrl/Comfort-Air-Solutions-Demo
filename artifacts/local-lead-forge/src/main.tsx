@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
+import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
 import DpaPage from '@/pages/dpa';
 import ExperienceDemoPage from '@/pages/experience-demo';
@@ -56,6 +57,7 @@ const routes: Record<string, { component: React.ComponentType; title: string; de
 
 const route = isOnboarding ? routes['/onboarding'] : routes[normalizedPath];
 const CurrentPage = route?.component ?? App;
+const supportAudience = normalizedPath === '/experience-demo' ? 'client' : normalizedPath === '/' ? 'prospect' : null;
 
 if (route) {
   document.title = route.title;
@@ -72,6 +74,9 @@ createRoot(document.getElementById('root')!, {
   },
 }).render(
   <ErrorBoundary>
-    <CurrentPage />
+    <>
+      <CurrentPage />
+      {supportAudience && <SupportChat audience={supportAudience} />}
+    </>
   </ErrorBoundary>,
 );
