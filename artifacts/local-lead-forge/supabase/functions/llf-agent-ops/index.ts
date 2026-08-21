@@ -25,7 +25,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: agent, error: agentError } = await admin
     .from('llf_agent_profiles')
-    .select('user_id,is_active,display_name,availability')
+    .select('user_id,is_active,display_name,role_label,availability')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
@@ -35,6 +35,18 @@ Deno.serve(async (req: Request) => {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: 'invalid_json' }, 400); }
   const action = String(body.action ?? '');
+
+  if (action === 'session_info') {
+    return json({
+      ok: true,
+      agent: {
+        user_id: agent.user_id,
+        display_name: agent.display_name,
+        role_label: agent.role_label,
+        availability: agent.availability,
+      },
+    });
+  }
 
   if (action === 'set_availability') {
     const availability = String(body.availability ?? '');
