@@ -8,3 +8,4 @@ export * from "./agent-permissions";
 export * from "./shadow-agents";
 export * from "./eval-scenarios";
 export * from "./eval-harness";
+export * from "./telemetry";
