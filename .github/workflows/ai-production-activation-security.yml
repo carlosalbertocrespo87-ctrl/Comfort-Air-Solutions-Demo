@@ -73,4 +73,10 @@ jobs:
           grep -F 'PA10_LIVE_SYNTHETIC_TEST_PASSED = false' artifacts/local-lead-forge/src/ai/internal-readiness.ts
           grep -F 'maxPerRequestUsd: 0.01' artifacts/local-lead-forge/src/ai/provider-budget.ts
           grep -F 'maxSessionUsd: 0.05' artifacts/local-lead-forge/src/ai/provider-budget.ts
-          ! grep -R -E 'sk-[A-Za-z0-9_-]{20,}' artifacts/local-lead-forge/src/ai
+          # Test/adversarial fixtures intentionally contain fake sk-* strings to prove redaction/blocking.
+          # Scan executable source while excluding those fixture files so only accidental embedded keys fail this gate.
+          ! grep -R -E 'sk-[A-Za-z0-9_-]{20,}' \
+            --include='*.ts' \
+            --exclude='*.spec.ts' \
+            --exclude='adversarial-provider-scenarios.ts' \
+            artifacts/local-lead-forge/src/ai
