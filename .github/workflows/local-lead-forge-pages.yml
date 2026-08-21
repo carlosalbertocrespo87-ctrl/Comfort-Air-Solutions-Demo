@@ -4,16 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "artifacts/local-lead-forge/**"
-      - "artifacts/wade-heating-air/**"
-      - "artifacts/comfortair-solutions/**"
-      - "artifacts/new-level-mechanical/**"
-      - "artifacts/hvac-prospect-template/**"
-      - "artifacts/prospect-configs/**"
-      - "scripts/build-generic-pages-demos.mjs"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/local-lead-forge-pages.yml"
   workflow_dispatch:
 
 permissions:
