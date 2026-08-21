@@ -12,3 +12,5 @@ export * from "./telemetry";
 export * from "./voice-realtime";
 export * from "./failure-providers";
 export * from "./resilience";
+export * from "./production-activation";
+export * from "./live-provider-adapter";
