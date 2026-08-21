@@ -139,7 +139,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for route in onboarding privacy terms dpa start; do
+          for route in onboarding privacy terms dpa start experience-demo; do
             mkdir -p "pages-dist/$route"
             cp pages-dist/index.html "pages-dist/$route/index.html"
           done
