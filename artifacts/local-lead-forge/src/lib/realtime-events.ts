@@ -16,6 +16,24 @@ export type SupportRealtimeEvent =
       at: string;
     }
   | {
+      type: 'AI_CHAT_STARTED';
+      conversationId: string;
+      at: string;
+    }
+  | {
+      type: 'AI_RESPONSE_FEEDBACK';
+      conversationId: string;
+      resolved: boolean;
+      source: 'EXPLICIT_YES' | 'EXPLICIT_NO' | 'THUMBS_UP' | 'THUMBS_DOWN';
+      at: string;
+    }
+  | {
+      type: 'HIGH_INTENT_DETECTED';
+      conversationId: string;
+      summary?: string;
+      at: string;
+    }
+  | {
       type: 'HANDOFF_REQUESTED';
       conversationId: string;
       at: string;
@@ -40,5 +58,6 @@ export type SupportRealtimeEvent =
     };
 
 export function isAgentAttentionEvent(event: SupportRealtimeEvent) {
-  return event.type === 'HANDOFF_REQUESTED';
+  if (event.type === 'HANDOFF_REQUESTED' || event.type === 'HIGH_INTENT_DETECTED') return true;
+  return event.type === 'AI_RESPONSE_FEEDBACK' && !event.resolved;
 }
