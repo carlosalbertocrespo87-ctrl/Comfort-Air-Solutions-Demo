@@ -1,61 +1,43 @@
-# PAYMENT-RUNTIME-BRIDGE-01 — Stage B Evidence
+# PAYMENT RUNTIME STAGE B — EVIDENCE
 
 Date: 21 Aug 2026
-Status: STAGE B COMPLETE / SIGNED TEST EVIDENCE PENDING
-Issues: #130, #136
-Production project: Local-Lead-Forge
+Status: STAGE B COMPLETE / POST-STAGE-B TEST DEFECT FOUND
+Issues: #130 / #136
 
-## Owner authorization
-The owner approved additive production schema/functions from payment-runtime migrations 012–015 plus immediate verification. No new Edge Function deployment, Stripe key-scope change, webhook endpoint change, payment action, onboarding release, legal/address change, or outreach was authorized.
+## Stage B production evidence
+Migrations 012–015 are applied in Supabase production. Hardened payment tables exist with RLS enabled and were empty at the Stage B checkpoint. No legacy table was dropped, renamed, truncated or backfilled.
 
-## Applied migrations
-Applied successfully in order:
-1. `012_payment_entitlement_foundation`
-2. `013_payment_entitlement_atomic_apply`
-3. `014_payment_correlation_bootstrap`
-4. `015_payment_runtime_service_role_least_privilege`
+Least privilege verified at Stage B:
+- service_role receipt INSERT allowed;
+- receipt UPDATE restricted to processing status/timestamp;
+- receipt predicate SELECT restricted to stripe_event_id;
+- required entitlement correlation/state columns readable;
+- direct entitlement INSERT/UPDATE/DELETE denied;
+- hardened RPC EXECUTE granted to service_role;
+- anon/authenticated hardened access denied.
 
-No existing table was dropped, renamed, truncated, or backfilled.
+## Signed TEST-mode post-Stage-B evidence
+A synthetic Stripe TEST subscription with no payment method and no charge generated signed webhook traffic to active `llf-stripe-events` v6.
 
-## Production result
-Added hardened objects:
-- `public.llf_payment_entitlements`
-- `public.llf_stripe_event_receipts`
-- `public.llf_recompute_onboarding_eligibility(uuid)`
-- `public.llf_apply_payment_entitlement_state(uuid,text,timestamptz,text,text,text,text,text)`
-- `public.llf_bootstrap_payment_correlation(uuid,text,text,text)`
+Observed:
+- signed TEST delivery reached v6;
+- durable legacy ledger evidence was written;
+- corrected `llf_acceptance_ref` metadata caused v6 to enter the authoritative TEST provider-read path;
+- that request returned HTTP 503 and the event was marked FAILED;
+- Stripe retried the same event id;
+- v6 then returned HTTP 200 as a duplicate without rerunning the failed reconciliation.
 
-Existing `llf_legal_acceptances`, `llf_first_sale_payment_state`, and `llf_stripe_event_ledger` were preserved.
+Therefore payment runtime release remains blocked. This is not a Stage B schema failure; it is a runtime TEST-access + FAILED-event retry defect discovered by the required end-to-end proof.
 
-Immediately after Stage B:
-- `llf_payment_entitlements`: 0 rows
-- `llf_stripe_event_receipts`: 0 rows
+## Source-only remediation prepared in Draft PR #143
+- FAILED receipt retry policy added;
+- terminal duplicate acknowledgement restricted to PROCESSED/IGNORED;
+- RECEIVED duplicate is retry-later/fail-closed;
+- successful hardened entitlement apply now marks receipt PROCESSED;
+- migration 016 prepared to add only SELECT(processing_status) for retry-state discrimination;
+- regression tests preserve denial of table-wide SELECT and destructive/direct-entitlement privileges.
 
-## Least-privilege verification
-Verified:
-- RLS enabled on private payment/legal runtime tables;
-- `service_role` can INSERT hardened receipts;
-- `service_role` can UPDATE only receipt `processing_status` and `processed_at`;
-- `service_role` can SELECT receipt `stripe_event_id` for predicate filtering, not table-wide receipt data;
-- `service_role` can SELECT only required entitlement correlation/current-state columns;
-- no direct INSERT/UPDATE/DELETE on hardened entitlements;
-- `service_role` can EXECUTE hardened atomic-apply and bootstrap RPCs;
-- `anon` and `authenticated` cannot read hardened entitlements or invoke atomic apply.
+Migration 016 is NOT applied in production. No Edge Function replacement is deployed by this evidence update.
 
-Negative checks passed for receipt table-wide SELECT, receipt DELETE, receipt unrelated-column UPDATE, entitlement table-wide SELECT, and direct entitlement INSERT/UPDATE/DELETE.
-
-## Active runtime audit
-A fresh read confirmed production `llf-stripe-events` v6 performs authoritative provider checks before mutation. It uses a restricted live Stripe key, supports separate TEST secret/key names when configured, verifies environment match, retrieves current Stripe Checkout/Subscription state, and passes confirmed paid/active booleans into `llf_apply_first_sale_stripe_event_v2(...)`.
-
-The older function remains in the database but is not called by v6.
-
-## Source-control evidence
-PR #143 carries the least-privilege migration record plus executable regression coverage for the authoritative source runtime. It is preparation/review only and does not deploy production.
-
-## Remaining validation gap
-Historical HTTP 500 webhook evidence belongs to v5. V6 still requires one signed Stripe TEST-mode end-to-end validation proving HTTP/ledger behavior, provider-state reconciliation, fail-closed unknown correlation, dedupe/stale protection, and no automatic onboarding.
-
-## Release posture
-**Production/customer release remains NO-GO.**
-
-No live Stripe object or payment action is authorized merely to obtain test evidence.
+## Release boundary
+Production checkout, customer charges, onboarding activation, legal publication and outreach remain NO-GO until TEST provider access and retry semantics are proven end-to-end after an explicitly approved runtime remediation.
