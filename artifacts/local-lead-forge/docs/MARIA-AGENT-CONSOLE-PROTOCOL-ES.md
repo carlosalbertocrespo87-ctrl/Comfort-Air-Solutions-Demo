@@ -2,11 +2,11 @@
 
 Estado: ENTRENAMIENTO / QA SINTÉTICO
 
-Este protocolo prepara a María para operar la Consola del Agente desde su iPhone. No autoriza mensajes reales, cambios en cuentas de clientes, cambios de rutas de leads ni promesas comerciales. Mientras el PR #93 permanezca en QA, solo se utilizan conversaciones marcadas `[QA]`.
+Este protocolo prepara a María para operar la Consola del Agente desde su iPhone. No autoriza mensajes reales, cambios en cuentas de clientes, cambios de rutas de leads ni promesas comerciales. Mientras el PR #94 permanezca en QA, solo se utilizan conversaciones marcadas `[QA]`.
 
 ## 1. Antes de comenzar el turno
 
-1. Abrir la consola únicamente desde el iPhone aprobado.
+1. Abrir la consola únicamente desde el iPhone aprobado para la sesión de QA.
 2. Confirmar que la página identifica a `María · trusted device`.
 3. Si aparece solicitud de acceso, passkey o código, detenerse y avisar a Carlos; no compartir códigos ni capturas que revelen credenciales.
 4. Elegir la disponibilidad correcta:
@@ -108,17 +108,34 @@ En producción, una conversación solo podrá cerrarse cuando exista evidencia d
 4. Cerrar la sesión si el teléfono se compartirá, se entregará a otra persona o se pierde control físico del dispositivo.
 5. Informar de cualquier comportamiento extraño, sesión inesperada o dispositivo desconocido.
 
-## 10. Prueba obligatoria antes de mensajes reales
+## 10. Gate obligatorio antes de mensajes reales
 
-- Inicio de sesión desde el iPhone confiable: PASS.
-- Dispositivo no confiable bloqueado: PASS.
-- Cambio de disponibilidad: PASS.
-- Lectura de solo conversaciones `[QA]`: PASS.
-- Reclamo por María: PASS.
-- Segundo reclamo simultáneo bloqueado: PASS.
-- Resolución sintética: PASS.
-- Intento de `send_message` bloqueado: PASS.
-- Conversación real/no sintética inaccesible por la ruta QA: PASS.
-- Registros de dispositivo, auditoría e interacción presentes: PASS.
+No marcar una comprobación humana como `PASS` hasta obtener evidencia del dispositivo real. El estado actual es:
 
-Hasta completar todos los puntos, la consola permanece en QA y no se habilitan clientes, prospectos, notificaciones push ni mensajes reales.
+- Inicio de sesión desde el iPhone del QA: `PENDING_PHYSICAL`.
+- Dispositivo no confiable bloqueado: `AUTOMATED_PASS / PHYSICAL_RECOMMENDED`.
+- Cambio de disponibilidad desde iPhone: `PENDING_PHYSICAL`.
+- Lectura visual de solo conversaciones `[QA]`: `PENDING_PHYSICAL`.
+- Filtro backend `is_synthetic = true`: `AUTOMATED_PASS`.
+- Reclamo por María: `PENDING_PHYSICAL`.
+- Segundo reclamo simultáneo bloqueado: `PENDING_PHYSICAL`.
+- Resolución sintética reflejada en ambos dispositivos: `PENDING_PHYSICAL`.
+- Intento de `send_message` bloqueado: `AUTOMATED_PASS`.
+- Conversación real/no sintética inaccesible por la ruta QA: `AUTOMATED_PASS`.
+- Registros de dispositivo, auditoría e interacción generados por la sesión física: `PENDING_PHYSICAL`.
+
+Hasta completar la evidencia física requerida, la consola permanece en QA y no se habilitan clientes, prospectos, notificaciones push ni mensajes reales.
+
+## 11. Preparación específica del QA físico PR #94
+
+El Deploy Preview está protegido y utiliza un origen distinto a producción. Para la sesión física:
+
+1. Carlos y María deben poder abrir el mismo preview autorizado de Netlify.
+2. Cada persona debe autenticarse mediante un enlace cuyo redirect termine en el origen exacto del preview; no copiar JWT, fragmentos de sesión ni tokens entre dominios.
+3. Cada navegador del preview registra un dispositivo independiente porque `localStorage` está aislado por origen.
+4. Aprobar únicamente los registros temporales que correspondan a la PC de Carlos y al iPhone de María.
+5. Ejecutar sincronización inicial, reclamo simultáneo y resolución.
+6. Capturar solamente evidencia sin credenciales ni datos sensibles.
+7. Al finalizar, retirar el callback temporal del preview, retirar el origen CORS temporal cuando deje de utilizarse y revocar los dispositivos temporales de QA si ya no son necesarios.
+
+Un fallo mantiene el PR en `HOLD`; no se habilita ninguna capacidad real para evitar o saltar el QA.
