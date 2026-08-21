@@ -1,0 +1,86 @@
+name: HVAC COMP 01 Revenue Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'artifacts/local-lead-forge/src/revenue/**'
+      - 'src/revenue/**'
+      - 'docs/HVAC-COMP-01-REVENUE-ATTRIBUTION.md'
+      - 'docs/hvac-comp/batch-01-progress.md'
+      - '.github/workflows/hvac-comp-01-revenue-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - feature/hvac-comp-01-revenue-attribution
+    paths:
+      - 'artifacts/local-lead-forge/src/revenue/**'
+      - 'src/revenue/**'
+      - 'docs/HVAC-COMP-01-REVENUE-ATTRIBUTION.md'
+      - 'docs/hvac-comp/batch-01-progress.md'
+      - '.github/workflows/hvac-comp-01-revenue-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revenue-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck Batch 01 contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler \
+            artifacts/local-lead-forge/src/revenue/revenue-lifecycle.ts \
+            artifacts/local-lead-forge/src/revenue/revenue-lifecycle.spec.ts \
+            artifacts/local-lead-forge/src/revenue/speed-to-lead.ts \
+            artifacts/local-lead-forge/src/revenue/pipeline-leakage.ts \
+            artifacts/local-lead-forge/src/revenue/recovery-opportunity.ts \
+            artifacts/local-lead-forge/src/revenue/weekly-owner-report.ts \
+            src/revenue/source-attribution.ts \
+            src/revenue/handoff-policy.ts \
+            src/revenue/batch-01.spec.ts
+
+      - name: Run executable Batch 01 contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          runner='pnpm dlx tsx@4.20.6'
+          $runner artifacts/local-lead-forge/src/revenue/revenue-lifecycle.spec.ts
+          $runner src/revenue/batch-01.spec.ts
+
+      - name: Enforce fail-closed commercial boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'communicationAuthorized: false' artifacts/local-lead-forge/src/revenue/recovery-opportunity.ts
+          grep -F 'externalActionAllowed: false' src/revenue/handoff-policy.ts
+          grep -F 'REVENUE_EVIDENCE_NOT_VERIFIED' artifacts/local-lead-forge/src/revenue/weekly-owner-report.ts
+          grep -F 'item.tenantId === opportunity.tenantId' artifacts/local-lead-forge/src/revenue/revenue-lifecycle.ts
+          grep -F 'item.opportunityId === opportunity.opportunityId' artifacts/local-lead-forge/src/revenue/revenue-lifecycle.ts
+          ! grep -R -E '(sendRealOutreach|sendLiveCustomerMessage|chargeRealCustomer|activateProduction)[[:space:]]*\(' \
+            artifacts/local-lead-forge/src/revenue src/revenue
