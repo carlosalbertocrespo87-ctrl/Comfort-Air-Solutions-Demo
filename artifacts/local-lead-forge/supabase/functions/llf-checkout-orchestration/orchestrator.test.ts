@@ -19,7 +19,7 @@ const releasedInput = {
   acceptanceRef,
   idempotencyKey: 'checkout-test-001',
   legalReleased: true,
-  paymentObjectCreationReleased: true,
+  checkoutCreationReleased: true,
   releasedLegalVersion: 'llf-legal-v1',
 };
 
@@ -48,21 +48,13 @@ function fakeDeps(overrides: Partial<CheckoutOrchestrationDeps> = {}) {
       calls.push('createCustomer');
       return 'cus_test_123';
     },
-    async persistCorrelation(patch) {
-      calls.push(`persist:${patch.setupPaymentRef ? 'setup' : patch.subscriptionRef ? 'subscription' : 'customer'}`);
-      correlation = {
-        stripeCustomerRef: patch.stripeCustomerRef,
-        setupPaymentRef: patch.setupPaymentRef ?? correlation.setupPaymentRef,
-        subscriptionRef: patch.subscriptionRef ?? correlation.subscriptionRef,
-      };
+    async persistCustomerCorrelation(_acceptanceRef, customerRef) {
+      calls.push('persistCustomerCorrelation');
+      correlation = { ...correlation, stripeCustomerRef: customerRef };
     },
-    async createSetupPayment() {
-      calls.push('createSetupPayment');
-      return 'pi_test_123';
-    },
-    async createSubscription() {
-      calls.push('createSubscription');
-      return 'sub_test_123';
+    async createHostedCheckoutSession() {
+      calls.push('createHostedCheckoutSession');
+      return { sessionRef: 'cs_test_123', url: 'https://checkout.stripe.com/c/pay/test' };
     },
     ...overrides,
   };
@@ -70,12 +62,12 @@ function fakeDeps(overrides: Partial<CheckoutOrchestrationDeps> = {}) {
   return { deps, calls, setCorrelation(next: ExistingCorrelation) { correlation = next; } };
 }
 
-// Release gates fail before any external dependency is called.
+// Release gates fail before any dependency/network-capable action is called.
 {
   const { deps, calls } = fakeDeps();
   await assert.rejects(
-    orchestrateCheckout({ ...releasedInput, paymentObjectCreationReleased: false }, deps),
-    /payment_object_creation_release_disabled/,
+    orchestrateCheckout({ ...releasedInput, checkoutCreationReleased: false }, deps),
+    /checkout_creation_release_disabled/,
   );
   assert.deepEqual(calls, []);
 }
@@ -92,18 +84,17 @@ function fakeDeps(overrides: Partial<CheckoutOrchestrationDeps> = {}) {
   await assert.rejects(orchestrateCheckout(releasedInput, deps), /legal_version_mismatch/);
 }
 
-// Offer mismatch fails before customer/payment object creation.
+// Offer mismatch fails before customer or Checkout creation.
 {
   const { deps, calls } = fakeDeps({
     verifyApprovedOffer: async () => ({ ok: false, errors: ['setup_amount_mismatch'] }),
   });
   await assert.rejects(orchestrateCheckout(releasedInput, deps), /offer_not_verified:setup_amount_mismatch/);
   assert.equal(calls.includes('createCustomer'), false);
-  assert.equal(calls.includes('createSetupPayment'), false);
-  assert.equal(calls.includes('createSubscription'), false);
+  assert.equal(calls.includes('createHostedCheckoutSession'), false);
 }
 
-// Customer correlation MUST persist before setup/subscription creation.
+// Customer correlation MUST persist before Stripe Checkout can be created.
 {
   const { deps, calls } = fakeDeps();
   const result = await orchestrateCheckout(releasedInput, deps);
@@ -112,21 +103,17 @@ function fakeDeps(overrides: Partial<CheckoutOrchestrationDeps> = {}) {
     'verifyApprovedOffer',
     'loadCorrelation',
     'createCustomer',
-    'persist:customer',
-    'createSetupPayment',
-    'persist:setup',
-    'createSubscription',
-    'persist:subscription',
+    'persistCustomerCorrelation',
+    'createHostedCheckoutSession',
   ]);
   assert.equal(result.stripeCustomerRef, 'cus_test_123');
-  assert.equal(result.setupPaymentRef, 'pi_test_123');
-  assert.equal(result.subscriptionRef, 'sub_test_123');
+  assert.equal(result.checkoutSessionRef, 'cs_test_123');
   assert.equal(result.setupStatus, 'PENDING');
   assert.equal(result.monthlyStatus, 'PENDING');
   assert.equal(result.onboardingEligible, false);
 }
 
-// Correlation persistence failure blocks all payment object creation.
+// Correlation persistence failure blocks Checkout creation entirely.
 {
   const calls: string[] = [];
   const { deps } = fakeDeps({
@@ -134,20 +121,30 @@ function fakeDeps(overrides: Partial<CheckoutOrchestrationDeps> = {}) {
       calls.push('createCustomer');
       return 'cus_test_123';
     },
-    persistCorrelation: async () => {
-      calls.push('persistCustomer');
+    persistCustomerCorrelation: async () => {
+      calls.push('persistCustomerCorrelation');
       throw new Error('correlation_persist_failed');
     },
-    createSetupPayment: async () => {
-      calls.push('createSetupPayment');
-      return 'pi_should_not_exist';
+    createHostedCheckoutSession: async () => {
+      calls.push('createHostedCheckoutSession');
+      return { sessionRef: 'cs_test_should_not_exist', url: 'https://checkout.stripe.com/blocked' };
     },
   });
   await assert.rejects(orchestrateCheckout(releasedInput, deps), /correlation_persist_failed/);
-  assert.deepEqual(calls, ['createCustomer', 'persistCustomer']);
+  assert.deepEqual(calls, ['createCustomer', 'persistCustomerCorrelation']);
 }
 
-// Retry/resume reuses durable provider refs and creates nothing again.
+// Existing customer correlation is reused; it is re-asserted durably before Checkout creation.
+{
+  const { deps, calls, setCorrelation } = fakeDeps();
+  setCorrelation({ stripeCustomerRef: 'cus_existing_123', setupPaymentRef: null, subscriptionRef: null });
+  await orchestrateCheckout(releasedInput, deps);
+  assert.equal(calls.includes('createCustomer'), false);
+  assert.equal(calls.includes('persistCustomerCorrelation'), true);
+  assert.equal(calls.includes('createHostedCheckoutSession'), true);
+}
+
+// Once payment/subscription objects exist, never create another checkout from this path.
 {
   const { deps, calls, setCorrelation } = fakeDeps();
   setCorrelation({
@@ -155,21 +152,23 @@ function fakeDeps(overrides: Partial<CheckoutOrchestrationDeps> = {}) {
     setupPaymentRef: 'pi_existing_123',
     subscriptionRef: 'sub_existing_123',
   });
-  const result = await orchestrateCheckout(releasedInput, deps);
-  assert.equal(calls.includes('createCustomer'), false);
-  assert.equal(calls.includes('createSetupPayment'), false);
-  assert.equal(calls.includes('createSubscription'), false);
-  assert.equal(calls.includes('persist:customer'), true);
-  assert.equal(result.setupStatus, 'PENDING');
-  assert.equal(result.monthlyStatus, 'PENDING');
-  assert.equal(result.onboardingEligible, false);
+  await assert.rejects(orchestrateCheckout(releasedInput, deps), /existing_payment_objects_require_reconciliation/);
+  assert.equal(calls.includes('createHostedCheckoutSession'), false);
 }
 
-// Payment/subscription refs without a customer correlation are inconsistent and fail closed.
+// Provider refs without a customer correlation are inconsistent and fail closed.
 {
   const { deps, setCorrelation } = fakeDeps();
   setCorrelation({ stripeCustomerRef: null, setupPaymentRef: 'pi_orphan_123', subscriptionRef: null });
   await assert.rejects(orchestrateCheckout(releasedInput, deps), /incomplete_existing_correlation/);
+}
+
+// Session response cannot smuggle an invalid/non-HTTPS checkout destination.
+{
+  const { deps } = fakeDeps({
+    createHostedCheckoutSession: async () => ({ sessionRef: 'cs_test_123', url: 'http://example.invalid' }),
+  });
+  await assert.rejects(orchestrateCheckout(releasedInput, deps), /invalid_checkout_url/);
 }
 
 console.log('checkout orchestration tests passed');
