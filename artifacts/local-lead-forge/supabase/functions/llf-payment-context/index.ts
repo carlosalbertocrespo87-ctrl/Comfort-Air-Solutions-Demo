@@ -3,6 +3,7 @@
 // Does NOT create a Stripe Checkout Session or charge a customer.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { APPROVED_OFFER } from './offer-verifier.ts';
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -30,7 +31,7 @@ Deno.serve(async (req: Request) => {
   if (acceptanceError) return json({ error: 'acceptance_lookup_failed' }, 500);
   if (!acceptance) return json({ error: 'acceptance_not_found' }, 404);
 
-  // Never accept browser-provided price IDs or amounts as authoritative.
+  // Never accept browser-provided price IDs, amounts, discounts, trial flags, or entitlement state as authoritative.
   if (!setupPriceId || !monthlyPriceId) {
     return json({ error: 'approved_price_configuration_missing' }, 503);
   }
@@ -41,13 +42,14 @@ Deno.serve(async (req: Request) => {
       ok: true,
       released: false,
       acceptance_ref: acceptance.acceptance_ref,
-      offer: { setup_usd_cents: 29900, monthly_usd_cents: 19900, interval: 'month' },
+      offer: APPROVED_OFFER,
       state: 'PAYMENT_CONTEXT_VALIDATED_BUT_RELEASE_LOCKED',
     });
   }
 
-  // Intentionally fail closed until official Stripe API price verification and Checkout creation are implemented.
-  return json({ error: 'stripe_price_verification_and_checkout_not_implemented' }, 503);
+  // Next implementation must retrieve both configured Price objects from Stripe server-side and pass
+  // normalized snapshots to verifyApprovedOffer(). Until that authoritative retrieval exists, fail closed.
+  return json({ error: 'stripe_price_retrieval_verification_and_checkout_not_implemented' }, 503);
 });
 
 function json(body: unknown, status = 200) {
