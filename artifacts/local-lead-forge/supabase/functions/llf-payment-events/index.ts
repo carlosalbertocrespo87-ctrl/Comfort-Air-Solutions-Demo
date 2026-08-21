@@ -1,10 +1,12 @@
 // LOCAL LEAD FORGE — PAYMENT EVENTS RUNTIME
-// Issue #80. Fail-closed: verifies Stripe signatures, deduplicates events, records audit receipts.
+// Issue #80. Fail-closed: verifies Stripe signatures, deduplicates events, records audit receipts,
+// and retrieves current Stripe object state before any entitlement mutation.
 // No checkout creation and no direct onboarding trigger.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyStripeSignature } from './stripe-signature.ts';
 import { normalizeStripeEvent, SUPPORTED_EVENT_TYPES } from './event-normalizer.ts';
+import { reconcileStripeObject } from './authoritative-reconciler.ts';
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -12,7 +14,10 @@ Deno.serve(async (req: Request) => {
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-  if (!url || !serviceRoleKey || !webhookSecret) return json({ error: 'server_configuration_error' }, 500);
+  const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+  if (!url || !serviceRoleKey || !webhookSecret || !stripeSecretKey) {
+    return json({ error: 'server_configuration_error' }, 500);
+  }
 
   const signature = req.headers.get('stripe-signature');
   if (!signature) return json({ error: 'stripe_signature_required' }, 400);
@@ -42,25 +47,40 @@ Deno.serve(async (req: Request) => {
   });
 
   if (receiptError) {
-    // Stripe retries deliveries. A duplicate primary key is intentionally treated as already accepted.
     if ((receiptError as any).code === '23505') return json({ ok: true, duplicate: true });
     return json({ error: 'event_receipt_insert_failed' }, 500);
   }
 
   if (!SUPPORTED_EVENT_TYPES.has(event.type)) {
-    await admin.from('llf_stripe_event_receipts')
-      .update({ processed_at: new Date().toISOString(), processing_status: 'IGNORED' })
-      .eq('stripe_event_id', event.id);
+    await markReceipt(admin, event.id, 'IGNORED');
     return json({ ok: true, ignored: true });
   }
 
-  // State mutation remains fail-closed until authoritative Stripe object retrieval/correlation is complete.
-  await admin.from('llf_stripe_event_receipts')
-    .update({ processed_at: new Date().toISOString(), processing_status: 'RECEIVED' })
-    .eq('stripe_event_id', event.id);
+  let reconciled;
+  try {
+    reconciled = await reconcileStripeObject(event.objectRef, stripeSecretKey);
+  } catch {
+    await markReceipt(admin, event.id, 'FAILED');
+    return json({ error: 'authoritative_reconciliation_failed' }, 503);
+  }
 
-  return json({ ok: true, accepted: true, state_mutation: 'locked_pending_authoritative_reconciliation' });
+  // Foundation stop gate: authoritative state may now be observed, but protected entitlement mutation
+  // remains disabled until correlation-to-acceptance and out-of-order mutation tests are complete.
+  await markReceipt(admin, event.id, 'PROCESSED');
+  return json({
+    ok: true,
+    accepted: true,
+    authoritative_state_observed: true,
+    reconciled,
+    state_mutation: 'locked_pending_acceptance_correlation_and_mutation_qa',
+  });
 });
+
+async function markReceipt(admin: any, eventId: string, status: 'PROCESSED' | 'IGNORED' | 'FAILED') {
+  await admin.from('llf_stripe_event_receipts')
+    .update({ processed_at: new Date().toISOString(), processing_status: status })
+    .eq('stripe_event_id', eventId);
+}
 
 async function sha256(value: string) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
