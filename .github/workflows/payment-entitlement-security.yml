@@ -11,6 +11,7 @@ on:
       - "artifacts/local-lead-forge/supabase/functions/llf-legal-acceptance/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-context/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-events/**"
+      - "artifacts/local-lead-forge/supabase/functions/llf-checkout-orchestration/**"
       - ".github/workflows/payment-entitlement-security.yml"
   push:
     branches:
@@ -24,6 +25,7 @@ on:
       - "artifacts/local-lead-forge/supabase/functions/llf-legal-acceptance/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-context/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-events/**"
+      - "artifacts/local-lead-forge/supabase/functions/llf-checkout-orchestration/**"
       - ".github/workflows/payment-entitlement-security.yml"
   workflow_dispatch:
 
@@ -36,7 +38,7 @@ concurrency:
 
 jobs:
   payment-security-tests:
-    name: Stripe signature, correlation, reconciliation and mutation tests
+    name: Stripe signature, correlation, reconciliation and orchestration tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,11 +51,13 @@ jobs:
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-context/*.test.ts
       - name: Run payment event tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-events/*.test.ts
-      - name: Guard live payment activation
+      - name: Run checkout orchestration tests
+        run: deno test artifacts/local-lead-forge/supabase/functions/llf-checkout-orchestration/*.test.ts
+      - name: Guard accidental checkout/onboarding activation
         run: |
-          ! grep -R "onboarding_triggered: true" artifacts/local-lead-forge/supabase/functions/llf-payment-events
-          ! grep -R "checkout.sessions.create" artifacts/local-lead-forge/supabase/functions/llf-payment-events artifacts/local-lead-forge/supabase/functions/llf-payment-context
-          ! grep -R "paymentLinks.create" artifacts/local-lead-forge/supabase/functions/llf-payment-events artifacts/local-lead-forge/supabase/functions/llf-payment-context
+          ! grep -R "onboarding_triggered: true" artifacts/local-lead-forge/supabase/functions
+          ! grep -R "checkout.sessions.create" artifacts/local-lead-forge/supabase/functions
+          ! grep -R "paymentLinks.create" artifacts/local-lead-forge/supabase/functions
 
   payment-sql-regression:
     name: Isolated PostgreSQL entitlement regression
