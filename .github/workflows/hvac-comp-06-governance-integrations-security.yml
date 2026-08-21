@@ -1,0 +1,79 @@
+name: HVAC COMP 06 Governance Integrations Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/governance/**'
+      - 'src/compliance/**'
+      - 'src/privacy/**'
+      - 'src/integrations/**'
+      - 'src/experiments/**'
+      - 'docs/hvac-comp/batch-06-progress.md'
+      - '.github/workflows/hvac-comp-06-governance-integrations-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - feature/hvac-comp-batch-06-governance-integrations
+    paths:
+      - 'src/governance/**'
+      - 'src/compliance/**'
+      - 'src/privacy/**'
+      - 'src/integrations/**'
+      - 'src/experiments/**'
+      - 'docs/hvac-comp/batch-06-progress.md'
+      - '.github/workflows/hvac-comp-06-governance-integrations-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governance-integrations-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck executable Batch 06 contract surface
+        run: pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler src/governance/batch-06.spec.ts
+
+      - name: Run executable Batch 06 contracts
+        run: pnpm dlx tsx@4.20.6 src/governance/batch-06.spec.ts
+
+      - name: Enforce fail-closed governance and integration boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'externalCommunicationAuthorized:false' src/governance/release-posture.ts
+          grep -F 'liveProviderWritesAuthorized:false' src/governance/release-posture.ts
+          grep -F 'customerTrafficAuthorized:false' src/governance/release-posture.ts
+          grep -F 'autonomyAboveL1Authorized:false' src/governance/release-posture.ts
+          grep -F 'readyForExternal:false' src/governance/multi-agent-readiness.ts
+          grep -F 'offerAuthorized:false' src/governance/performance-guarantee-gate.ts
+          grep -F 'promiseAuthorized:false' src/experiments/territory-exclusivity.ts
+          grep -F 'communicationAuthorized:false' src/compliance/consent-eligibility.ts
+          grep -F 'communicationAuthorized:false' src/compliance/communication-window.ts
+          grep -R -F 'liveWritesEnabled:false' src/integrations/specs
+          grep -R -F 'costApproved:false' src/integrations/specs
+          ! grep -R -E '(sendRealEmail|sendRealSms|placeRealCall|writeLiveCrm|writeLiveProvider|chargeRealCustomer|refundRealCustomer|activateProduction|publishLiveGuarantee|promiseTerritory)[[:space:]]*\(' \
+            src/governance src/compliance src/privacy src/integrations src/experiments
