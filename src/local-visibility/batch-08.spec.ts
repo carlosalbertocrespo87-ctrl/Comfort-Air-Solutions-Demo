@@ -37,7 +37,7 @@ assertThrows(()=>proposeGbpChange({field:"phone",proposedValue:"",evidenceUrl:"h
 assert(localVisibilitySyntheticCases.length>0,"local visibility synthetic pack must not be empty");
 assert(localVisibilitySyntheticCases.every(item=>item.synthetic===true),"all Batch 08 QA cases must be synthetic");
 assert(localVisibilitySyntheticCases.some(item=>item.locale==="en-US")&&localVisibilitySyntheticCases.some(item=>item.locale==="es-US"),"Batch 08 QA must cover EN/ES");
-assert(localVisibilitySyntheticCases.some(item=>item.scenario.toLowerCase().includes("gating")),"Batch 08 QA must cover review gating");
+assert(localVisibilitySyntheticCases.some(item=>item.id==="es-review-gating"&&item.expectedHumanReview===true),"Batch 08 QA must cover review gating");
 
 const report=buildLocalVisibilityOwnerReport({score:82,grade:"B",topGaps:["gap1","gap2"],verifiedFacts:8,unverifiedFacts:2,duplicateRisk:"LOW",recommendedNextActions:["verify only"]});
 assert(report.externalActionsAuthorized===false,"owner report must not authorize external actions");
