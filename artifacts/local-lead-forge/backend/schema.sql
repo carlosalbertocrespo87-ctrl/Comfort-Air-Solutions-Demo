@@ -79,7 +79,9 @@ create table if not exists llf_push_subscriptions (
   unique(agent_user_id, endpoint)
 );
 
--- Atomic claim: only the first eligible agent wins.
+-- Atomic claim foundation: only the first eligible active agent wins.
+-- This base function is NOT executable by PUBLIC. The authenticated deployment
+-- migration replaces it with auth.uid()-bound verification before granting execute.
 create or replace function llf_claim_conversation(p_conversation_id uuid, p_agent_user_id uuid)
 returns llf_conversations
 language plpgsql
@@ -89,6 +91,14 @@ as $$
 declare
   claimed llf_conversations;
 begin
+  if not exists (
+    select 1 from llf_agent_profiles
+     where user_id = p_agent_user_id
+       and is_active = true
+  ) then
+    raise exception 'active_agent_required';
+  end if;
+
   update llf_conversations
      set status = 'AGENT_ACTIVE',
          assigned_agent_user_id = p_agent_user_id,
@@ -109,6 +119,9 @@ begin
   return claimed;
 end;
 $$;
+
+-- Fail closed at the base layer: no browser/client role receives execute here.
+revoke all on function llf_claim_conversation(uuid, uuid) from public;
 
 -- Security remains deny-by-default until deployment-specific RLS policies are reviewed.
 alter table llf_agent_profiles enable row level security;
