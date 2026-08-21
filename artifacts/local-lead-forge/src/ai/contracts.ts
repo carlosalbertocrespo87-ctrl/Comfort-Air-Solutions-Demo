@@ -30,6 +30,7 @@ export type AIResult<T = unknown> = {
   ok: boolean;
   provider: AIProviderId;
   model: string;
+  modelVersion?: string;
   task: AITaskType;
   correlationId: string;
   tenantId: string;
@@ -44,6 +45,22 @@ export type AIResult<T = unknown> = {
   policy: {
     selectedBy: "explicit" | "policy" | "fallback";
     fallbackUsed: boolean;
+    routeTier?: "fast" | "balanced" | "reasoning" | "realtime";
+    allowedProviders?: AIProviderId[];
+    attempt?: number;
+    maxAttempts?: number;
+  };
+  budget?: {
+    maxLatencyMs?: number;
+    maxCostUsd?: number;
+    withinLatencyBudget?: boolean;
+    withinCostBudget?: boolean;
+  };
+  observability?: {
+    startedAt?: string;
+    completedAt?: string;
+    routeId?: string;
+    traceId?: string;
   };
 };
 
