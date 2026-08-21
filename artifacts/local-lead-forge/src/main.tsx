@@ -4,6 +4,7 @@ import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
 import DpaPage from '@/pages/dpa';
+import ExperienceDemoPage from '@/pages/experience-demo';
 import OnboardingPage from '@/pages/onboarding';
 import PrivacyPage from '@/pages/privacy';
 import StartPage from '@/pages/start';
@@ -19,6 +20,12 @@ const routes: Record<string, { component: React.ComponentType; title: string; de
     component: OnboardingPage,
     title: 'Client Onboarding | Local Lead Forge',
     description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.',
+    private: true,
+  },
+  '/experience-demo': {
+    component: ExperienceDemoPage,
+    title: 'Client Experience Lab | Local Lead Forge',
+    description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.',
     private: true,
   },
   '/privacy': {
