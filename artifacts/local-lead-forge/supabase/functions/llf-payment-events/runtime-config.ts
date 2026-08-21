@@ -21,6 +21,13 @@ export function loadPaymentEventRuntimeConfig(env: EnvReader): PaymentEventRunti
 
   if (!supabaseUrl || !serviceRoleKey || !liveStripeRestrictedKey || !liveWebhookSecret) return null;
 
+  // Fail closed on credential-class or environment aliasing. The live runtime must use a
+  // live restricted key; an optional TEST runtime must use its own TEST restricted key.
+  if (!liveStripeRestrictedKey.startsWith('rk_live_')) return null;
+  if (testStripeRestrictedKey && !testStripeRestrictedKey.startsWith('rk_test_')) return null;
+  if (testStripeRestrictedKey && testStripeRestrictedKey === liveStripeRestrictedKey) return null;
+  if (testWebhookSecret && testWebhookSecret === liveWebhookSecret) return null;
+
   return {
     supabaseUrl,
     serviceRoleKey,
