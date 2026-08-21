@@ -9,7 +9,8 @@ create table if not exists public.llf_legal_acceptances (
   company_name text,
   customer_email text,
   accepted_at timestamptz not null default now(),
-  source text not null default 'server',
+  source text not null default 'server' check (source = 'server'),
+  idempotency_key text not null unique,
   created_at timestamptz not null default now()
 );
 
@@ -25,7 +26,10 @@ create table if not exists public.llf_payment_entitlements (
   last_event_created_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (acceptance_ref)
+  unique (acceptance_ref),
+  constraint llf_onboarding_eligibility_requires_setup_and_monthly check (
+    onboarding_eligible = false or (setup_status = 'PAID' and monthly_status = 'ACTIVE')
+  )
 );
 
 create table if not exists public.llf_stripe_event_receipts (
@@ -68,6 +72,6 @@ revoke all on public.llf_legal_acceptances from anon, authenticated;
 revoke all on public.llf_payment_entitlements from anon, authenticated;
 revoke all on public.llf_stripe_event_receipts from anon, authenticated;
 
-comment on table public.llf_legal_acceptances is 'Durable server-side evidence of customer legal acceptance. Do not store card/bank data.';
-comment on table public.llf_payment_entitlements is 'Authoritative entitlement state. Onboarding is eligible only after setup PAID + monthly ACTIVE.';
+comment on table public.llf_legal_acceptances is 'Durable server-side evidence of customer legal acceptance. Idempotency key prevents duplicate acceptance records. Do not store card/bank data.';
+comment on table public.llf_payment_entitlements is 'Authoritative entitlement state. Database constraint prevents onboarding eligibility unless setup is PAID and monthly is ACTIVE.';
 comment on table public.llf_stripe_event_receipts is 'Idempotency/audit ledger for Stripe webhook event IDs.';
