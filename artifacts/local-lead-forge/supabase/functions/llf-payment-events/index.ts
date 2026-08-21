@@ -8,7 +8,7 @@ import { normalizeStripeEvent, SUPPORTED_EVENT_TYPES } from './event-normalizer.
 import { reconcileStripeObject } from './authoritative-reconciler.ts';
 import { resolveSingleCorrelation, type CorrelationCandidate } from './correlation.ts';
 import { applyAuthoritativeEntitlementState } from './entitlement-mutation.ts';
-import { loadPaymentEventRuntimeConfig } from './runtime-config.ts';
+import { loadPaymentEventRuntimeConfig, stripeRuntimeKeyForMode } from './runtime-config.ts';
 import { verifyWebhookSignatureMode, webhookModeMatchesEvent } from './webhook-environment.ts';
 
 Deno.serve(async (req: Request) => {
@@ -41,6 +41,12 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'environment_mismatch' }, 400);
   }
 
+  // Stripe live/test object retrieval must use a credential from the same mode as the verified webhook.
+  const stripeRuntimeKey = stripeRuntimeKeyForMode(config, signatureMode.mode);
+  if (!stripeRuntimeKey) {
+    return json({ error: signatureMode.mode === 'test' ? 'stripe_test_runtime_key_missing' : 'stripe_runtime_key_missing' }, 503);
+  }
+
   const admin = createClient(config.supabaseUrl, config.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -70,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
   let reconciled;
   try {
-    reconciled = await reconcileStripeObject(event.objectRef, config.stripeRestrictedKey);
+    reconciled = await reconcileStripeObject(event.objectRef, stripeRuntimeKey);
   } catch {
     await markReceipt(admin, event.id, 'FAILED');
     return json({ error: 'authoritative_reconciliation_failed' }, 503);
