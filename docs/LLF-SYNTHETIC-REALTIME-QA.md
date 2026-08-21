@@ -292,3 +292,25 @@ No se debe copiar el fragmento de acceso, el JWT ni ningún token desde producci
 6. Al finalizar el QA, retirar el callback temporal del preview junto con su origen CORS.
 
 Este requisito se suma a la autorización de Netlify; ambos controles deben superarse para completar el QA PC–iPhone.
+
+
+## 14. Registro de dispositivos dentro del preview
+
+El identificador de instalación LLF se guarda en `localStorage`, que también está aislado por origen. Por esta razón:
+
+- la PC confiable en `localleadforge.com` no hereda automáticamente esa confianza en el dominio del preview;
+- el iPhone confiable en `localleadforge.com` tampoco la hereda;
+- cada navegador del preview se registrará como un dispositivo independiente con estado inicial `PENDING`.
+
+### Procedimiento
+
+1. Carlos abre su magic link del preview desde Chrome en la PC.
+2. Confirmar que aparece `Device approval required`.
+3. Aprobar únicamente el nuevo registro que coincida con su plataforma y navegador.
+4. María abre su magic link del preview desde Safari en el iPhone.
+5. Confirmar el registro pendiente separado.
+6. Aprobar únicamente el registro correspondiente a María.
+7. Recargar ambos dispositivos y comprobar `trusted device`.
+8. Revocar o eliminar estos registros temporales después del QA, según la política de conservación que se adopte.
+
+No se debe reutilizar manualmente el identificador local de producción ni transferirlo entre navegadores.
