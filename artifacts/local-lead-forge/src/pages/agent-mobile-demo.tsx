@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Bell, Bot, CheckCircle2, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, UserRound, Users } from 'lucide-react';
+import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
 import {
   INITIAL_AGENTS,
   claimConversation,
@@ -9,6 +9,7 @@ import {
   type Conversation,
 } from '@/lib/conversation-model';
 import { planAgentNotification, type AgentAvailability } from '@/lib/agent-notification-policy';
+import { callAgentOps, getStoredAgentSession } from '@/lib/supabase-session';
 
 const seed: Conversation[] = [
   {
@@ -59,10 +60,16 @@ const statusLabel = {
 } as const;
 
 export default function AgentMobileDemoPage() {
+  const session = getStoredAgentSession();
+  const me: AgentId = session?.displayName.toLowerCase().includes('maria') ? 'MARIA' : 'CARLOS';
+  const initialAvailability = (session?.availability ?? 'OFFLINE') as AgentAvailability;
   const [conversations, setConversations] = useState(seed);
   const [selectedId, setSelectedId] = useState(seed[0].id);
-  const [me, setMe] = useState<AgentId>('CARLOS');
-  const [availability, setAvailability] = useState<Record<AgentId, AgentAvailability>>({ CARLOS: 'AVAILABLE', MARIA: 'AVAILABLE' });
+  const [availability, setAvailability] = useState<Record<AgentId, AgentAvailability>>({
+    CARLOS: me === 'CARLOS' ? initialAvailability : 'OFFLINE',
+    MARIA: me === 'MARIA' ? initialAvailability : 'OFFLINE',
+  });
+  const [availabilityState, setAvailabilityState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
 
   const notificationPlan = useMemo(
@@ -76,6 +83,19 @@ export default function AgentMobileDemoPage() {
   const patch = (next: Conversation) => setConversations((items) => items.map((item) => item.id === next.id ? next : item));
   const assignedElsewhere = current.assignedAgent && current.assignedAgent !== me;
 
+  const updateAvailability = async (next: AgentAvailability) => {
+    const previous = availability[me];
+    setAvailability((value) => ({ ...value, [me]: next }));
+    setAvailabilityState('saving');
+    try {
+      await callAgentOps({ action: 'set_availability', availability: next });
+      setAvailabilityState('saved');
+    } catch {
+      setAvailability((value) => ({ ...value, [me]: previous }));
+      setAvailabilityState('error');
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#020711] text-white">
       <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d19] shadow-2xl">
@@ -83,31 +103,24 @@ export default function AgentMobileDemoPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-xs font-black text-orange-400">LLF</div>
-              <div><div className="text-sm font-black">Agent Console</div><div className="text-[10px] text-slate-500">iPhone simulation · internal only</div></div>
+              <div>
+                <div className="text-sm font-black">Agent Console</div>
+                <div className="text-[10px] text-slate-500">{session?.displayName ?? 'LLF Specialist'} · trusted device</div>
+              </div>
             </div>
             <Bell className="h-5 w-5 text-orange-400" />
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {(['CARLOS', 'MARIA'] as AgentId[]).map((agent) => (
-              <button key={agent} onClick={() => setMe(agent)} className={`rounded-xl border px-3 py-2 text-left ${me === agent ? 'border-orange-500/40 bg-orange-500/10' : 'border-white/10 bg-white/[0.025]'}`}>
-                <div className="text-[10px] font-black text-white">Acting as {INITIAL_AGENTS[agent].displayName}</div>
-                <div className="mt-1 text-[9px] text-slate-500">{INITIAL_AGENTS[agent].role}</div>
-              </button>
-            ))}
           </div>
         </header>
 
         <section className="border-b border-white/10 px-4 py-3">
           <div className="flex items-center justify-between"><span className="text-xs font-black">Availability</span><Smartphone className="h-4 w-4 text-slate-500" /></div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {(['CARLOS', 'MARIA'] as AgentId[]).map((agent) => (
-              <select key={agent} value={availability[agent]} onChange={(e) => setAvailability((v) => ({ ...v, [agent]: e.target.value as AgentAvailability }))} className="rounded-lg border border-white/10 bg-[#07111f] px-2 py-2 text-[11px] text-slate-200 outline-none">
-                <option value="AVAILABLE">{INITIAL_AGENTS[agent].displayName}: Available</option>
-                <option value="BUSY">{INITIAL_AGENTS[agent].displayName}: Busy</option>
-                <option value="OFFLINE">{INITIAL_AGENTS[agent].displayName}: Offline</option>
-              </select>
-            ))}
+          <select value={availability[me]} onChange={(e) => void updateAvailability(e.target.value as AgentAvailability)} className="mt-2 w-full rounded-lg border border-white/10 bg-[#07111f] px-3 py-2.5 text-[11px] text-slate-200 outline-none">
+            <option value="AVAILABLE">Available</option>
+            <option value="BUSY">Busy</option>
+            <option value="OFFLINE">Offline</option>
+          </select>
+          <div className={`mt-1 text-[9px] ${availabilityState === 'error' ? 'text-rose-300' : 'text-slate-600'}`}>
+            {availabilityState === 'saving' ? 'Saving to secure backend…' : availabilityState === 'saved' ? 'Saved to secure backend.' : availabilityState === 'error' ? 'Could not save. Previous state restored.' : 'Backend-controlled agent presence.'}
           </div>
         </section>
 
@@ -146,23 +159,23 @@ export default function AgentMobileDemoPage() {
 
           <div className="mt-4 rounded-xl border border-white/10 bg-[#07111f] p-3">
             <div className="flex items-center gap-2 text-[10px] font-black text-slate-300"><ShieldCheck className="h-4 w-4 text-emerald-400" /> Claim protection</div>
-            {current.status === 'WAITING_FOR_AGENT' && <p className="mt-2 text-[10px] text-slate-500">Available to claim. Notification plan: {notificationPlan.recipients.map((id) => INITIAL_AGENTS[id].displayName).join(' + ') || 'queued'}.</p>}
-            {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : '—'}</b>. The other agent should not reply.</p>}
+            {current.status === 'WAITING_FOR_AGENT' && <p className="mt-2 text-[10px] text-slate-500">Synthetic QA conversation. Notification plan: {notificationPlan.recipients.map((id) => INITIAL_AGENTS[id].displayName).join(' + ') || 'queued'}.</p>}
+            {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : '—'}</b>. Claim lock prevents a second specialist from replying.</p>}
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button disabled={current.status !== 'WAITING_FOR_AGENT'} onClick={() => patch(claimConversation(current, me))} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {INITIAL_AGENTS[me].displayName}</button>
+              <button disabled={current.status !== 'WAITING_FOR_AGENT'} onClick={() => patch(claimConversation(current, me))} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {session?.displayName ?? INITIAL_AGENTS[me].displayName}</button>
               <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} onClick={() => patch(resolveConversation(current))} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button>
               <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} onClick={() => patch(returnConversationToAI(current))} className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI</button>
             </div>
           </div>
 
           <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3">
-            <div className="flex items-center gap-2 text-[10px] font-black"><MessageCircle className="h-4 w-4 text-orange-400" /> Reply as {current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : 'LLF Specialist'}</div>
-            <textarea disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} placeholder={assignedElsewhere ? `${INITIAL_AGENTS[current.assignedAgent!].displayName} is handling this conversation` : 'Type your reply…'} className="mt-3 min-h-20 w-full resize-none rounded-lg border border-white/10 bg-[#020711] p-3 text-xs text-white outline-none placeholder:text-slate-700 disabled:opacity-40" />
-            <button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — disabled until secure backend</button>
+            <div className="flex items-center gap-2 text-[10px] font-black"><MessageCircle className="h-4 w-4 text-orange-400" /> Reply as {session?.displayName ?? 'LLF Specialist'}</div>
+            <textarea disabled placeholder="Real sending remains disabled during authenticated QA." className="mt-3 min-h-20 w-full resize-none rounded-lg border border-white/10 bg-[#020711] p-3 text-xs text-white outline-none placeholder:text-slate-700 disabled:opacity-40" />
+            <button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — blocked until conversation backend QA</button>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Simulation only. No real notifications, authentication, customer data, or messages are active yet.</div>
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Auth and device trust are real. Conversations shown here remain synthetic; live customer messages, realtime delivery and push remain blocked.</div>
         </section>
       </div>
     </main>
