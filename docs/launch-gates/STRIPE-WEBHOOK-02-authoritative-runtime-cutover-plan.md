@@ -1,145 +1,150 @@
-# STRIPE-WEBHOOK-02 — Authoritative Runtime Cutover Plan
+# STRIPE-WEBHOOK-02 — v6 Validation + Optional Hardened Runtime Plan
 
 Status: REVIEW / PREP ONLY — NO DEPLOYMENT AUTHORIZED
 Date: 21 Aug 2026
-Issue: #130
+Issues: #130, #136
 
 ## Purpose
 
-Define the smallest safe path from the currently deployed legacy `llf-stripe-events` v5 runtime to the authoritative Stripe-state runtime already source-controlled on protected `main`, without creating real Stripe objects, changing live payment state, or applying database/credential changes from this document.
+Separate two different decisions that must not be conflated:
+
+1. **Immediate release evidence:** validate the already-active production `llf-stripe-events` v6 with one legitimate signed Stripe TEST-mode end-to-end event.
+2. **Optional future architecture:** decide later whether to deploy the alternate source-controlled `llf-payment-events` runtime that uses the hardened receipt/entitlement schema.
+
+The second decision is not a prerequisite merely to complete the first.
 
 ## Evidence-backed production state
 
-Read-only production inspection on 21 Aug 2026 confirms all five relevant tables currently exist and have RLS enabled:
+Production currently contains both legacy-path and hardened payment objects with RLS enabled. At the Stage B checkpoint the relevant hardened tables reported zero rows:
 
-- `llf_legal_acceptances` — 0 rows observed
-- `llf_payment_entitlements` — 0 rows observed
-- `llf_stripe_event_receipts` — 0 rows observed
-- `llf_first_sale_payment_state` — 0 rows observed
-- `llf_stripe_event_ledger` — 0 rows observed
+- `llf_payment_entitlements` — 0 rows observed;
+- `llf_stripe_event_receipts` — 0 rows observed.
 
-The newer receipt/entitlement schema is already present in production; core authoritative table creation is not the remaining blocker.
+Stage B migrations 012–015 were already applied with explicit owner approval and verified. No new DDL is authorized by this document.
 
 Production also contains:
 
-- legacy `llf_apply_first_sale_stripe_event(...)` — SECURITY INVOKER;
-- authoritative `llf_apply_payment_entitlement_state(...)` — SECURITY DEFINER;
-- correlation bootstrap `llf_bootstrap_payment_correlation(...)` — SECURITY DEFINER.
+- legacy `llf_first_sale_payment_state` and `llf_stripe_event_ledger`;
+- active v2 transition function `llf_apply_first_sale_stripe_event_v2(...)` used by v6;
+- hardened `llf_apply_payment_entitlement_state(...)`;
+- hardened `llf_bootstrap_payment_correlation(...)`.
 
-Read-only function checks confirm `service_role` has EXECUTE on the authoritative apply and correlation-bootstrap functions.
+## Active production runtime — v6
 
-## Current mismatch
+Fresh production source inspection confirms `llf-stripe-events` v6 is ACTIVE and already performs authoritative provider checks before state advancement:
 
-### Deployed runtime
+1. verifies the raw Stripe webhook signature;
+2. identifies live vs TEST signature mode using separate webhook secrets when configured;
+3. rejects live/TEST event mismatch;
+4. uses a restricted live Stripe key for live provider reads;
+5. requires a separate TEST restricted key for TEST provider reads;
+6. retrieves current Checkout Session state for setup-payment events;
+7. advances setup only when current Checkout `payment_status = paid`;
+8. retrieves current Subscription state for recurring events;
+9. advances monthly only when current Subscription `status = active`;
+10. calls `llf_apply_first_sale_stripe_event_v2(...)` with explicit provider-confirmed paid/active booleans;
+11. never automatically triggers onboarding.
 
-`llf-stripe-events` v5 currently:
+Historical HTTP 500 evidence belongs to v5 and must not be treated as current v6 evidence.
 
-1. verifies Stripe webhook signatures and live/test consistency;
-2. writes `llf_stripe_event_ledger`;
-3. reads `llf_acceptance_ref` from event metadata;
-4. calls legacy `llf_apply_first_sale_stripe_event(...)`;
-5. updates the legacy event ledger.
+## Stage B hardened foundation — complete
 
-The legacy RPC can mark setup/monthly state from event type plus object references without independently retrieving current Stripe object status. It is therefore not the final release architecture.
+The additive hardened database foundation is present and least-privilege verified:
 
-### Hardened source runtime
+- receipt INSERT allowed for `service_role`;
+- receipt status/timestamp UPDATE allowed;
+- receipt ID predicate SELECT allowed only as required;
+- entitlement reads limited to required correlation/state columns;
+- direct entitlement INSERT/UPDATE/DELETE denied for the webhook runtime role;
+- hardened atomic-apply/bootstrap RPC EXECUTE allowed;
+- anon/authenticated hardened access denied;
+- RLS enabled.
 
-`artifacts/local-lead-forge/supabase/functions/llf-payment-events`:
+Migration 015 now exists in source control on Draft PR #143 as the record of the already-applied Stage B grant shape. PR #143 also contains an isolated PostgreSQL regression that applies 012–015 and asserts required and denied privileges.
 
-1. verifies signatures;
-2. normalizes supported events;
-3. records an idempotent receipt in `llf_stripe_event_receipts`;
-4. retrieves current Stripe PaymentIntent / Charge / Subscription / Invoice state;
-5. requires exactly one existing durable correlation in `llf_payment_entitlements`;
-6. applies state atomically through `llf_apply_payment_entitlement_state(...)`;
-7. ignores stale events and blocks ambiguous/missing correlation;
-8. never triggers onboarding directly.
+## Draft PR #143 — alternate hardened source runtime
 
-## Authoritative least-privilege compatibility — PROBE PASS
+PR #143 consolidates the stronger source-controlled `llf-payment-events` path:
 
-A more precise column-level privilege inspection supersedes the earlier table-level-only reading.
+- separate live and TEST restricted-key contracts;
+- wrong-mode and credential-alias rejection;
+- separate webhook-secret environment handling;
+- signature-mode verification before JSON parsing;
+- required event `livemode` matching;
+- authoritative PaymentIntent/Charge/Subscription/Invoice reconciliation;
+- hardened receipt/entitlement correlation and atomic mutation;
+- no automatic onboarding trigger;
+- executable Deno + PostgreSQL security regression coverage.
 
-Observed `service_role` access matches the hardened webhook runtime shape:
+Current head `366a77731a472ecc7fa7acb86841400696976a23` has all four observed workflows PASS:
 
-- `llf_stripe_event_receipts`
-  - INSERT on receipt columns used by the runtime;
-  - UPDATE on `processing_status` and `processed_at`;
-  - column-scoped SELECT on `stripe_event_id` for the UPDATE predicate;
-  - no DELETE requirement.
-- `llf_payment_entitlements`
-  - column-scoped SELECT on exactly the runtime-read fields: `acceptance_ref`, `stripe_customer_ref`, `setup_payment_ref`, `subscription_ref`, `setup_status`, `monthly_status`;
-  - no direct runtime UPDATE requirement because authoritative mutation is through the SECURITY DEFINER RPC.
-- `llf_apply_payment_entitlement_state(...)`
-  - EXECUTE for `service_role` observed.
+- Payment Entitlement Security Gate;
+- LLF Main Protection Gate;
+- LLF Onboarding CI;
+- LLF Pixel Match QA.
 
-A rollback-only production permission probe was then executed as `service_role` using a synthetic event ID:
+PR #143 remains DRAFT and source-only. It does not deploy production or change Stripe credentials.
 
-1. insert synthetic receipt;
-2. update receipt status using `WHERE stripe_event_id=...`;
-3. perform the entitlement read shape used by the runtime;
-4. rollback transaction;
-5. verify persisted probe rows = 0.
+## Immediate remaining payment proof — active v6 TEST E2E
 
-Result: **PASS**. No database privilege/schema change was applied.
+Before payment-runtime release, obtain one legitimate signed Stripe TEST-mode event against active v6. The evidence packet must show:
 
-This closes the authoritative webhook database-permission compatibility sub-gate on current evidence. Permissions must still be re-verified if schema/runtime code changes before deployment.
+1. TEST signature accepted through the TEST webhook-secret path;
+2. event classified as TEST and not live;
+3. TEST restricted Stripe credential used for provider retrieval;
+4. current provider state retrieved before advancement;
+5. expected HTTP result;
+6. durable event-ledger evidence;
+7. missing/unknown acceptance/correlation remains fail-closed;
+8. duplicate/stale behavior cannot incorrectly advance state;
+9. no live customer/payment/onboarding side effects.
 
-## Checkout / correlation bootstrap dependency
+The Stripe connector available in the current ChatGPT session exposes live mode only. Do not generate this proof from the live context.
 
-The authoritative webhook intentionally refuses to mutate an entitlement unless exactly one durable Stripe correlation already exists.
+## Optional future hardened-runtime deployment
 
-The source legal-acceptance endpoint initializes `llf_payment_entitlements` with a PENDING row. The merged checkout-orchestration core requires the Stripe Customer reference to be durably persisted before a hosted Checkout Session may be created.
+After the v6 TEST evidence is complete, a separate architecture decision may consider deploying `llf-payment-events`. That later change requires its own explicit approval and must include:
 
-Therefore the production provider adapter must preserve this sequence:
+- fresh table/row/permission preflight;
+- exact restricted-key read-scope verification;
+- environment/secrets readiness without exposing values;
+- deployment plan and rollback version;
+- webhook endpoint/routing plan if applicable;
+- controlled TEST-mode validation after deployment;
+- legacy ledgers/functions retained until a later decommission review.
 
-1. durable legal acceptance exists;
-2. PENDING entitlement row exists;
-3. create or reuse Stripe Customer server-side only after release gates permit;
-4. persist `acceptance_ref <-> cus_...` through the correlation-bootstrap path;
+Do not treat PR #143 merge or deployment as automatic follow-on work from Issue #130.
+
+## Checkout / correlation dependency
+
+The hardened alternate runtime intentionally refuses to mutate unless exactly one durable Stripe correlation exists in `llf_payment_entitlements`. Any future provider adapter must preserve this order:
+
+1. durable legal acceptance;
+2. PENDING entitlement row;
+3. create/reuse Stripe Customer only after release gates permit;
+4. persist `acceptance_ref <-> cus_...` through the bootstrap path;
 5. only then create hosted Checkout;
-6. webhook retrieves authoritative Stripe state and can correlate by customer/payment/subscription reference;
+6. webhook performs authoritative provider reconciliation;
 7. entitlement remains fail-closed until setup=`PAID` and monthly=`ACTIVE`.
 
-No provider adapter is deployed by the current checkout-orchestration source foundation.
+PR #134 merged the safe checkout-orchestration core but does not deploy a live Stripe/Supabase provider adapter or create payment objects by itself.
 
-## Stripe credential + environment compatibility
+## Safety boundary
 
-Draft PR #143 (`Issue #130: harden authoritative Stripe webhook runtime compatibility`) now prepares this source-only compatibility layer:
+Not authorized by this plan:
 
-- replaces generic `STRIPE_SECRET_KEY` usage in the authoritative webhook with the least-privilege restricted-key contract;
-- separates live and TEST-mode restricted credentials so test events cannot retrieve objects through a live-mode key;
-- verifies webhook signature mode before JSON parsing;
-- requires event `livemode` to match the verified webhook environment;
-- adds executable tests and runtime typecheck/security guards.
-
-PR #143 is source-only/draft. It does not create/rotate credentials, deploy the Edge Function, send Stripe events or alter production state.
-
-Before future deployment, the relevant restricted key must be verified to have only the required read permissions for PaymentIntent, Charge, Subscription and Invoice retrieval. Credential scope expansion or creation remains separately gated.
-
-## Zero-row cutover advantage
-
-At this checkpoint, both legacy and authoritative payment-state/receipt tables report zero rows. If that remains true immediately before a future approved cutover, no production customer/payment backfill is required.
-
-This condition must be re-verified immediately before deployment. If any relevant table contains real rows at that time, cutover must stop and a record-by-record migration/reconciliation plan is required.
-
-## Remaining safe sequence
-
-1. complete CI/review evidence on draft PR #143;
-2. verify restricted live/test key scopes without exposing secret values;
-3. re-verify authoritative table/function permissions and zero-row state immediately before any cutover decision;
-4. obtain explicit owner approval before Edge Function deployment or any credential/configuration mutation;
-5. deploy only the reviewed target runtime;
-6. send one signed Stripe TEST-mode event with a TEST-mode restricted retrieval credential;
-7. require HTTP 200 plus receipt evidence, authoritative Stripe retrieval, unique correlation and correct state mutation/ignore behavior;
-8. retain legacy tables/functions during the first cutover for rollback; do not drop them;
-9. keep checkout release, real charges/refunds/payouts, onboarding, outreach and production traffic OFF until all separate launch gates clear.
-
-## Rollback boundary
-
-A future deployment plan must preserve the ability to revert the Edge Function version without deleting either ledger. Do not drop legacy tables/functions during the first authoritative-runtime cutover. Retain them read-only/historical until test evidence and a later decommission review prove they are no longer required.
+- new Edge Function deployment/replacement;
+- database/schema/privilege mutation;
+- Stripe credential creation, rotation or scope expansion;
+- webhook repointing;
+- live charges, refunds, payouts, subscriptions or customers;
+- onboarding release;
+- legal/address changes;
+- customer/prospect outreach;
+- destructive rollback or legacy-table deletion.
 
 ## Decision
 
-**Authoritative schema + current database permission shape are validated; production cutover remains HOLD.**
+**Active v6 is the runtime to validate now. Production/customer release remains HOLD.**
 
-The remaining technical work is primarily PR #143 code/CI evidence, restricted-key scope verification, explicit deployment approval, and a signed TEST-mode end-to-end webhook run. No live payment/customer release is implied.
+The immediate payment-runtime gap is signed Stripe TEST-mode v6 evidence, not an obligatory production cutover to the alternate hardened runtime. PR #143 remains a green, draft, source-control hardening path for a separately reviewed future decision.
