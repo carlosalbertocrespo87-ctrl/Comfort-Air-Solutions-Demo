@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@1';
-import { verifyWebhookEnvironment } from './webhook-environment.ts';
+import { verifyWebhookSignatureMode, webhookModeMatchesEvent } from './webhook-environment.ts';
 
 async function sign(secret: string, timestamp: number, body: string) {
   const key = await crypto.subtle.importKey(
@@ -13,61 +13,51 @@ async function sign(secret: string, timestamp: number, body: string) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-Deno.test('accepts live signature only for livemode event', async () => {
+Deno.test('detects live signature mode before payload parsing', async () => {
   const now = 1_800_000_000;
-  const body = '{"id":"evt_live","livemode":true}';
+  const body = '{"id":"evt_live"}';
   const signature = await sign('whsec_live', now, body);
-  const result = await verifyWebhookEnvironment({
+  const result = await verifyWebhookSignatureMode({
     rawBody: body,
     signatureHeader: `t=${now},v1=${signature}`,
     liveSecret: 'whsec_live',
     testSecret: 'whsec_test',
-    eventLivemode: true,
     nowSeconds: now,
   });
   assertEquals(result, { ok: true, mode: 'live' });
+  if (result.ok) {
+    assertEquals(webhookModeMatchesEvent(result.mode, true), true);
+    assertEquals(webhookModeMatchesEvent(result.mode, false), false);
+  }
 });
 
-Deno.test('accepts test signature only for non-livemode event', async () => {
+Deno.test('detects test signature mode before payload parsing', async () => {
   const now = 1_800_000_000;
-  const body = '{"id":"evt_test","livemode":false}';
+  const body = '{"id":"evt_test"}';
   const signature = await sign('whsec_test', now, body);
-  const result = await verifyWebhookEnvironment({
+  const result = await verifyWebhookSignatureMode({
     rawBody: body,
     signatureHeader: `t=${now},v1=${signature}`,
     liveSecret: 'whsec_live',
     testSecret: 'whsec_test',
-    eventLivemode: false,
     nowSeconds: now,
   });
   assertEquals(result, { ok: true, mode: 'test' });
-});
-
-Deno.test('fails closed on live/test environment mismatch', async () => {
-  const now = 1_800_000_000;
-  const body = '{"id":"evt_mismatch","livemode":false}';
-  const signature = await sign('whsec_live', now, body);
-  const result = await verifyWebhookEnvironment({
-    rawBody: body,
-    signatureHeader: `t=${now},v1=${signature}`,
-    liveSecret: 'whsec_live',
-    testSecret: 'whsec_test',
-    eventLivemode: false,
-    nowSeconds: now,
-  });
-  assertEquals(result, { ok: false, error: 'environment_mismatch' });
+  if (result.ok) {
+    assertEquals(webhookModeMatchesEvent(result.mode, false), true);
+    assertEquals(webhookModeMatchesEvent(result.mode, true), false);
+  }
 });
 
 Deno.test('fails closed when neither configured secret verifies', async () => {
   const now = 1_800_000_000;
-  const body = '{"id":"evt_bad","livemode":false}';
+  const body = '{"id":"evt_bad"}';
   const signature = await sign('whsec_other', now, body);
-  const result = await verifyWebhookEnvironment({
+  const result = await verifyWebhookSignatureMode({
     rawBody: body,
     signatureHeader: `t=${now},v1=${signature}`,
     liveSecret: 'whsec_live',
     testSecret: 'whsec_test',
-    eventLivemode: false,
     nowSeconds: now,
   });
   assertEquals(result, { ok: false, error: 'stripe_signature_invalid' });
