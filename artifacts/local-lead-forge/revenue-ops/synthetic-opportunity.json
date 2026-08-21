@@ -1,0 +1,17 @@
+{
+  "synthetic": true,
+  "prospect_id": "synthetic-hvac-001",
+  "company": "Synthetic HVAC Client #1",
+  "fit_tier": "A",
+  "stage": "PAYMENT_PENDING",
+  "contact_authorized": false,
+  "payment_verified": false,
+  "legal_verified": false,
+  "delivery_ready": false,
+  "post_payment_pass": false,
+  "open_p1": 0,
+  "owner_id": "llf-ops",
+  "next_action": "Complete synthetic end-to-end readiness simulation",
+  "due_at": "2099-01-01T00:00:00Z",
+  "evidence_refs": ["synthetic://qualification","synthetic://demo","synthetic://proposal"]
+}

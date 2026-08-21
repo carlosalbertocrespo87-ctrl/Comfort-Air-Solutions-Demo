@@ -17,9 +17,12 @@ export type RevenueSource = {
 
 export type RevenueEvidence = {
   evidenceId: string;
+  tenantId: string;
+  opportunityId: string;
   kind: "appointment" | "won" | "lost" | "estimated_revenue" | "confirmed_revenue" | "recovered_revenue";
   recordedAt: string;
   source: "internal" | "client_confirmed" | "system_verified";
+  amountUsd?: number;
 };
 
 export type RevenueOpportunity = {
@@ -58,8 +61,19 @@ export function preserveFirstTouch(current: RevenueSource, incoming: RevenueSour
   };
 }
 
-function hasEvidence(opportunity: RevenueOpportunity, kind: RevenueEvidence["kind"]): boolean {
-  return opportunity.evidence.some((item) => item.kind === kind);
+function matchingRevenueEvidence(
+  opportunity: RevenueOpportunity,
+  kind: "confirmed_revenue" | "recovered_revenue",
+  amountUsd: number,
+): boolean {
+  return opportunity.evidence.some((item) =>
+    item.kind === kind &&
+    item.tenantId === opportunity.tenantId &&
+    item.opportunityId === opportunity.opportunityId &&
+    item.amountUsd === amountUsd &&
+    item.source !== "internal" &&
+    Number.isFinite(Date.parse(item.recordedAt)),
+  );
 }
 
 export function validateRevenueOpportunity(opportunity: RevenueOpportunity): { valid: boolean; reason: string } {
@@ -75,10 +89,16 @@ export function validateRevenueOpportunity(opportunity: RevenueOpportunity): { v
   if (opportunity.recoveredRevenueUsd != null && opportunity.recoveredRevenueUsd < 0) {
     return { valid: false, reason: "RECOVERED_REVENUE_INVALID" };
   }
-  if (opportunity.confirmedRevenueUsd != null && !hasEvidence(opportunity, "confirmed_revenue")) {
+  if (
+    opportunity.confirmedRevenueUsd != null &&
+    !matchingRevenueEvidence(opportunity, "confirmed_revenue", opportunity.confirmedRevenueUsd)
+  ) {
     return { valid: false, reason: "CONFIRMED_REVENUE_EVIDENCE_REQUIRED" };
   }
-  if (opportunity.recoveredRevenueUsd != null && !hasEvidence(opportunity, "recovered_revenue")) {
+  if (
+    opportunity.recoveredRevenueUsd != null &&
+    !matchingRevenueEvidence(opportunity, "recovered_revenue", opportunity.recoveredRevenueUsd)
+  ) {
     return { valid: false, reason: "RECOVERED_REVENUE_EVIDENCE_REQUIRED" };
   }
   if (opportunity.stage === "lost" && !opportunity.lostReason) {
