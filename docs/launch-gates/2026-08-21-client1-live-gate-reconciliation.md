@@ -14,8 +14,9 @@ Branch: `feature/client1-live-gate-reconciliation`
 | Stripe event ledger | PERMISSION PROBE PASS | service_role can insert a receipt and update processing status using `WHERE stripe_event_id=...`. Probe transaction rolled back; zero synthetic rows persisted. Table-wide ledger SELECT remains denied. |
 | First-sale payment state RPC | PERMISSION PROBE PASS | SECURITY INVOKER RPC executed as `service_role`; unknown synthetic acceptance ref returned `processed=false`, `onboarding_ready=false`, reason `unknown_acceptance_ref`. |
 | Stripe signed TEST event | PENDING / BLOCKED-BY-TEST-CHANNEL | Not sent. Connected Stripe tool context currently exposes Local Lead Forge in livemode only. Do not generate a live event merely for validation. |
+| Banking / payout destination readiness | GREEN — READ-ONLY VERIFIED | Stripe account reports `payouts_enabled=true`, `charges_enabled=true`, details submitted, no current/future account requirements due, and one default USD external bank account at Lead Bank. Found email evidence also confirms the business account is open and its debit card shipped. Do not change payout bank or business address solely from this check. |
+| Real payment transaction validation | PENDING | No real charge, refund, payout, subscription creation or customer activation is authorized. A real transaction remains a separate owner/release gate after the test webhook and other launch gates pass. |
 | PR #94 two-device QA | BLOCKED-PC / OWNER | Draft PR remains open; physical Carlos PC ↔ María iPhone QA still pending. Real messaging/push/conversations remain blocked. |
-| Real payment / payout validation | PENDING | No real charge, refund, payout or customer activation authorized. |
 | Production provider activation | HOLD | Separate production gates remain required. |
 | Prospect/customer outreach | HOLD | No live email/SMS/calls/postal outreach authorized. |
 
@@ -54,6 +55,17 @@ The payment-state RPC was also tested separately under `service_role` using an u
 
 Supabase security advisor was re-run. Existing notices remain: RLS enabled/no policy on the three private runtime tables and leaked-password protection disabled. No new advisory was introduced by this narrow permission change.
 
+## Banking / payout readiness validation
+
+A read-only Stripe account inspection on 21 Aug 2026 confirmed:
+- `charges_enabled=true`;
+- `payouts_enabled=true`;
+- account details submitted;
+- no currently due, past due, eventually due, pending-verification or future requirements on the account;
+- one default USD external bank account is linked at Lead Bank with standard payouts available.
+
+Separate Found email evidence confirms the Found account is open and the Found debit card has shipped. This closes the banking / payout-destination readiness sub-gate for the current setup. It does **not** authorize a payout, change bank details, change the business address, or represent completion of a real-money end-to-end payment test.
+
 ## Remaining Stripe validation
 
 The permission blocker is repaired at database level, but the end-to-end Stripe webhook gate is not fully cleared until one Stripe TEST-mode signed event can be sent through an authenticated test-mode channel.
@@ -72,4 +84,4 @@ Remaining steps:
 
 **NO-GO for production / real customer traffic.**
 
-The database-permission sub-gate is now validated. Safe internal preparation can continue while iPostal1, Stripe test-event validation, PR #94 physical QA and remaining external release gates stay fail-closed.
+The database-permission sub-gate and banking/payout-destination readiness sub-gate are validated. Safe internal preparation can continue while iPostal1, Stripe test-event validation, PR #94 physical QA and remaining external release gates stay fail-closed.
