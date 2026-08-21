@@ -1,0 +1,1 @@
+export const goHighLevelAdapterSpec={provider:'GOHIGHLEVEL',status:'SPEC_ONLY',required:['tenant auth isolation','contact/opportunity mapping','pipeline-stage mapping','conversation boundary','idempotent write contract','audit mapping'],liveWritesEnabled:false,costApproved:false} as const;

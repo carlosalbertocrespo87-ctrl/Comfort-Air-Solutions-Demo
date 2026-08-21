@@ -1,0 +1,1 @@
+export const jobberAdapterSpec={provider:'JOBBER',status:'SPEC_ONLY',required:['tenant auth isolation','client/request mapping','job/visit mapping','idempotent write contract','webhook/event mapping','audit mapping'],liveWritesEnabled:false,costApproved:false} as const;

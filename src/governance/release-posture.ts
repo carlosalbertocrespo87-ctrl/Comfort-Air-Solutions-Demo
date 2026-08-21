@@ -1,0 +1,1 @@
+export const batch06ReleasePosture={internalArchitectureComplete:true,externalCommunicationAuthorized:false,liveProviderWritesAuthorized:false,customerTrafficAuthorized:false,autonomyAboveL1Authorized:false,notes:'Batch 06 closes governance and integration-readiness architecture only.'} as const;
