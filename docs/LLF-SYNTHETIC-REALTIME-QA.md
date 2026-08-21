@@ -191,3 +191,52 @@ El código y el despliegue automático están correctos, pero la prueba Carlos P
 4. Mantener el PR en borrador hasta escoger y completar una de estas rutas.
 
 No se modificó la protección de Netlify ni se publicó el preview de forma abierta.
+
+
+## 11. Auditoría automática sin PC
+
+Se ejecutó una revisión adicional del backend y la base de datos mientras la prueba visual PC–iPhone permanece aplazada.
+
+### Resultado
+
+| Control | Resultado |
+|---|---:|
+| Conversaciones sintéticas | 2 |
+| Conversaciones no sintéticas | 0 |
+| Mensajes sintéticos | 4 |
+| Mensajes con conversación inexistente | 0 |
+| RLS en conversaciones | Activo |
+| RLS en mensajes | Activo |
+| Lectura anónima de conversaciones | Denegada |
+| Lectura anónima de mensajes | Denegada |
+| Ejecución pública de la función trigger | Denegada |
+| Triggers sintéticos instalados | 2 |
+| Política privada Realtime | 1 |
+| Dispositivos confiables | 2 |
+| Dispositivos pendientes o revocados | 0 |
+| REALTIME_CONVERSATIONS | BLOCKED |
+| SECURE_IPHONE_PUSH | BLOCKED |
+| Edge Function llf-agent-ops | v7 ACTIVE |
+
+### Revisión de plataforma
+
+La documentación vigente de Supabase confirma que:
+
+- los canales privados deben usar autorización RLS en `realtime.messages`;
+- `realtime.send` es apropiado para emitir notificaciones personalizadas y filtradas;
+- el cliente debe eliminar la suscripción al desmontar el componente;
+- una clave publicable puede utilizarse en el frontend, pero una clave secreta o `service_role` nunca debe exponerse.
+
+El changelog de julio de 2026 informa que el esquema `realtime` está bloqueado contra modificaciones generales, aunque las políticas RLS en `realtime.messages` continúan admitidas. La política de LLF ya existe y fue validada.
+
+### Advisors
+
+El único aviso de seguridad permanece:
+
+- `Leaked Password Protection Disabled`: limitación conocida del plan Free actual.
+
+Los avisos de índices sin uso son informativos y se conservarán hasta contar con tráfico real suficiente para decidir con evidencia.
+
+### Conclusión
+
+Los controles automáticos disponibles sin la PC están aprobados. El único gate pendiente para el PR #94 es el QA humano simultáneo en el preview protegido de Netlify.
