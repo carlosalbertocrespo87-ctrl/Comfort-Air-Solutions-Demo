@@ -1,0 +1,4 @@
+import{qualify}from'./qualification.ts';import{demoReady}from'./demo-readiness.ts';import{replyNeedsAttention,canAutoSendReply}from'./reply.ts';
+Deno.test('unsupported prospect is HOLD',()=>{if(qualify({hvac:true,serviceAreaMatch:true,validBusinessEvidence:false,reachableChannelEvidence:true,demoOpportunity:true})!=='HOLD')throw new Error('unsupported prospect qualified');});
+Deno.test('demo requires all QA evidence',()=>{const p={businessEvidence:true,brandingChecked:true,contactFactsChecked:true,mobileQa:true,desktopQa:true,leadFlowQa:true,noFabricatedClaims:true};if(!demoReady(p))throw new Error('valid demo blocked');if(demoReady({...p,mobileQa:false}))throw new Error('unverified demo allowed');});
+Deno.test('reply cannot be auto-sent',()=>{if(canAutoSendReply())throw new Error('real reply automation enabled');if(!replyNeedsAttention({intent:'INTERESTED'}))throw new Error('unowned interested reply hidden');});

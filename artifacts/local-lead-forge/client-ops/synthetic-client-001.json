@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "client_id": "synthetic-client-001",
+  "business_name": "Synthetic HVAC Client #1",
+  "lifecycle_status": "PAID_PENDING_VERIFICATION",
+  "payment_entitlement": "SYNTHETIC_VERIFIED",
+  "legal_acceptance_status": "SYNTHETIC_ACCEPTED",
+  "onboarding_progress": 0,
+  "implementation_owner": "synthetic-ops-owner",
+  "next_action": "Create onboarding record",
+  "next_action_due_at": "2099-01-01T12:00:00Z",
+  "health_status": "GREEN",
+  "support_priority": "P3",
+  "activation_gate": "BLOCKED_SYNTHETIC_ONLY",
+  "evidence_refs": ["synthetic://payment/verified", "synthetic://legal/accepted"]
+}
