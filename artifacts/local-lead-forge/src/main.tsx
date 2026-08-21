@@ -28,6 +28,24 @@ function AgentAuthRequired() {
   );
 }
 
+function DeviceTrustRequired({ status }: { status: 'PENDING' | 'REVOKED' }) {
+  const pending = status === 'PENDING';
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#020711] px-6 text-white">
+      <div className="max-w-md rounded-2xl border border-white/10 bg-[#07111f] p-6 text-center">
+        <div className="text-sm font-black text-orange-400">LLF Device Trust</div>
+        <h1 className="mt-3 text-2xl font-black">{pending ? 'Device approval required' : 'Device access revoked'}</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-400">
+          {pending
+            ? 'Your identity is verified. This browser has been registered as a pending device and must be approved before the Agent Console can open.'
+            : 'This device is no longer trusted. Sign in from an approved device or request a new device review.'}
+        </p>
+        <a href="/" className="mt-5 inline-block rounded-xl bg-orange-600 px-4 py-3 text-sm font-black">Return to Local Lead Forge</a>
+      </div>
+    </main>
+  );
+}
+
 async function bootstrap() {
   const authResult = await consumeSupabaseAuthHash();
   if (authResult === 'consumed') {
@@ -37,11 +55,17 @@ async function bootstrap() {
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isOnboarding = normalizedPath === '/onboarding';
+  const agentSession = getStoredAgentSession();
+
+  let AgentRoute: React.ComponentType = AgentAuthRequired;
+  if (agentSession?.deviceTrustStatus === 'TRUSTED') AgentRoute = AgentMobileDemoPage;
+  else if (agentSession?.deviceTrustStatus === 'PENDING') AgentRoute = () => <DeviceTrustRequired status="PENDING" />;
+  else if (agentSession?.deviceTrustStatus === 'REVOKED') AgentRoute = () => <DeviceTrustRequired status="REVOKED" />;
 
   const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
-    '/agent-demo': { component: getStoredAgentSession() ? AgentMobileDemoPage : AgentAuthRequired, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists.', private: true },
+    '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
     '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'Local Lead Forge privacy information.', private: !LEGAL_RELEASED },
     '/terms': { component: TermsPage, title: 'Service Terms | Local Lead Forge', description: 'Local Lead Forge service terms.', private: !LEGAL_RELEASED },
     '/dpa': { component: DpaPage, title: 'Data Processing Addendum | Local Lead Forge', description: 'Local Lead Forge data processing information.', private: !LEGAL_RELEASED },
