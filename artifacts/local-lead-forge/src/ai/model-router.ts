@@ -7,12 +7,18 @@ import type {
   ModelRouteRule,
 } from "./contracts";
 import { getTaskModelPolicy } from "./task-policy";
+import type { AITelemetrySink } from "./telemetry";
+import { toTelemetryEvent } from "./telemetry";
 
 export class ModelRouter {
   private readonly providers = new Map<AIProviderId, AIProviderAdapter>();
   private readonly routes = new Map<AITaskType, ModelRouteRule>();
 
-  constructor(providers: AIProviderAdapter[], rules: ModelRouteRule[]) {
+  constructor(
+    providers: AIProviderAdapter[],
+    rules: ModelRouteRule[],
+    private readonly telemetry?: AITelemetrySink,
+  ) {
     for (const provider of providers) this.providers.set(provider.id, provider);
     for (const rule of rules) this.routes.set(rule.task, rule);
   }
@@ -27,7 +33,7 @@ export class ModelRouter {
         : [];
 
     if (orderedIds.length === 0) {
-      return this.noProvider<T>(request, explicitProvider ?? "mock");
+      return this.observe(this.noProvider<T>(request, explicitProvider ?? "mock"));
     }
 
     let fallbackUsed = false;
@@ -72,13 +78,25 @@ export class ModelRouter {
         traceId: request.correlationId,
       };
 
+      await this.observe(result);
       if (result.ok) return result;
       lastFailure = result;
       if (!result.error?.retryable || !taskPolicy.allowFallback) return result;
       fallbackUsed = true;
     }
 
-    return lastFailure ?? this.noProvider<T>(request, explicitProvider ?? route?.primary ?? "mock");
+    if (lastFailure) return lastFailure;
+    return this.observe(this.noProvider<T>(request, explicitProvider ?? route?.primary ?? "mock"));
+  }
+
+  private async observe<T>(result: AIResult<T>): Promise<AIResult<T>> {
+    if (!this.telemetry) return result;
+    try {
+      await this.telemetry.record(toTelemetryEvent(result));
+    } catch {
+      // Observability must never turn a model result into an application failure.
+    }
+    return result;
   }
 
   private noProvider<T>(request: AIRequest, provider: AIProviderId): AIResult<T> {
