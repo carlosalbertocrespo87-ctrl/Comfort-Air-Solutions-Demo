@@ -8,8 +8,8 @@ declare
   a uuid := gen_random_uuid();
   r record;
 begin
-  insert into public.llf_legal_acceptances (acceptance_ref, legal_version, customer_name, customer_email)
-  values (a, 'qa-test-only', 'QA Test', 'qa@example.invalid');
+  insert into public.llf_legal_acceptances (acceptance_ref, legal_version, customer_name, customer_email, idempotency_key)
+  values (a, 'qa-test-only', 'QA Test', 'qa@example.invalid', 'qa-entitlement-atomic-001');
 
   insert into public.llf_payment_entitlements (acceptance_ref)
   values (a);
