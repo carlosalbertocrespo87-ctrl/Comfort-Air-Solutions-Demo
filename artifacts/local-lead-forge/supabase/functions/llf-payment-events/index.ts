@@ -1,7 +1,8 @@
 // LOCAL LEAD FORGE — PAYMENT EVENTS RUNTIME
-// Issue #80. Fail-closed: verifies Stripe signatures, deduplicates events, records audit receipts,
-// retrieves current Stripe object state, requires one existing durable correlation, and only then
-// applies authoritative entitlement state atomically. No checkout creation and no onboarding trigger.
+// Issue #80 / PAYMENT-RUNTIME-BRIDGE-01. Fail-closed: verifies Stripe signatures, deduplicates events,
+// records audit receipts, retrieves current Stripe object state with a least-privilege restricted key,
+// requires one existing durable correlation, and only then applies authoritative entitlement state
+// atomically. No checkout creation and no onboarding trigger.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyStripeSignature } from './stripe-signature.ts';
@@ -16,14 +17,13 @@ Deno.serve(async (req: Request) => {
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-  const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!url || !serviceRoleKey || !webhookSecret || !stripeSecretKey) {
+  const stripeRestrictedKey = Deno.env.get('STRIPE_RESTRICTED_KEY');
+  if (!url || !serviceRoleKey || !webhookSecret || !stripeRestrictedKey) {
     return json({ error: 'server_configuration_error' }, 500);
   }
 
   const signature = req.headers.get('stripe-signature');
   if (!signature) return json({ error: 'stripe_signature_required' }, 400);
-
   const rawBody = await req.text();
   if (!rawBody) return json({ error: 'empty_payload' }, 400);
 
@@ -32,13 +32,11 @@ Deno.serve(async (req: Request) => {
 
   let parsed: unknown;
   try { parsed = JSON.parse(rawBody); } catch { return json({ error: 'invalid_json' }, 400); }
-
   const event = normalizeStripeEvent(parsed);
   if (!event) return json({ error: 'invalid_stripe_event' }, 400);
 
   const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const payloadHash = await sha256(rawBody);
-
   const { error: receiptError } = await admin.from('llf_stripe_event_receipts').insert({
     stripe_event_id: event.id,
     event_type: event.type,
@@ -52,27 +50,21 @@ Deno.serve(async (req: Request) => {
     if ((receiptError as any).code === '23505') return json({ ok: true, duplicate: true });
     return json({ error: 'event_receipt_insert_failed' }, 500);
   }
-
   if (!SUPPORTED_EVENT_TYPES.has(event.type)) {
     await markReceipt(admin, event.id, 'IGNORED');
     return json({ ok: true, ignored: true });
   }
 
   let reconciled;
-  try {
-    reconciled = await reconcileStripeObject(event.objectRef, stripeSecretKey);
-  } catch {
+  try { reconciled = await reconcileStripeObject(event.objectRef, stripeRestrictedKey); }
+  catch {
     await markReceipt(admin, event.id, 'FAILED');
     return json({ error: 'authoritative_reconciliation_failed' }, 503);
   }
 
-  // Correlation is deliberately bootstrap-closed. This runtime may mutate only when one entitlement
-  // already contains a matching Stripe customer/payment/subscription reference. The future checkout
-  // creation path must establish that durable correlation server-side before first webhook mutation.
   let candidates: CorrelationCandidate[];
-  try {
-    candidates = await loadCorrelationCandidates(admin, reconciled);
-  } catch {
+  try { candidates = await loadCorrelationCandidates(admin, reconciled); }
+  catch {
     await markReceipt(admin, event.id, 'FAILED');
     return json({ error: 'correlation_lookup_failed' }, 503);
   }
@@ -82,13 +74,9 @@ Deno.serve(async (req: Request) => {
     paymentIntentRef: reconciled.setup_payment_ref ?? null,
     subscriptionRef: reconciled.subscription_ref ?? null,
   });
-
   if (!correlation) {
     await markReceipt(admin, event.id, 'FAILED');
-    return json({
-      error: 'unique_existing_correlation_required',
-      state_mutation: 'blocked',
-    }, 503);
+    return json({ error: 'unique_existing_correlation_required', state_mutation: 'blocked' }, 503);
   }
 
   const { data: current, error: currentError } = await admin
@@ -112,7 +100,6 @@ Deno.serve(async (req: Request) => {
       setupStatus: reconciled.setup_status ?? current.setup_status,
       monthlyStatus: reconciled.monthly_status ?? current.monthly_status,
     });
-
     return json({
       ok: true,
       accepted: true,
@@ -134,7 +121,6 @@ async function loadCorrelationCandidates(admin: any, reconciled: any): Promise<C
     ['subscription_ref', reconciled.subscription_ref],
   ];
   const byAcceptance = new Map<string, CorrelationCandidate>();
-
   for (const [column, value] of refs) {
     if (!value || typeof value !== 'string') continue;
     const { data, error } = await admin
@@ -145,7 +131,6 @@ async function loadCorrelationCandidates(admin: any, reconciled: any): Promise<C
     if (error) throw new Error('candidate_lookup_failed');
     for (const row of data ?? []) byAcceptance.set(row.acceptance_ref, row as CorrelationCandidate);
   }
-
   return [...byAcceptance.values()];
 }
 
@@ -161,8 +146,5 @@ async function sha256(value: string) {
 }
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
