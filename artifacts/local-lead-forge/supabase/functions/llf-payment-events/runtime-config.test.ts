@@ -52,3 +52,46 @@ Deno.test('test-mode secrets are optional until test mode is actually used', () 
   }));
   assertEquals(noLiveSecret, null);
 });
+
+Deno.test('rejects wrong-mode or aliased Stripe restricted credentials', () => {
+  const wrongLiveMode = loadPaymentEventRuntimeConfig(env({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+    STRIPE_RESTRICTED_KEY: 'rk_test_wrong_slot',
+    STRIPE_WEBHOOK_SECRET: 'whsec_live',
+  }));
+  assertEquals(wrongLiveMode, null);
+
+  const wrongTestMode = loadPaymentEventRuntimeConfig(env({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+    STRIPE_RESTRICTED_KEY: 'rk_live_example',
+    STRIPE_RESTRICTED_KEY_TEST: 'rk_live_wrong_slot',
+    STRIPE_WEBHOOK_SECRET: 'whsec_live',
+    STRIPE_WEBHOOK_SECRET_TEST: 'whsec_test',
+  }));
+  assertEquals(wrongTestMode, null);
+
+  const aliasedKey = loadPaymentEventRuntimeConfig(env({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+    STRIPE_RESTRICTED_KEY: 'rk_live_same',
+    STRIPE_RESTRICTED_KEY_TEST: 'rk_live_same',
+    STRIPE_WEBHOOK_SECRET: 'whsec_live',
+    STRIPE_WEBHOOK_SECRET_TEST: 'whsec_test',
+  }));
+  assertEquals(aliasedKey, null);
+});
+
+Deno.test('rejects live and TEST webhook secret aliasing', () => {
+  const config = loadPaymentEventRuntimeConfig(env({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+    STRIPE_RESTRICTED_KEY: 'rk_live_example',
+    STRIPE_RESTRICTED_KEY_TEST: 'rk_test_example',
+    STRIPE_WEBHOOK_SECRET: 'whsec_same',
+    STRIPE_WEBHOOK_SECRET_TEST: 'whsec_same',
+  }));
+
+  assertEquals(config, null);
+});
