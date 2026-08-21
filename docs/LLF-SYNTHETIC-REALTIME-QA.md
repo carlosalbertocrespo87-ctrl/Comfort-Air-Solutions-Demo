@@ -90,9 +90,9 @@ El origen del preview es temporal y debe retirarse cuando deje de ser necesario.
 
 Workflow: `.github/workflows/agent-console-security.yml`.
 
-El gate ejecuta invariantes fail-closed, typecheck y build. A partir de esta reconciliación también vigila que la documentación operativa no declare falsamente completado el QA físico.
+El gate ejecuta 17 invariantes fail-closed, typecheck y build. También vigila que la documentación operativa no declare falsamente completado el QA físico.
 
-La suite está diseñada para detectar, entre otros:
+La suite detecta, entre otros:
 
 - pérdida de allowlist exacta;
 - introducción de CORS wildcard;
@@ -101,7 +101,7 @@ La suite está diseñada para detectar, entre otros:
 - pérdida del gate de dispositivo confiable;
 - documentación que vuelva a marcar como PASS una prueba física aún no observada.
 
-Los checks automáticos son necesarios, pero **no sustituyen** la prueba PC ↔ iPhone.
+Hay hosted PASS de estas invariantes, typecheck y build en la reconciliación actual. Los checks automáticos son necesarios, pero **no sustituyen** la prueba PC ↔ iPhone.
 
 ## 6. Bloqueos del Deploy Preview
 
@@ -203,7 +203,8 @@ Cuando termine el QA:
 
 PR #94 puede pasar de DRAFT/HOLD a revisión únicamente cuando:
 
-- todos los checks automáticos del head final estén en verde;
+- la rama de QA esté sincronizada con el `main` vigente;
+- todos los checks automáticos del head sincronizado estén en verde;
 - Casos A–D tengan evidencia física PASS;
 - claim simultáneo tenga un solo ganador;
 - resolve sincronice en ambos dispositivos;
@@ -213,12 +214,38 @@ PR #94 puede pasar de DRAFT/HOLD a revisión únicamente cuando:
 
 Caso E es seguridad adicional recomendada antes de ampliar acceso a más agentes y puede ejecutarse durante la misma sesión si resulta práctico.
 
-## 12. Decisión actual
+## 12. Gate de frescura de integración
 
-**HOLD.** Backend, datos sintéticos, RLS, capability blocks y runtime v11 están preparados para QA autenticado. Falta observar la conducta simultánea real de Carlos PC ↔ María iPhone y capturar evidencia. Hasta entonces:
+Antes de iniciar el QA físico se ejecutó una comparación nueva contra protected `main`.
+
+Resultado:
+
+- rama PR #94: **29 commits ahead** por el trabajo de Agent Console;
+- rama PR #94: **101 commits behind** current `main`;
+- estado de comparación: `diverged`;
+- merge base todavía corresponde al `main` anterior al aterrizaje de los lotes recientes.
+
+Aunque los 15 paths propios de PR #94 no aparecen entre los 93 paths que current `main` llevaría a la rama en el sync actual, la prueba física debe hacerse sobre la integración fresca, no sobre una rama 101 commits atrasada.
+
+Se abrió Draft PR **#147 — `chore: refresh Agent Console QA branch from current main`**:
+
+- head: `main`;
+- base: `feature/synthetic-realtime-console`;
+- 101 commits / 93 changed files;
+- GitHub reporta `mergeable=true` en el último checkpoint;
+- permanece abierto, Draft y sin merge.
+
+**Orden obligatorio:** revisar/sincronizar #147 → esperar nuevos checks de PR #94 → ejecutar QA físico → documentar evidencia → decidir revisión de PR #94.
+
+La creación de #147 no autoriza su merge ni modifica producción.
+
+## 13. Decisión actual
+
+**HOLD.** Backend, datos sintéticos, RLS, capability blocks y runtime v11 están preparados. Antes del QA físico falta refrescar la rama mediante el proceso controlado de #147; después seguirá la prueba simultánea real de Carlos PC ↔ María iPhone. Hasta entonces:
 
 - PR #94 permanece Draft;
-- no se fusiona por conveniencia;
+- PR #147 permanece Draft/unmerged;
+- no se ejecuta QA físico sobre la rama stale;
 - no se habilita mensajería;
 - no se habilita push;
 - no se habilitan conversaciones reales;
