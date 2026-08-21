@@ -1,90 +1,39 @@
-# PAYMENT-RUNTIME-BRIDGE-01 — Authoritative Stripe Runtime Bridge
+# LOCAL LEAD FORGE — PAYMENT RUNTIME BRIDGE PLAN
 
-Status: STAGE B COMPLETE / V6 TEST EVIDENCE PENDING
-Date: 21 Aug 2026
-Cost target: $0
-Issues: #130, #136
+Status: PREP / NO PRODUCTION RELEASE
+Issues: #130 / #136
 
 ## Current production truth
+- `llf-stripe-events` v6 is ACTIVE in Supabase.
+- Stage B migrations 012–015 are applied in production.
+- v6 verifies signed live/TEST webhook mode and performs authoritative Checkout/Subscription retrieval before legacy state mutation.
+- No automatic onboarding trigger is present.
 
-Stage B added the hardened database foundation additively, with no cutover and no data migration.
+## Signed TEST evidence — 21 Aug 2026
+A real Stripe TEST-mode subscription event reached v6 with a valid signature and durable ledger evidence. A corrected `customer.subscription.updated` event carrying the exact `llf_acceptance_ref` metadata key entered the authoritative TEST reconciliation path and returned HTTP 503; the ledger marked that event FAILED. Stripe then retried the same event id, but v6 treated the existing ledger row as a terminal duplicate and returned HTTP 200 without rerunning authoritative reconciliation.
 
-Preserved existing objects:
-- `llf_legal_acceptances`
-- `llf_first_sale_payment_state`
-- `llf_stripe_event_ledger`
+This proves two remaining runtime defects before release:
+1. TEST provider retrieval is not yet completing successfully; current tooling cannot distinguish secret absence from provider-read permission failure without exposing secrets or a response-body delivery trace.
+2. FAILED events must remain retryable. A duplicate event id is terminal only after PROCESSED or intentionally IGNORED state; RECEIVED must fail closed/retry later and FAILED must be claimable for reprocessing.
 
-Added hardened objects:
-- `llf_payment_entitlements`
-- `llf_stripe_event_receipts`
-- `llf_recompute_onboarding_eligibility(uuid)`
-- `llf_apply_payment_entitlement_state(uuid,text,timestamptz,text,text,text,text,text)`
-- `llf_bootstrap_payment_correlation(uuid,text,text,text)`
+## Source-only hardening in Draft PR #143
+The source-controlled hardened payment runtime now prepares the corrected behavior:
+- explicit duplicate receipt decision policy;
+- FAILED receipt retry claim back to RECEIVED;
+- PROCESSED/IGNORED terminal duplicate acknowledgement only;
+- RECEIVED duplicate returns retryable 503 rather than false success;
+- unknown receipt state fails closed;
+- successful authoritative entitlement application marks the receipt PROCESSED;
+- migration 016 grants only column-level SELECT on receipt `processing_status`, required for retry-state discrimination;
+- CI regression coverage asserts retry policy and preserves denial of table-wide receipt SELECT, destructive grants, direct entitlement mutation and anon/authenticated access.
 
-Both new hardened tables contained 0 rows immediately after Stage B. No backfill, table drop, rename, truncate, or legacy-data mutation occurred.
+Migration 016 and the runtime changes are SOURCE ONLY. They are not applied or deployed by this plan.
 
-## Active runtime evidence
+## Next gates
+1. Current-head PR #143 CI must pass.
+2. Identify/fix TEST restricted provider access without exposing secret values.
+3. Explicit owner approval is required before any production migration 016 or Edge Function replacement/deployment.
+4. After deployment approval, rerun a signed TEST event and require: authoritative provider read, durable receipt/ledger state, retry-safe semantics, unknown correlation fail-closed, duplicate/stale safety, and zero live/onboarding side effects.
 
-Production `llf-stripe-events` v6 already performs authoritative checks before mutation:
-- verifies Stripe signatures;
-- uses `STRIPE_RESTRICTED_KEY` for live provider reads;
-- supports separate TEST secret/key names when configured;
-- rejects live/test environment mismatch;
-- retrieves current Checkout Session / Subscription state from Stripe;
-- passes explicit provider-confirmed paid/active booleans to `llf_apply_first_sale_stripe_event_v2(...)`;
-- does not automatically trigger onboarding.
-
-The older `llf_apply_first_sale_stripe_event(...)` still exists, but v6 does not call it.
-
-## Stage B — completed with owner approval
-
-Applied successfully:
-1. `012_payment_entitlement_foundation`
-2. `013_payment_entitlement_atomic_apply`
-3. `014_payment_correlation_bootstrap`
-4. `015_payment_runtime_service_role_least_privilege`
-
-Verified:
-- RLS enabled on private payment/legal tables;
-- hardened tables empty after apply;
-- `service_role` receipt INSERT allowed;
-- only receipt status/timestamp UPDATE and predicate-column SELECT allowed;
-- only required entitlement columns readable by `service_role`;
-- no direct entitlement INSERT/UPDATE/DELETE;
-- hardened RPC EXECUTE granted only to required server role;
-- anon/authenticated hardened access denied;
-- no backfill.
-
-## Remaining payment-runtime gate
-
-The old HTTP 500 logs belong to v5. The immediate missing proof is one signed TEST-mode end-to-end validation of deployed v6:
-1. verify TEST secret/key presence without exposing values;
-2. obtain an authenticated Stripe TEST-mode channel;
-3. send one signed TEST event to v6;
-4. verify HTTP result and durable ledger evidence;
-5. verify authoritative Stripe retrieval before state mutation;
-6. verify missing/unknown acceptance fails closed;
-7. verify duplicate/stale events cannot advance state incorrectly;
-8. verify onboarding is not triggered automatically;
-9. keep all live payment/customer activity untouched.
-
-## Alternate hardened runtime source path
-
-The source-controlled `llf-payment-events` path uses separate live/test restricted-key contracts and the hardened entitlement/receipt schema. PR #143 prepares this path for review and future controlled use; it does not deploy or replace production v6.
-
-## Explicitly not authorized
-
-- new Edge Function deployment;
-- Stripe key permission changes;
-- webhook endpoint changes;
-- live charges, refunds, payouts, subscriptions or customers;
-- onboarding release;
-- legal/address changes;
-- customer/prospect outreach;
-- destructive rollback or legacy-table deletion.
-
-## Current decision
-
-**NO-GO for production/customer release.**
-
-Stage B is complete. Signed TEST-mode v6 evidence remains the payment-runtime release gate.
+## Safety boundary
+No production checkout, live customer/payment/subscription object, charge, refund, payout, webhook repoint, onboarding activation, legal publication or outreach is authorized by this document.
