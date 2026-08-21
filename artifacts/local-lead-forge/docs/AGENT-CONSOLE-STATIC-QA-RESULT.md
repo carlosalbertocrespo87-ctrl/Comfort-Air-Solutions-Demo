@@ -2,12 +2,12 @@
 
 Date: 2026-08-21
 Branch: `feature/synthetic-realtime-console`
-Current assertion set: **17 fail-closed checks**
+Result: **17/17 PASS** on hosted `Agent Console Security Gate` for head `938f0a58a9e9b2e3736c4887bda2d8aca6b87ee7`.
 Release interpretation: automated PASS is required but cannot replace physical PC ↔ iPhone evidence.
 
 ## Automated assertions
 
-The Agent Console security script now verifies:
+The Agent Console security script verifies:
 
 1. Production origins are explicitly allowlisted.
 2. The exact PR #94 Deploy Preview origin is allowlisted.
@@ -31,10 +31,19 @@ Command:
 
 `node artifacts/local-lead-forge/scripts/validate-agent-console-qa.mjs`
 
+## Hosted evidence
+
+GitHub run `Agent Console Security Gate` run #14 completed successfully. Its job showed PASS for:
+
+- 17 invariant/evidence assertions;
+- TypeScript typecheck;
+- production application build.
+
 ## Current production QA checkpoint
 
-Fresh platform reads before this documentation reconciliation showed:
+Fresh platform reads during this reconciliation showed:
 
+- Supabase project `Local-Lead-Forge` ACTIVE_HEALTHY;
 - `llf-agent-ops` v11 ACTIVE;
 - 2 synthetic conversations;
 - 0 real conversations;
@@ -48,7 +57,7 @@ Fresh platform reads before this documentation reconciliation showed:
 
 Workflow: `.github/workflows/agent-console-security.yml`.
 
-The workflow now triggers on the security surface plus the QA evidence documents that determine release posture. It performs:
+The workflow triggers on the Agent Console security surface plus the QA evidence documents that determine release posture. It performs:
 
 1. fail-closed static and documentation assertions;
 2. TypeScript typecheck;
@@ -58,4 +67,4 @@ The workflow uses read-only repository permissions and does not deploy, modify S
 
 ## Evidence rule
 
-Do not label this file `17/17 PASS` for the current head until GitHub reports the new hosted Agent Console Security Gate as completed successfully. Even after hosted PASS, PR #94 remains `HOLD` until the physical two-device scenarios are observed and documented.
+A future commit that changes the guarded code or evidence must obtain a fresh hosted PASS. Even with 17/17 automated PASS, PR #94 remains `HOLD` until the physical two-device scenarios are observed and documented.
