@@ -270,3 +270,25 @@ No se utilizó `*`, una expresión general de Netlify ni acceso para otros previ
 ### Retiro futuro
 
 El origen del preview #94 debe eliminarse de la lista CORS cuando finalice el QA y deje de utilizarse. No forma parte de la configuración permanente de producción.
+
+
+## 13. Requisito de autenticación para el preview
+
+La sesión LLF se guarda en `sessionStorage`. Los navegadores aíslan este almacenamiento por origen, por lo que una sesión creada en `https://localleadforge.com` no existe en el dominio del Deploy Preview.
+
+### Consecuencia
+
+Aunque Carlos o María puedan superar la protección privada de Netlify, el preview mostrará `Authentication required` hasta que cada agente complete un magic link cuyo callback termine en el origen exacto del preview.
+
+No se debe copiar el fragmento de acceso, el JWT ni ningún token desde producción hacia el preview. Esa práctica expondría credenciales y anularía la separación entre orígenes.
+
+### Paso pendiente en PC
+
+1. En Supabase Auth, agregar temporalmente el callback exacto del preview #94 a las Redirect URLs permitidas.
+2. Mantener `https://localleadforge.com` como Site URL principal.
+3. Generar enlaces de acceso nuevos y separados para Carlos y María con redirect al preview.
+4. Abrir cada enlace directamente en el dispositivo que se probará.
+5. Verificar nuevamente el estado `TRUSTED`.
+6. Al finalizar el QA, retirar el callback temporal del preview junto con su origen CORS.
+
+Este requisito se suma a la autorización de Netlify; ambos controles deben superarse para completar el QA PC–iPhone.
