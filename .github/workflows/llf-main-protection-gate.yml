@@ -63,6 +63,9 @@ jobs:
       - name: Validate legal release gate remains fail-closed
         run: node artifacts/local-lead-forge/scripts/validate-legal-release-gate.mjs
 
+      - name: Validate support authorization remains fail-closed
+        run: node artifacts/local-lead-forge/scripts/validate-support-authorization.mjs
+
       - name: Validate Stage 7 base conversion contract
         run: node artifacts/hvac-prospect-template/scripts/validate-stage7-conversion.mjs
 
