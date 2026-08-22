@@ -37,7 +37,7 @@ export function runSupportKnowledgeContractTests() {
   assert.equal(handoff?.id, 'human-support');
   assert.equal(handoff?.locale, 'es');
   assert.match(handoff?.answer ?? '', /no notifica a ninguna persona/i);
-  assert.match(handoff?.answer ?? '', /no env[ií]a mensajes en vivo/i);
+  assert.match(handoff?.answer ?? '', /ni env[ií]a mensajes en vivo/i);
 
   assert.equal(findKnowledgeAnswer('zebra quantum warranty question', 'prospect', 'en'), null);
   assert.ok(supportKnowledge.every((entry) => entry.localized.en.answer && entry.localized.es.answer));
