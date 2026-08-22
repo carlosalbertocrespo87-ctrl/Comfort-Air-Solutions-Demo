@@ -8,6 +8,7 @@
   "serviceArea": "Lawrenceville, Duluth, Buford and surrounding areas",
   "publicContact": null,
   "demoRoute": "alpha-heating-air-demo",
+  "publishDemo": false,
   "verifiedServices": [
     "Residential air conditioning installation and repair",
     "Residential HVAC maintenance and repair",
