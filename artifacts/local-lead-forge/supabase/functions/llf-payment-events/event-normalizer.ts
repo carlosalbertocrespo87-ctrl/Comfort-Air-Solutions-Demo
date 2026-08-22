@@ -2,6 +2,7 @@ export type NormalizedStripeEvent = {
   id: string;
   type: string;
   created: number | null;
+  livemode: boolean;
   objectRef: string | null;
   customerRef: string | null;
   paymentIntentRef: string | null;
@@ -23,12 +24,19 @@ export function normalizeStripeEvent(input: unknown): NormalizedStripeEvent | nu
   if (!input || typeof input !== 'object') return null;
   const event = input as Record<string, any>;
   const object = event.data?.object;
-  if (typeof event.id !== 'string' || typeof event.type !== 'string' || !object || typeof object !== 'object') return null;
+  if (
+    typeof event.id !== 'string' ||
+    typeof event.type !== 'string' ||
+    typeof event.livemode !== 'boolean' ||
+    !object ||
+    typeof object !== 'object'
+  ) return null;
 
   return {
     id: event.id,
     type: event.type,
     created: Number.isFinite(event.created) ? Number(event.created) : null,
+    livemode: event.livemode,
     objectRef: typeof object.id === 'string' ? object.id : null,
     customerRef: typeof object.customer === 'string' ? object.customer : null,
     paymentIntentRef: typeof object.payment_intent === 'string'
