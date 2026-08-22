@@ -5,9 +5,11 @@ export const SUPPORT_RUNTIME_DISCLOSURE = {
   liveHumanHandoff: false,
   assistantTitle: 'LLF Support Assistant',
   statusLabel: 'Knowledge demo · no live messaging',
+  handoffActionLabel: 'Preview specialist handoff',
   handoffTitle: 'Handoff simulation prepared',
   handoffMessage:
     'No LLF specialist has been notified. This demo preserves the local conversation context only so the future authenticated handoff experience can be rehearsed safely.',
+  launcherLabel: 'Questions? Ask LLF',
   footerLabel: 'Knowledge-driven demo · AI provider and human handoff are not live yet.',
 } as const;
 
