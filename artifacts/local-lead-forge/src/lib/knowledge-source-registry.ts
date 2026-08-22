@@ -1,5 +1,6 @@
 export type KnowledgeAudience = 'PROSPECT' | 'CLIENT' | 'AGENT';
 export type KnowledgeSensitivity = 'PUBLIC_APPROVED' | 'CLIENT_AUTHENTICATED' | 'INTERNAL_AGENT_ONLY';
+export type KnowledgeLifecycle = 'DRAFT' | 'APPROVED' | 'SUPERSEDED' | 'BLOCKED';
 
 export type KnowledgeSource = {
   key: string;
@@ -11,6 +12,33 @@ export type KnowledgeSource = {
   purpose: string;
   allowAiAnswering: boolean;
 };
+
+export type KnowledgeSourceRuntimeState = {
+  lifecycle: KnowledgeLifecycle;
+  reviewedAt: string;
+  expiresAt?: string | null;
+};
+
+export type KnowledgeRetrievalContext = {
+  audience: KnowledgeAudience;
+  authenticatedClient: boolean;
+  now?: Date;
+};
+
+export type KnowledgeEligibilityDecision =
+  | { allowed: true; reason: 'APPROVED_IN_SCOPE' }
+  | {
+      allowed: false;
+      reason:
+        | 'AI_ANSWERING_DISABLED'
+        | 'SOURCE_STATE_REQUIRED'
+        | 'SOURCE_NOT_APPROVED'
+        | 'AUDIENCE_NOT_ALLOWED'
+        | 'SENSITIVITY_MISMATCH'
+        | 'CLIENT_AUTH_REQUIRED'
+        | 'SOURCE_EXPIRED'
+        | 'INVALID_SOURCE_DATE';
+    };
 
 /**
  * Canonical LLF knowledge registry.
@@ -91,6 +119,46 @@ export const LLF_KNOWLEDGE_SOURCES: KnowledgeSource[] = [
     allowAiAnswering: false,
   },
 ];
+
+/**
+ * Deny-by-default eligibility check for future server-side retrieval.
+ *
+ * A registry row alone never authorizes an answer. The caller must also supply
+ * current lifecycle metadata. Missing metadata, stale content, audience/sensitivity
+ * mismatches, and unauthenticated client requests all fail closed.
+ */
+export function canUseKnowledgeSource(
+  source: KnowledgeSource,
+  state: KnowledgeSourceRuntimeState | null | undefined,
+  context: KnowledgeRetrievalContext,
+): KnowledgeEligibilityDecision {
+  if (!source.allowAiAnswering) return { allowed: false, reason: 'AI_ANSWERING_DISABLED' };
+  if (!state) return { allowed: false, reason: 'SOURCE_STATE_REQUIRED' };
+  if (state.lifecycle !== 'APPROVED') return { allowed: false, reason: 'SOURCE_NOT_APPROVED' };
+  if (!source.audiences.includes(context.audience)) return { allowed: false, reason: 'AUDIENCE_NOT_ALLOWED' };
+
+  if (source.sensitivity === 'INTERNAL_AGENT_ONLY' && context.audience !== 'AGENT') {
+    return { allowed: false, reason: 'SENSITIVITY_MISMATCH' };
+  }
+
+  if (source.sensitivity === 'CLIENT_AUTHENTICATED') {
+    if (context.audience === 'PROSPECT') return { allowed: false, reason: 'SENSITIVITY_MISMATCH' };
+    if (context.audience === 'CLIENT' && !context.authenticatedClient) {
+      return { allowed: false, reason: 'CLIENT_AUTH_REQUIRED' };
+    }
+  }
+
+  const reviewedAt = Date.parse(state.reviewedAt);
+  if (!Number.isFinite(reviewedAt)) return { allowed: false, reason: 'INVALID_SOURCE_DATE' };
+
+  if (state.expiresAt) {
+    const expiresAt = Date.parse(state.expiresAt);
+    if (!Number.isFinite(expiresAt)) return { allowed: false, reason: 'INVALID_SOURCE_DATE' };
+    if ((context.now ?? new Date()).getTime() >= expiresAt) return { allowed: false, reason: 'SOURCE_EXPIRED' };
+  }
+
+  return { allowed: true, reason: 'APPROVED_IN_SCOPE' };
+}
 
 export const KNOWLEDGE_GUARDRAILS = {
   requireSourceCitationInternally: true,
