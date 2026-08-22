@@ -8,6 +8,10 @@ on:
       - "artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.test.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.test.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.test.sql"
+      - "artifacts/local-lead-forge/backend/016_payment_runtime_failed_retry.sql"
+      - "artifacts/local-lead-forge/backend/016_payment_runtime_failed_retry.test.sql"
       - "artifacts/local-lead-forge/supabase/functions/llf-legal-acceptance/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-context/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-events/**"
@@ -22,6 +26,10 @@ on:
       - "artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.test.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.sql"
       - "artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.test.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql"
+      - "artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.test.sql"
+      - "artifacts/local-lead-forge/backend/016_payment_runtime_failed_retry.sql"
+      - "artifacts/local-lead-forge/backend/016_payment_runtime_failed_retry.test.sql"
       - "artifacts/local-lead-forge/supabase/functions/llf-legal-acceptance/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-context/**"
       - "artifacts/local-lead-forge/supabase/functions/llf-payment-events/**"
@@ -51,8 +59,21 @@ jobs:
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-context/*.test.ts
       - name: Run payment event tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-payment-events/*.test.ts
+      - name: Typecheck authoritative payment event runtime
+        run: deno check --node-modules-dir=auto artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
       - name: Run checkout orchestration tests
         run: deno test artifacts/local-lead-forge/supabase/functions/llf-checkout-orchestration/*.test.ts
+      - name: Guard restricted-key and environment isolation
+        run: |
+          ! grep -R "STRIPE_SECRET_KEY" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts artifacts/local-lead-forge/supabase/functions/llf-payment-events/runtime-config.ts
+          grep -q "STRIPE_RESTRICTED_KEY" artifacts/local-lead-forge/supabase/functions/llf-payment-events/runtime-config.ts
+          grep -q "STRIPE_RESTRICTED_KEY_TEST" artifacts/local-lead-forge/supabase/functions/llf-payment-events/runtime-config.ts
+          grep -q "environment_mismatch" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
+      - name: Guard failed-event retry and terminal receipt marking
+        run: |
+          grep -q "decideDuplicateReceipt" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
+          grep -q "processing_status', 'FAILED'" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
+          grep -q "markReceipt(admin, event.id, 'PROCESSED')" artifacts/local-lead-forge/supabase/functions/llf-payment-events/index.ts
       - name: Guard accidental checkout/onboarding activation
         run: |
           ! grep -R "onboarding_triggered: true" artifacts/local-lead-forge/supabase/functions
@@ -98,7 +119,13 @@ jobs:
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/012_payment_entitlement_foundation.sql
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.sql
           psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.sql
+          psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.sql
+          psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/016_payment_runtime_failed_retry.sql
       - name: Run atomic apply regression
         run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/013_payment_entitlement_atomic_apply.test.sql
       - name: Run correlation bootstrap regression
         run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/014_payment_correlation_bootstrap.test.sql
+      - name: Run least-privilege regression
+        run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/015_payment_runtime_service_role_least_privilege.test.sql
+      - name: Run failed-event retry privilege regression
+        run: psql -h 127.0.0.1 -U postgres -d llf_payment_qa -v ON_ERROR_STOP=1 -f artifacts/local-lead-forge/backend/016_payment_runtime_failed_retry.test.sql
