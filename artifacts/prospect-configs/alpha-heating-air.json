@@ -7,8 +7,7 @@
   "phoneDisplay": "(678) 895-1887",
   "serviceArea": "Lawrenceville, Duluth, Buford and surrounding areas",
   "publicContact": null,
-  "demoRoute": "alpha-heating-air-demo",
-  "publishDemo": false,
+  "plannedDemoRoute": "alpha-heating-air-demo",
   "verifiedServices": [
     "Residential air conditioning installation and repair",
     "Residential HVAC maintenance and repair",
