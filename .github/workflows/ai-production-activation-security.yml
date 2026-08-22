@@ -1,0 +1,82 @@
+name: AI Production Activation Security Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'artifacts/local-lead-forge/src/ai/**'
+      - 'docs/LLF-PA-10-EVIDENCE-PACK.md'
+      - '.github/workflows/ai-production-activation-security.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'artifacts/local-lead-forge/src/ai/**'
+      - 'docs/LLF-PA-10-EVIDENCE-PACK.md'
+      - '.github/workflows/ai-production-activation-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  activation-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run controlled-activation executable specs
+        shell: bash
+        run: |
+          set -euo pipefail
+          runner='pnpm dlx tsx@4.20.6'
+          for spec in \
+            artifacts/local-lead-forge/src/ai/production-activation.spec.ts \
+            artifacts/local-lead-forge/src/ai/provider-budget.spec.ts \
+            artifacts/local-lead-forge/src/ai/output-safety.spec.ts \
+            artifacts/local-lead-forge/src/ai/kill-switch.spec.ts \
+            artifacts/local-lead-forge/src/ai/adversarial-provider-scenarios.spec.ts \
+            artifacts/local-lead-forge/src/ai/telemetry-alerts.spec.ts \
+            artifacts/local-lead-forge/src/ai/readiness-gate.spec.ts \
+            artifacts/local-lead-forge/src/ai/internal-pilot.spec.ts \
+            artifacts/local-lead-forge/src/ai/internal-pilot-runner.spec.ts
+          do
+            echo "Running $spec"
+            $runner "$spec"
+          done
+
+      - name: Enforce fail-closed release invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'liveProviderEnabled: false' artifacts/local-lead-forge/src/ai/production-activation.ts
+          grep -F 'if (traffic === "customer") return { allowed: false' artifacts/local-lead-forge/src/ai/production-activation.ts
+          grep -F 'canAdvanceToCustomer: false' artifacts/local-lead-forge/src/ai/readiness-gate.ts
+          grep -F 'PA10_LIVE_SYNTHETIC_TEST_PASSED = false' artifacts/local-lead-forge/src/ai/internal-readiness.ts
+          grep -F 'maxPerRequestUsd: 0.01' artifacts/local-lead-forge/src/ai/provider-budget.ts
+          grep -F 'maxSessionUsd: 0.05' artifacts/local-lead-forge/src/ai/provider-budget.ts
+          # Test/adversarial fixtures intentionally contain fake sk-* strings to prove redaction/blocking.
+          # Scan executable source while excluding those fixture files so only accidental embedded keys fail this gate.
+          ! grep -R -E 'sk-[A-Za-z0-9_-]{20,}' \
+            --include='*.ts' \
+            --exclude='*.spec.ts' \
+            --exclude='adversarial-provider-scenarios.ts' \
+            artifacts/local-lead-forge/src/ai
