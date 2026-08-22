@@ -1,0 +1,72 @@
+name: Agent Console Security Gate
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/local-lead-forge/backend/**"
+      - "artifacts/local-lead-forge/src/lib/agent-notification-policy.ts"
+      - "artifacts/local-lead-forge/src/lib/supabase-session.ts"
+      - "artifacts/local-lead-forge/src/lib/synthetic-realtime.ts"
+      - "artifacts/local-lead-forge/src/pages/agent-mobile-demo.tsx"
+      - "artifacts/local-lead-forge/supabase/functions/llf-agent-ops/**"
+      - "artifacts/local-lead-forge/scripts/validate-agent-console-qa.mjs"
+      - "artifacts/local-lead-forge/docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md"
+      - "artifacts/local-lead-forge/docs/AGENT-CONSOLE-STATIC-QA-RESULT.md"
+      - "docs/PR94-SECURITY-MERGE-GATE.md"
+      - "docs/LLF-SYNTHETIC-REALTIME-QA.md"
+      - "artifacts/local-lead-forge/package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/agent-console-security.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "artifacts/local-lead-forge/backend/**"
+      - "artifacts/local-lead-forge/src/lib/agent-notification-policy.ts"
+      - "artifacts/local-lead-forge/src/lib/supabase-session.ts"
+      - "artifacts/local-lead-forge/src/lib/synthetic-realtime.ts"
+      - "artifacts/local-lead-forge/src/pages/agent-mobile-demo.tsx"
+      - "artifacts/local-lead-forge/supabase/functions/llf-agent-ops/**"
+      - "artifacts/local-lead-forge/scripts/validate-agent-console-qa.mjs"
+      - "artifacts/local-lead-forge/docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md"
+      - "artifacts/local-lead-forge/docs/AGENT-CONSOLE-STATIC-QA-RESULT.md"
+      - "docs/PR94-SECURITY-MERGE-GATE.md"
+      - "docs/LLF-SYNTHETIC-REALTIME-QA.md"
+      - "artifacts/local-lead-forge/package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/agent-console-security.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-console-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fail-closed-validation:
+    name: Static security, typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate Agent Console safety invariants and evidence status
+        run: pnpm --dir artifacts/local-lead-forge run qa:agent-console-security
+      - name: Typecheck Agent Console application
+        run: pnpm --dir artifacts/local-lead-forge run typecheck
+      - name: Build Agent Console application
+        env:
+          BASE_PATH: ./
+        run: pnpm --dir artifacts/local-lead-forge run build

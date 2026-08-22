@@ -1,15 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
 import {
   INITIAL_AGENTS,
-  claimConversation,
-  resolveConversation,
-  returnConversationToAI,
   type AgentId,
   type Conversation,
 } from '@/lib/conversation-model';
 import { planAgentNotification, type AgentAvailability } from '@/lib/agent-notification-policy';
 import { callAgentOps, getStoredAgentSession } from '@/lib/supabase-session';
+import { subscribeToSyntheticRefresh, unsubscribeFromSyntheticRefresh, type SyntheticRealtimeState } from '@/lib/synthetic-realtime';
 
 const seed: Conversation[] = [
   {
@@ -70,7 +68,36 @@ export default function AgentMobileDemoPage() {
     MARIA: me === 'MARIA' ? initialAvailability : 'OFFLINE',
   });
   const [availabilityState, setAvailabilityState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [dataState, setDataState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [realtimeState, setRealtimeState] = useState<SyntheticRealtimeState>('CONNECTING');
+  const [actionState, setActionState] = useState<'idle' | 'saving' | 'error'>('idle');
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
+
+  const loadSyntheticConversations = async () => {
+    try {
+      const result = await callAgentOps<{ ok: boolean; conversations: BackendConversation[] }>({ action: 'list_synthetic_conversations' });
+      const mapped = result.conversations.map(mapBackendConversation);
+      setConversations(mapped);
+      setSelectedId((value) => mapped.some((item) => item.id === value) ? value : (mapped[0]?.id ?? ''));
+      setDataState('ready');
+    } catch {
+      setDataState('error');
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    let channel: Awaited<ReturnType<typeof subscribeToSyntheticRefresh>> | undefined;
+    void loadSyntheticConversations();
+    void subscribeToSyntheticRefresh(
+      () => { if (active) void loadSyntheticConversations(); },
+      (state) => { if (active) setRealtimeState(state); },
+    ).then((value) => { channel = value; }).catch(() => setRealtimeState('CHANNEL_ERROR'));
+    return () => {
+      active = false;
+      if (channel) void unsubscribeFromSyntheticRefresh(channel);
+    };
+  }, []);
 
   const notificationPlan = useMemo(
     () => planAgentNotification(current, [
@@ -80,8 +107,18 @@ export default function AgentMobileDemoPage() {
     [current, availability],
   );
 
-  const patch = (next: Conversation) => setConversations((items) => items.map((item) => item.id === next.id ? next : item));
   const assignedElsewhere = current.assignedAgent && current.assignedAgent !== me;
+
+  const runConversationAction = async (action: 'claim' | 'resolve') => {
+    setActionState('saving');
+    try {
+      await callAgentOps({ action, conversation_id: current.id });
+      await loadSyntheticConversations();
+      setActionState('idle');
+    } catch {
+      setActionState('error');
+    }
+  };
 
   const updateAvailability = async (next: AgentAvailability) => {
     const previous = availability[me];
@@ -126,6 +163,9 @@ export default function AgentMobileDemoPage() {
 
         <section className="px-4 py-4">
           <div className="flex items-center justify-between"><h1 className="text-sm font-black">Needs attention</h1><span className="rounded-full bg-rose-500/10 px-2 py-1 text-[9px] font-bold text-rose-300">{conversations.filter((c) => c.status === 'WAITING_FOR_AGENT').length} waiting</span></div>
+          <div className={`mt-2 text-[9px] ${dataState === 'error' || realtimeState === 'CHANNEL_ERROR' ? 'text-rose-300' : realtimeState === 'SUBSCRIBED' ? 'text-emerald-300' : 'text-amber-300'}`}>
+            {dataState === 'error' ? 'Secure synthetic data could not be loaded.' : realtimeState === 'SUBSCRIBED' ? 'Private Realtime connected · synthetic data only' : 'Connecting private Realtime…'}
+          </div>
           <div className="mt-3 space-y-2">
             {conversations.map((conversation) => (
               <button key={conversation.id} onClick={() => setSelectedId(conversation.id)} className={`w-full rounded-xl border p-3 text-left ${selectedId === conversation.id ? 'border-orange-500/35 bg-orange-500/[0.07]' : 'border-white/10 bg-[#07111f]'}`}>
@@ -163,10 +203,11 @@ export default function AgentMobileDemoPage() {
             {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : '—'}</b>. Claim lock prevents a second specialist from replying.</p>}
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button disabled={current.status !== 'WAITING_FOR_AGENT'} onClick={() => patch(claimConversation(current, me))} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {session?.displayName ?? INITIAL_AGENTS[me].displayName}</button>
-              <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} onClick={() => patch(resolveConversation(current))} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button>
-              <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} onClick={() => patch(returnConversationToAI(current))} className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI</button>
+              <button disabled={current.status !== 'WAITING_FOR_AGENT' || actionState === 'saving'} onClick={() => void runConversationAction('claim')} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {session?.displayName ?? INITIAL_AGENTS[me].displayName}</button>
+              <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere || actionState === 'saving'} onClick={() => void runConversationAction('resolve')} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button>
+              <button disabled className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI — blocked during QA</button>
             </div>
+            {actionState === 'error' && <p className="mt-2 text-[9px] text-rose-300">The protected backend rejected the action. Refresh and verify assignment.</p>}
           </div>
 
           <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3">
@@ -175,9 +216,50 @@ export default function AgentMobileDemoPage() {
             <button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — blocked until conversation backend QA</button>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Auth and device trust are real. Conversations shown here remain synthetic; live customer messages, realtime delivery and push remain blocked.</div>
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Auth, trusted-device checks, synthetic persistence and private Realtime are active for QA. Live customer messages and push remain blocked.</div>
         </section>
       </div>
     </main>
   );
+}
+
+type BackendConversation = {
+  id: string;
+  audience: Conversation['audience'];
+  channel: Conversation['channel'];
+  status: Conversation['status'];
+  contact_name?: string;
+  company_name?: string;
+  assigned_agent_user_id?: string;
+  handoff_reason?: string;
+  handoff_user_intent?: string;
+  handoff_unresolved_question?: string;
+  handoff_suggested_next_action?: string;
+  llf_conversation_messages?: Array<{ id: string; author: 'VISITOR' | 'AI' | 'AGENT'; author_label: string; body: string; created_at: string }>;
+  llf_conversation_handoff_facts?: Array<{ fact: string }>;
+};
+
+function mapBackendConversation(row: BackendConversation): Conversation {
+  const assignedAgent = row.assigned_agent_user_id === '1c1e7606-b9dc-4604-8047-df86760809d7'
+    ? 'CARLOS'
+    : row.assigned_agent_user_id === '31cd8575-1b51-4c95-9d07-ffec6ce21fde' ? 'MARIA' : undefined;
+  return {
+    id: row.id,
+    audience: row.audience,
+    channel: row.channel,
+    status: row.status,
+    contactName: row.contact_name,
+    companyName: row.company_name,
+    assignedAgent,
+    messages: (row.llf_conversation_messages ?? [])
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((message) => ({ id: message.id, author: message.author, authorLabel: message.author_label, body: message.body, createdAt: new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })),
+    handoffSummary: row.handoff_reason ? {
+      reason: row.handoff_reason,
+      userIntent: row.handoff_user_intent ?? 'Synthetic QA handoff',
+      knownFacts: (row.llf_conversation_handoff_facts ?? []).map((item) => item.fact),
+      unresolvedQuestion: row.handoff_unresolved_question ?? 'No open question',
+      suggestedNextAction: row.handoff_suggested_next_action ?? 'Validate the synthetic workflow.',
+    } : undefined,
+  };
 }
