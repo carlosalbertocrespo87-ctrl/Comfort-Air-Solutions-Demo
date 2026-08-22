@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Bot, Headphones, MessageCircle, Send, UserRound, X } from 'lucide-react';
 import { findKnowledgeAnswer, type SupportAudience } from '@/lib/support-knowledge';
+import {
+  SUPPORT_RUNTIME_DISCLOSURE,
+  getSupportIntro,
+  getUnknownAnswerDisclosure,
+} from '@/lib/support-runtime-disclosure';
 
 type Message = {
   id: number;
@@ -22,9 +27,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
     {
       id: 1,
       role: 'assistant',
-      text: audience === 'prospect'
-        ? 'Hi — I’m the LLF AI Assistant. I can answer questions about Local Lead Forge, pricing, bilingual support, and how the system works. If you prefer a person, choose “Talk to a specialist” at any time.'
-        : 'Hi — I’m the LLF AI Assistant. I can help with onboarding, implementation, reporting, support, and common account questions. If you prefer a person, choose “Talk to a specialist” at any time.',
+      text: getSupportIntro(audience),
     },
   ]);
 
@@ -41,7 +44,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
       : {
           id: nextId + 1,
           role: 'assistant',
-          text: 'I do not have enough approved information to answer that confidently. I can hand this conversation to an LLF specialist instead of guessing.',
+          text: getUnknownAnswerDisclosure(),
         };
     setMessages((current) => [...current, userMessage, reply]);
     setInput('');
@@ -55,7 +58,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
       {
         id: current.length + 1,
         role: 'system',
-        text: 'Human handoff requested. Conversation context will be preserved for an authorized LLF specialist (Carlos or María).',
+        text: `${SUPPORT_RUNTIME_DISCLOSURE.handoffTitle}. ${SUPPORT_RUNTIME_DISCLOSURE.handoffMessage}`,
       },
     ]);
   };
@@ -66,8 +69,8 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-xl border border-orange-500/30 bg-orange-500/10"><Bot className="h-4 w-4 text-orange-400" /></div>
           <div>
-            <div className="text-xs font-black text-white">LLF AI Assistant</div>
-            <div className="mt-0.5 text-[10px] font-semibold text-emerald-400">● AI online · {contextLabel}</div>
+            <div className="text-xs font-black text-white">{SUPPORT_RUNTIME_DISCLOSURE.assistantTitle}</div>
+            <div className="mt-0.5 text-[10px] font-semibold text-amber-300">● {SUPPORT_RUNTIME_DISCLOSURE.statusLabel} · {contextLabel}</div>
           </div>
         </div>
         {!embedded && <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-white" aria-label="Close support chat"><X className="h-4 w-4" /></button>}
@@ -87,14 +90,14 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
 
       {handoff && (
         <div className="mx-4 mb-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3">
-          <div className="flex items-center gap-2 text-xs font-black text-sky-300"><UserRound className="h-4 w-4" /> Waiting for LLF specialist</div>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">MVP simulation: the future live system will notify Carlos and María, show whether this is a prospect or client, and include an AI-generated conversation summary. No live message is sent yet.</p>
+          <div className="flex items-center gap-2 text-xs font-black text-sky-300"><UserRound className="h-4 w-4" /> {SUPPORT_RUNTIME_DISCLOSURE.handoffTitle}</div>
+          <p className="mt-1 text-[10px] leading-4 text-slate-500">{SUPPORT_RUNTIME_DISCLOSURE.handoffMessage}</p>
         </div>
       )}
 
       <div className="border-t border-white/10 p-3">
         <button onClick={requestHuman} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-xs font-extrabold text-sky-300">
-          <Headphones className="h-4 w-4" /> Talk to a specialist
+          <Headphones className="h-4 w-4" /> {SUPPORT_RUNTIME_DISCLOSURE.handoffActionLabel}
         </button>
         <div className="flex gap-2">
           <input
@@ -106,7 +109,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
           />
           <button onClick={ask} className="grid h-11 w-11 place-items-center rounded-xl bg-orange-600 text-white" aria-label="Send question"><Send className="h-4 w-4" /></button>
         </div>
-        <div className="mt-2 text-center text-[9px] text-slate-700">Knowledge-driven MVP · Human handoff is simulated until the secure backend is connected.</div>
+        <div className="mt-2 text-center text-[9px] text-slate-700">{SUPPORT_RUNTIME_DISCLOSURE.footerLabel}</div>
       </div>
     </div>
   );
@@ -117,7 +120,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
     <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
       {open ? panel : (
         <button onClick={() => setOpen(true)} className="flex items-center gap-3 rounded-full border border-orange-400/40 bg-orange-600 px-5 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(255,106,0,.28)]">
-          <MessageCircle className="h-5 w-5" /> Questions? Ask LLF AI
+          <MessageCircle className="h-5 w-5" /> {SUPPORT_RUNTIME_DISCLOSURE.launcherLabel}
         </button>
       )}
     </div>
