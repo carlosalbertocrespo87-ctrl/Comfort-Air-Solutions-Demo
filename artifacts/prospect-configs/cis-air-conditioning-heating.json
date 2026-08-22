@@ -1,0 +1,33 @@
+{
+  "companyName": "CIS Air Conditioning and Heating Inc.",
+  "shortName": "CIS Air Conditioning and Heating",
+  "website": "https://cisairandheat.com/",
+  "emailDomain": "yahoo.com",
+  "publicEmail": "cisairandheat@yahoo.com",
+  "phoneDisplay": "(470) 568-8923",
+  "serviceArea": "Gwinnett County and surrounding counties",
+  "publicContact": null,
+  "demoRoute": "cis-air-conditioning-heating-demo",
+  "verifiedServices": [
+    "Air conditioning repair",
+    "Heating service and repair",
+    "HVAC system installation",
+    "HVAC tune-up and diagnostic service"
+  ],
+  "verifiedHighlights": [
+    "The official website describes CIS Air Conditioning and Heating Inc. as a family-owned business serving Gwinnett County for more than 15 years.",
+    "The official website publishes text/voice phone 470-568-8923, office/fax 770-674-4617 and email cisairandheat@yahoo.com.",
+    "The official website lists AC repair, heating service, installation and a booking path for HVAC tune-up or diagnostic service."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual qualification and follow-up path to a comparatively simple local HVAC website while preserving only verified service claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
