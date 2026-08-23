@@ -1,0 +1,35 @@
+{
+  "companyName": "Air Science Heating and Air LLC",
+  "shortName": "Air Science Heating and Air",
+  "website": "https://airsciencehvac.net/",
+  "emailDomain": null,
+  "publicEmail": "AirScienceHvacAtl@gmail.com",
+  "phoneDisplay": "(404) 617-1402",
+  "serviceArea": "Lawrenceville, Gwinnett County and surrounding Metro Atlanta areas",
+  "publicContact": null,
+  "plannedDemoRoute": "air-science-heating-air-demo",
+  "verifiedServices": [
+    "Air conditioning repair",
+    "Heating system repair",
+    "HVAC installation and replacement",
+    "Custom ductwork",
+    "Indoor air quality service",
+    "HVAC tune-ups and maintenance"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Air Science Heating and Air as family owned, licensed and insured, serving residential and light-commercial customers from Lawrenceville.",
+    "The official website states more than 18 years of experience and publishes Georgia license CR110426.",
+    "The official website publishes phone 404-617-1402, email AirScienceHvacAtl@gmail.com, a request form, and service support in English, French and Creole."
+  ],
+  "opportunity": "Add a clear mobile-first bilingual EN/ES lead qualification demo while preserving the company’s currently verified residential, light-commercial and multilingual service claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
