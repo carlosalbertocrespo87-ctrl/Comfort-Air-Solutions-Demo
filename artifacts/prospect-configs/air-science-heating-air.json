@@ -1,0 +1,31 @@
+{
+  "companyName": "Air Science Heating and Air LLC",
+  "shortName": "Air Science Heating and Air",
+  "website": "https://airsciencehvac.net/",
+  "emailDomain": "airsciencehvac.net",
+  "publicEmail": "AirScienceHvacAtl@gmail.com",
+  "phoneDisplay": "(404) 617-1402",
+  "serviceArea": "Lawrenceville and surrounding listed service areas",
+  "publicContact": null,
+  "plannedDemoRoute": "air-science-heating-air-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Light commercial HVAC service"
+  ],
+  "verifiedHighlights": [
+    "The official website presents Air Science Heating and Air as a family-owned, licensed and insured HVAC contractor with more than 18 years of experience.",
+    "The official website publishes phone 404-617-1402, AirScienceHvacAtl@gmail.com, Georgia license CR110426 and a business-controlled quote/appointment form.",
+    "The official website supports English, French and Creole; no decision-maker identity is asserted in this research config."
+  ],
+  "opportunity": "Add a concise mobile-first qualification path, including bilingual EN/ES demo capability, without claiming that the current business site already offers Spanish support.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
