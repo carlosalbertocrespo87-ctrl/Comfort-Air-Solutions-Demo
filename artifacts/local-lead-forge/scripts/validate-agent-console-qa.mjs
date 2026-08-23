@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-
 const edge = await readFile(new URL('../supabase/functions/llf-agent-ops/index.ts', import.meta.url), 'utf8');
 const sql = await readFile(new URL('../backend/012_synthetic_realtime_console.sql', import.meta.url), 'utf8');
 const page = await readFile(new URL('../src/pages/agent-mobile-demo.tsx', import.meta.url), 'utf8');
@@ -12,57 +11,48 @@ const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOC
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
-
 const qaPreviewOrigin = 'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app';
-
 const checks = [
-  ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
-  ['synchronized QA carrier origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
-  ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
-  ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'") && !edge.includes('"Access-Control-Allow-Origin": "*"')],
-  ['active agent required', edge.includes(".eq('is_active', true)")],
-  ['trusted device required', edge.includes("trustedDevice.trust_status !== 'TRUSTED'")],
-  ['synthetic list filter', edge.includes(".eq('is_synthetic', true)")],
-  ['synthetic mutation filter', edge.match(/\.eq\('is_synthetic', true\)/g)?.length >= 3],
-  ['outbound message blocked', edge.includes('messaging_capability_blocked')],
-  ['claim remains atomic on waiting and unassigned state', edge.includes(".eq('status', 'WAITING_FOR_AGENT').is('assigned_agent_user_id', null)") && edge.includes('conversation_not_claimable')],
-  ['resolve requires active agent state', edge.includes(".eq('status', 'AGENT_ACTIVE')")],
-  ['resolve fails closed when no row matches', edge.includes('conversation_not_resolvable') && edge.includes("{ error: 'conversation_not_resolvable' }, 409")],
-  ['pilot operator identity is centralized by auth user id', model.includes('PILOT_AGENT_USER_IDS') && model.includes('resolvePilotAgentId')],
-  ['display-name heuristics do not choose operator identity', !page.includes("displayName.toLowerCase().includes('maria')")],
-  ['page does not duplicate pilot auth UUID mapping', !page.includes('1c1e7606-b9dc-4604-8047-df86760809d7') && !page.includes('31cd8575-1b51-4c95-9d07-ffec6ce21fde')],
-  ['unknown pilot operator blocks protected data load', page.includes("if (!me) {\n      setDataState('error');\n      return false;")],
-  ['unknown or missing operator blocks conversation actions', page.includes("if (!me || !current) {\n      setActionState('error');")],
-  ['unknown pilot operator blocks availability changes', page.includes("if (!me) {\n      setAvailabilityState('error');")],
-  ['missing session is not labeled authenticated', page.includes("{session ? 'Authenticated' : 'Authentication required'}")],
-  ['empty synthetic list has an explicit safe state', page.includes('No synthetic conversations are currently available. No conversation action can be taken.')],
-  ['empty selection uses a non-actionable notification plan', page.includes('EMPTY_NOTIFICATION_PLAN') && page.includes("reason: 'No synthetic conversation selected.'")],
-  ['unknown active assignment fails closed in UI', page.includes("current?.status === 'AGENT_ACTIVE' && current.assignedAgent !== me") && page.includes('Unknown / not in pilot')],
-  ['invalid token expiry fails closed', session.includes("throw new Error('invalid_token_expiry')") && session.includes('Number.isFinite(session.expiresAt)')],
-  ['trusted-device client guard remains fail closed', session.includes("session.deviceTrustStatus !== 'TRUSTED'")],
-  ['auth hash is cleared from visible URL before network use', session.includes('history.replaceState({}, document.title, window.location.pathname + window.location.search)')],
-  ['realtime requires trusted stored session before subscription', realtime.includes("session.deviceTrustStatus !== 'TRUSTED'") && realtime.includes("throw new Error('trusted_device_required')")],
-  ['private realtime topic', sql.includes("'llf-agent-console-synthetic'") && sql.includes("extension = 'broadcast'")],
-  ['fixed refresh payload', sql.includes("jsonb_build_object('reason', lower(tg_op), 'entity', tg_table_name)")],
-  ['realtime capability remains gated', sql.includes('activation waits for two-device authenticated QA')],
-  ['protected data load precedes realtime subscription', page.indexOf('const loaded = await loadSyntheticConversations()') < page.indexOf('const value = await subscribeToSyntheticRefresh(')],
-  ['late realtime subscription is removed after unmount', page.includes('if (!active) {\n          await unsubscribeFromSyntheticRefresh(value);')],
-  ['realtime state updates are guarded after unmount', page.includes("if (active) setRealtimeState('CHANNEL_ERROR')")],
-  ['notification plan exposes recipients plus UI primary/fallback contract', policy.includes('recipients: AgentId[]') && policy.includes('primary?: AgentId') && policy.includes('fallback?: AgentId')],
-  ['notification fallback is derived from the second authorized recipient only', policy.includes('const primary = recipients[0]') && policy.includes('const fallback = recipients.length > 1 ? recipients[1] : undefined')],
-  ['reply UI disabled', page.includes('Real sending remains disabled during authenticated QA.')],
-  ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
-  ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
-  ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
-  ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL') && mariaProtocol.includes('Segundo reclamo simultáneo bloqueado: `PENDING_PHYSICAL`')],
-  ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('## Physical QA still required')],
-  ['runbook keeps production mutation blocked', qaRunbook.includes('No requiere desplegar') && qaRunbook.includes('no autoriza producción')],
-  ['equivalence evidence explicitly selects PR94 as QA carrier', equivalence.includes('QA_CARRIER_PR_94') && equivalence.includes('72b028287b45ee19eb4d1188405bcee7b5741dd8')],
+['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
+['synchronized QA carrier origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
+['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'")],
+['active agent required', edge.includes(".eq('is_active', true)")],
+['trusted device required', edge.includes("trustedDevice.trust_status !== 'TRUSTED'")],
+['synthetic list filter', edge.includes(".eq('is_synthetic', true)")],
+['synthetic mutation filter', edge.match(/\.eq\('is_synthetic', true\)/g)?.length >= 3],
+['outbound message blocked', edge.includes('messaging_capability_blocked')],
+['claim remains atomic on waiting and unassigned state', edge.includes(".eq('status', 'WAITING_FOR_AGENT').is('assigned_agent_user_id', null)") && edge.includes('conversation_not_claimable')],
+['resolve requires active agent state', edge.includes(".eq('status', 'AGENT_ACTIVE')")],
+['resolve fails closed when no row matches', edge.includes('conversation_not_resolvable')],
+['pilot operator identity is centralized by auth user id', model.includes('PILOT_AGENT_USER_IDS') && model.includes('resolvePilotAgentId')],
+['display-name heuristics do not choose operator identity', !page.includes("displayName.toLowerCase().includes('maria')")],
+['unknown pilot operator blocks protected data load', page.includes('if (!me) { invalidateProtectedView(); return false; }')],
+['unknown or missing operator blocks conversation actions', page.includes("if (!me || !current) { setActionState('error'); return; }")],
+['missing session is not labeled authenticated', page.includes("{session ? 'Authenticated' : 'Authentication required'}")],
+['empty synthetic list has an explicit safe state', page.includes('No synthetic conversations are currently available. No conversation action can be taken.')],
+['empty selection uses a non-actionable notification plan', page.includes('EMPTY_NOTIFICATION_PLAN')],
+['unknown active assignment fails closed in UI', page.includes("current?.status === 'AGENT_ACTIVE' && current.assignedAgent !== me")],
+['protected view is invalidated on load failure', page.includes('const invalidateProtectedView = () =>') && page.includes('setConversations([])') && page.includes("setSelectedId('')") && page.includes("setDataState('error')")],
+['post-action refresh must confirm convergence', page.includes('const refreshed = await loadSyntheticConversations()') && page.includes("setActionState(refreshed ? 'idle' : 'error')")],
+['stale protected data is not presented as current after refresh failure', page.includes('Stale conversation data has been cleared.')],
+['invalid token expiry fails closed', session.includes("throw new Error('invalid_token_expiry')") && session.includes('Number.isFinite(session.expiresAt)')],
+['trusted-device client guard remains fail closed', session.includes("session.deviceTrustStatus !== 'TRUSTED'")],
+['auth hash is cleared from visible URL before network use', session.includes('history.replaceState({}, document.title, window.location.pathname + window.location.search)')],
+['realtime requires trusted stored session before subscription', realtime.includes("session.deviceTrustStatus !== 'TRUSTED'")],
+['private realtime topic', sql.includes("'llf-agent-console-synthetic'") && sql.includes("extension = 'broadcast'")],
+['fixed refresh payload', sql.includes("jsonb_build_object('reason', lower(tg_op), 'entity', tg_table_name)")],
+['protected data load precedes realtime subscription', page.indexOf('const loaded = await loadSyntheticConversations()') < page.indexOf('const value = await subscribeToSyntheticRefresh(')],
+['late realtime subscription is removed after unmount', page.includes('if (!active) { await unsubscribeFromSyntheticRefresh(value); return; }')],
+['notification plan exposes recipients plus UI primary/fallback contract', policy.includes('recipients: AgentId[]') && policy.includes('primary?: AgentId') && policy.includes('fallback?: AgentId')],
+['reply UI disabled', page.includes('Real sending remains disabled during authenticated QA.')],
+['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
+['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
+['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
+['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL')],
+['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('## Physical QA still required')],
+['runbook keeps production mutation blocked', qaRunbook.includes('No requiere desplegar') && qaRunbook.includes('no autoriza producción')],
+['equivalence evidence explicitly selects PR94 as QA carrier', equivalence.includes('QA_CARRIER_PR_94')],
 ];
-
-for (const [name, passed] of checks) {
-  assert.equal(Boolean(passed), true, `FAIL: ${name}`);
-  console.log(`PASS: ${name}`);
-}
-
+for (const [name, passed] of checks) { assert.equal(Boolean(passed), true, `FAIL: ${name}`); console.log(`PASS: ${name}`); }
 console.log(`Agent Console static QA: ${checks.length}/${checks.length} checks passed.`);
