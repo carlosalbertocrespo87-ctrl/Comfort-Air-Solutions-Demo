@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
 import {
   INITIAL_AGENTS,
+  resolvePilotAgentId,
   type AgentId,
   type Conversation,
 } from '@/lib/conversation-model';
@@ -32,7 +33,7 @@ const seed: Conversation[] = [
 
 export default function AgentMobileDemoPage() {
   const session = getStoredAgentSession();
-  const me: AgentId = session?.displayName.toLowerCase().includes('maria') ? 'MARIA' : 'CARLOS';
+  const me = resolvePilotAgentId(session?.agentUserId);
   const initialAvailability = (session?.availability ?? 'OFFLINE') as AgentAvailability;
   const [conversations, setConversations] = useState(seed);
   const [selectedId, setSelectedId] = useState(seed[0].id);
@@ -47,6 +48,10 @@ export default function AgentMobileDemoPage() {
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
 
   const loadSyntheticConversations = async (): Promise<boolean> => {
+    if (!me) {
+      setDataState('error');
+      return false;
+    }
     try {
       const result = await callAgentOps<{ ok: boolean; conversations: BackendConversation[] }>({ action: 'list_synthetic_conversations' });
       const mapped = result.conversations.map(mapBackendConversation);
@@ -100,9 +105,13 @@ export default function AgentMobileDemoPage() {
     [current, availability],
   );
 
-  const assignedElsewhere = current.assignedAgent && current.assignedAgent !== me;
+  const assignedElsewhere = !me || Boolean(current.assignedAgent && current.assignedAgent !== me);
 
   const runConversationAction = async (action: 'claim' | 'resolve') => {
+    if (!me) {
+      setActionState('error');
+      return;
+    }
     setActionState('saving');
     try {
       await callAgentOps({ action, conversation_id: current.id });
@@ -114,6 +123,10 @@ export default function AgentMobileDemoPage() {
   };
 
   const updateAvailability = async (next: AgentAvailability) => {
+    if (!me) {
+      setAvailabilityState('error');
+      return;
+    }
     const previous = availability[me];
     setAvailability((value) => ({ ...value, [me]: next }));
     setAvailabilityState('saving');
@@ -126,6 +139,8 @@ export default function AgentMobileDemoPage() {
     }
   };
 
+  const operatorLabel = session?.displayName ?? (me ? INITIAL_AGENTS[me].displayName : 'Unknown operator');
+
   return (
     <main className="min-h-screen bg-[#030913] text-white">
       <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d18] shadow-2xl">
@@ -135,9 +150,10 @@ export default function AgentMobileDemoPage() {
         </header>
 
         <section className="border-b border-white/10 px-4 py-3">
-          <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] text-slate-400">Signed in as</p><p className="text-sm font-black">{session?.displayName ?? INITIAL_AGENTS[me].displayName}</p></div><Smartphone className="h-5 w-5 text-orange-400" /></div>
+          <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] text-slate-400">Signed in as</p><p className="text-sm font-black">{operatorLabel}</p></div><Smartphone className="h-5 w-5 text-orange-400" /></div>
+          {!me && <p className="mt-2 text-[9px] text-rose-300">This authenticated account is not mapped to an approved pilot operator. Protected actions stay blocked.</p>}
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {(['AVAILABLE','BUSY','OFFLINE'] as const).map((state) => <button key={state} onClick={() => void updateAvailability(state)} className={`rounded-lg border px-2 py-2 text-[9px] font-black ${availability[me] === state ? 'border-orange-500/40 bg-orange-500/10 text-orange-300' : 'border-white/10 bg-white/[0.03] text-slate-400'}`}>{state}</button>)}
+            {(['AVAILABLE','BUSY','OFFLINE'] as const).map((state) => <button key={state} disabled={!me} onClick={() => void updateAvailability(state)} className={`rounded-lg border px-2 py-2 text-[9px] font-black ${me && availability[me] === state ? 'border-orange-500/40 bg-orange-500/10 text-orange-300' : 'border-white/10 bg-white/[0.03] text-slate-400'} disabled:cursor-not-allowed disabled:opacity-30`}>{state}</button>)}
           </div>
           {availabilityState === 'error' && <p className="mt-2 text-[9px] text-rose-300">Availability update rejected by protected backend.</p>}
         </section>
@@ -169,8 +185,8 @@ export default function AgentMobileDemoPage() {
             {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : '—'}</b>. Claim lock prevents a second specialist from replying.</p>}
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button disabled={current.status !== 'WAITING_FOR_AGENT' || actionState === 'saving'} onClick={() => void runConversationAction('claim')} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {session?.displayName ?? INITIAL_AGENTS[me].displayName}</button>
-              <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere || actionState === 'saving'} onClick={() => void runConversationAction('resolve')} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button>
+              <button disabled={!me || current.status !== 'WAITING_FOR_AGENT' || actionState === 'saving'} onClick={() => void runConversationAction('claim')} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {operatorLabel}</button>
+              <button disabled={!me || current.status !== 'AGENT_ACTIVE' || assignedElsewhere || actionState === 'saving'} onClick={() => void runConversationAction('resolve')} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button>
               <button disabled className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI — blocked during QA</button>
             </div>
             {actionState === 'error' && <p className="mt-2 text-[9px] text-rose-300">The protected backend rejected the action. Refresh and verify assignment.</p>}
@@ -205,9 +221,6 @@ type BackendConversation = {
 };
 
 function mapBackendConversation(row: BackendConversation): Conversation {
-  const assignedAgent = row.assigned_agent_user_id === '1c1e7606-b9dc-4604-8047-df86760809d7'
-    ? 'CARLOS'
-    : row.assigned_agent_user_id === '31cd8575-1b51-4c95-9d07-ffec6ce21fde' ? 'MARIA' : undefined;
   return {
     id: row.id,
     audience: row.audience,
@@ -215,7 +228,7 @@ function mapBackendConversation(row: BackendConversation): Conversation {
     status: row.status,
     contactName: row.contact_name,
     companyName: row.company_name,
-    assignedAgent,
+    assignedAgent: resolvePilotAgentId(row.assigned_agent_user_id),
     messages: (row.llf_conversation_messages ?? [])
       .sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map((message) => ({ id: message.id, author: message.author, authorLabel: message.author_label, body: message.body, createdAt: new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })),
