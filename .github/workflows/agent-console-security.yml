@@ -50,6 +50,7 @@ jobs:
   fail-closed-validation:
     name: Static security, typecheck and build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
