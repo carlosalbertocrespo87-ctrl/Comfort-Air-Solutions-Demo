@@ -6,13 +6,27 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const configsRoot = path.join(repoRoot, "artifacts/prospect-configs");
 const manifestPath = path.join(configsRoot, "published-generic-demos.json");
+const guardRelativePath = "scripts/verify-planned-demo-route-safety.mjs";
 const routePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-const publicConsumers = [
-  "scripts/build-generic-pages-demos.mjs",
-  "scripts/verify-published-demo-routes.mjs",
-  ".github/workflows/local-lead-forge-pages.yml",
-];
+const executableExtensions = new Set([
+  ".cjs",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".sh",
+  ".ts",
+  ".tsx",
+  ".yaml",
+  ".yml",
+]);
+const ignoredDirectories = new Set([
+  ".git",
+  ".next",
+  "build",
+  "coverage",
+  "dist",
+  "node_modules",
+]);
 
 const requiredDemoRules = {
   unofficialDemo: true,
@@ -113,13 +127,48 @@ function loadPublishedRoutes(records) {
   return routes;
 }
 
-function assertPublicationConsumersIgnorePlannedRoutes() {
-  for (const relativePath of publicConsumers) {
-    const source = fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
-    if (source.includes("plannedDemoRoute")) {
-      fail(`${relativePath}: public build/verification path must not consume plannedDemoRoute`);
+function toRepoRelative(fullPath) {
+  return path.relative(repoRoot, fullPath).split(path.sep).join("/");
+}
+
+function collectExecutableFiles(directory = repoRoot) {
+  const files = [];
+
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (entry.name.startsWith(".") && entry.name !== ".github") {
+      if (entry.isDirectory()) continue;
     }
+
+    const fullPath = path.join(directory, entry.name);
+    const relativePath = toRepoRelative(fullPath);
+
+    if (entry.isDirectory()) {
+      if (ignoredDirectories.has(entry.name)) continue;
+      files.push(...collectExecutableFiles(fullPath));
+      continue;
+    }
+
+    if (!entry.isFile()) continue;
+    if (relativePath === guardRelativePath) continue;
+    if (!executableExtensions.has(path.extname(entry.name).toLowerCase())) continue;
+    files.push({ fullPath, relativePath });
   }
+
+  return files;
+}
+
+function assertSourceDoesNotConsumePlannedRoute(relativePath, source) {
+  if (source.includes("plannedDemoRoute")) {
+    fail(`${relativePath}: executable source must not consume plannedDemoRoute; staging-only routes require explicit promotion to demoRoute`);
+  }
+}
+
+function assertExecutableSourcesIgnorePlannedRoutes() {
+  const files = collectExecutableFiles();
+  for (const file of files) {
+    assertSourceDoesNotConsumePlannedRoute(file.relativePath, fs.readFileSync(file.fullPath, "utf8"));
+  }
+  return files.length;
 }
 
 function validPlannedConfig(route = "safe-planned-demo") {
@@ -187,7 +236,16 @@ function runSelfTests() {
     /lowercase slug/,
   );
 
-  console.log("PLANNED_DEMO_ROUTE_SELF_TEST_PASS cases=6");
+  assert.doesNotThrow(
+    () => assertSourceDoesNotConsumePlannedRoute("safe.mjs", "const route = config.demoRoute;"),
+  );
+
+  assert.throws(
+    () => assertSourceDoesNotConsumePlannedRoute("unsafe.mjs", "const route = config.plannedDemoRoute;"),
+    /executable source must not consume plannedDemoRoute/,
+  );
+
+  console.log("PLANNED_DEMO_ROUTE_SELF_TEST_PASS cases=8");
 }
 
 runSelfTests();
@@ -195,8 +253,8 @@ runSelfTests();
 const records = loadRepositoryConfigs();
 const publishedRoutes = loadPublishedRoutes(records);
 const result = validatePlannedDemoConfigs(records, publishedRoutes);
-assertPublicationConsumersIgnorePlannedRoutes();
+const executableFilesScanned = assertExecutableSourcesIgnorePlannedRoutes();
 
 console.log(
-  `PLANNED_DEMO_ROUTE_SAFETY_PASS planned=${result.plannedCount} published=${publishedRoutes.size} consumers=${publicConsumers.length}`,
+  `PLANNED_DEMO_ROUTE_SAFETY_PASS planned=${result.plannedCount} published=${publishedRoutes.size} executable_files_scanned=${executableFilesScanned}`,
 );
