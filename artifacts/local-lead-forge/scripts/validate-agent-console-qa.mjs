@@ -22,6 +22,8 @@ const checks = [
   ['synthetic list filter', edge.includes(".eq('is_synthetic', true)")],
   ['synthetic mutation filter', edge.match(/\.eq\('is_synthetic', true\)/g)?.length >= 3],
   ['outbound message blocked', edge.includes('messaging_capability_blocked')],
+  ['resolve requires active agent state', edge.includes(".eq('status', 'AGENT_ACTIVE')")],
+  ['resolve fails closed when no row matches', edge.includes('conversation_not_resolvable') && edge.includes("{ error: 'conversation_not_resolvable' }, 409")],
   ['private realtime topic', sql.includes("'llf-agent-console-synthetic'") && sql.includes("extension = 'broadcast'")],
   ['fixed refresh payload', sql.includes("jsonb_build_object('reason', lower(tg_op), 'entity', tg_table_name)")],
   ['realtime capability remains gated', sql.includes('activation waits for two-device authenticated QA')],
