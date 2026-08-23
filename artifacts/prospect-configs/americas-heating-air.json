@@ -1,0 +1,33 @@
+{
+  "companyName": "America's Heating And Air Conditioning Services",
+  "shortName": "America's Heating & Air",
+  "website": "https://www.americasair.com/",
+  "emailDomain": null,
+  "publicEmail": null,
+  "phoneDisplay": "(678) 863-0869",
+  "serviceArea": "Winder, Barrow County and surrounding listed communities",
+  "publicContact": null,
+  "plannedDemoRoute": "americas-heating-air-demo",
+  "verifiedServices": [
+    "HVAC installation, repair and maintenance",
+    "HVAC upgrade and replacement",
+    "Commercial HVAC service",
+    "Indoor air quality and duct services"
+  ],
+  "verifiedHighlights": [
+    "The official website says the company serves Barrow County and surrounding communities and provides heating and cooling solutions for homes and businesses.",
+    "The official website publishes phone 678-863-0869, Georgia license CR109743 and a Winder mailing address.",
+    "The official website uses a business-controlled Contact Us form that collects name, phone, email, address, city and comments before a team follow-up."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path ahead of the existing team follow-up flow while preserving only verified service, contact and service-area claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
