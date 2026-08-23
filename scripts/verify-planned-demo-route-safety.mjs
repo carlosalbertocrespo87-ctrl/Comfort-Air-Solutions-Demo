@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const configsRoot = path.join(repoRoot, "artifacts/prospect-configs");
 const manifestPath = path.join(configsRoot, "published-generic-demos.json");
+const publicVerifierPath = path.join(repoRoot, "scripts/verify-published-demo-routes.mjs");
 const guardRelativePath = "scripts/verify-planned-demo-route-safety.mjs";
 const routePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const executableExtensions = new Set([
@@ -108,8 +109,28 @@ function loadRepositoryConfigs() {
     }));
 }
 
-function loadPublishedRoutes(records) {
+export function parseLegacyPublicRoutes(source) {
+  const legacyBlock = source.match(/const\s+legacy\s*=\s*\[([\s\S]*?)\n\];/);
+  if (!legacyBlock) {
+    fail("verify-published-demo-routes.mjs legacy route registry could not be parsed; review publication contract before proceeding");
+  }
+
   const routes = new Set();
+  const routeEntryPattern = /,\s*["']([a-z0-9]+(?:-[a-z0-9]+)*)["']\s*\]/g;
+  for (const match of legacyBlock[1].matchAll(routeEntryPattern)) {
+    routes.add(normalizeRoute(match[1], "legacy route", "verify-published-demo-routes.mjs"));
+  }
+
+  if (routes.size === 0) {
+    fail("verify-published-demo-routes.mjs legacy route registry parsed zero routes; review publication contract before proceeding");
+  }
+
+  return routes;
+}
+
+function loadPublishedRoutes(records) {
+  const verifierSource = fs.readFileSync(publicVerifierPath, "utf8");
+  const routes = parseLegacyPublicRoutes(verifierSource);
 
   for (const record of records) {
     if (record.config.demoRoute == null) continue;
@@ -245,7 +266,15 @@ function runSelfTests() {
     /executable source must not consume plannedDemoRoute/,
   );
 
-  console.log("PLANNED_DEMO_ROUTE_SELF_TEST_PASS cases=8");
+  const parsedLegacyRoutes = parseLegacyPublicRoutes(`const legacy = [\n  ["One", "one-demo"],\n  ["Two", "two-demo"],\n];`);
+  assert.deepEqual([...parsedLegacyRoutes], ["one-demo", "two-demo"]);
+
+  assert.throws(
+    () => parseLegacyPublicRoutes("const somethingElse = [];"),
+    /legacy route registry could not be parsed/,
+  );
+
+  console.log("PLANNED_DEMO_ROUTE_SELF_TEST_PASS cases=10");
 }
 
 runSelfTests();
