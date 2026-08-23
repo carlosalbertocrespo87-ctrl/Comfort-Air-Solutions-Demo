@@ -6,7 +6,7 @@ import {
   type AgentId,
   type Conversation,
 } from '@/lib/conversation-model';
-import { planAgentNotification, type AgentAvailability } from '@/lib/agent-notification-policy';
+import { planAgentNotification, type AgentAvailability, type NotificationPlan } from '@/lib/agent-notification-policy';
 import { callAgentOps, getStoredAgentSession } from '@/lib/supabase-session';
 import { subscribeToSyntheticRefresh, unsubscribeFromSyntheticRefresh, type SyntheticRealtimeState } from '@/lib/synthetic-realtime';
 
@@ -30,6 +30,13 @@ const seed: Conversation[] = [
     messages: [],
   },
 ];
+
+const EMPTY_NOTIFICATION_PLAN: NotificationPlan = {
+  shouldNotify: false,
+  recipients: [],
+  escalationLabel: 'NORMAL',
+  reason: 'No synthetic conversation selected.',
+};
 
 export default function AgentMobileDemoPage() {
   const session = getStoredAgentSession();
@@ -98,17 +105,17 @@ export default function AgentMobileDemoPage() {
   }, []);
 
   const notificationPlan = useMemo(
-    () => planAgentNotification(current, [
+    () => current ? planAgentNotification(current, [
       { agent: 'CARLOS', availability: availability.CARLOS },
       { agent: 'MARIA', availability: availability.MARIA },
-    ]),
+    ]) : EMPTY_NOTIFICATION_PLAN,
     [current, availability],
   );
 
-  const assignedElsewhere = !me || Boolean(current.assignedAgent && current.assignedAgent !== me);
+  const assignedElsewhere = !me || Boolean(current?.status === 'AGENT_ACTIVE' && current.assignedAgent !== me);
 
   const runConversationAction = async (action: 'claim' | 'resolve') => {
-    if (!me) {
+    if (!me || !current) {
       setActionState('error');
       return;
     }
@@ -146,12 +153,13 @@ export default function AgentMobileDemoPage() {
       <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d18] shadow-2xl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#050d18]/95 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2"><ChevronLeft className="h-4 w-4" /><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">Local Lead Forge</p><p className="text-xs font-black">Agent Console · QA</p></div></div>
-          <div className="flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold text-emerald-300"><ShieldCheck className="h-3.5 w-3.5" /> Authenticated</div>
+          <div className={`flex items-center gap-2 rounded-full border px-2 py-1 text-[9px] font-bold ${session ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/25 bg-rose-500/10 text-rose-300'}`}><ShieldCheck className="h-3.5 w-3.5" /> {session ? 'Authenticated' : 'Authentication required'}</div>
         </header>
 
         <section className="border-b border-white/10 px-4 py-3">
           <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] text-slate-400">Signed in as</p><p className="text-sm font-black">{operatorLabel}</p></div><Smartphone className="h-5 w-5 text-orange-400" /></div>
-          {!me && <p className="mt-2 text-[9px] text-rose-300">This authenticated account is not mapped to an approved pilot operator. Protected actions stay blocked.</p>}
+          {!session && <p className="mt-2 text-[9px] text-rose-300">No authenticated agent session is available. Protected actions stay blocked.</p>}
+          {session && !me && <p className="mt-2 text-[9px] text-rose-300">This authenticated account is not mapped to an approved pilot operator. Protected actions stay blocked.</p>}
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(['AVAILABLE','BUSY','OFFLINE'] as const).map((state) => <button key={state} disabled={!me} onClick={() => void updateAvailability(state)} className={`rounded-lg border px-2 py-2 text-[9px] font-black ${me && availability[me] === state ? 'border-orange-500/40 bg-orange-500/10 text-orange-300' : 'border-white/10 bg-white/[0.03] text-slate-400'} disabled:cursor-not-allowed disabled:opacity-30`}>{state}</button>)}
           </div>
@@ -164,6 +172,7 @@ export default function AgentMobileDemoPage() {
             {dataState === 'error' ? 'Secure synthetic data could not be loaded.' : realtimeState === 'SUBSCRIBED' ? 'Private Realtime connected · synthetic data only' : 'Connecting private Realtime…'}
           </div>
           <div className="mt-3 space-y-2">
+            {conversations.length === 0 && <div className="rounded-xl border border-white/10 bg-[#07111f] p-4 text-[10px] text-slate-400">No synthetic conversations are currently available. No conversation action can be taken.</div>}
             {conversations.map((conversation) => (
               <button key={conversation.id} onClick={() => setSelectedId(conversation.id)} className={`w-full rounded-xl border p-3 text-left ${selectedId === conversation.id ? 'border-orange-500/35 bg-orange-500/[0.07]' : 'border-white/10 bg-[#07111f]'}`}>
                 <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black">{conversation.contactName}</p><p className="text-[9px] text-slate-400">{conversation.companyName} · {conversation.channel}</p></div><span className={`rounded-full px-2 py-1 text-[8px] font-black ${conversation.status === 'WAITING_FOR_AGENT' ? 'bg-rose-500/10 text-rose-300' : conversation.status === 'AGENT_ACTIVE' ? 'bg-orange-500/10 text-orange-300' : 'bg-emerald-500/10 text-emerald-300'}`}>{conversation.status}</span></div>
@@ -171,7 +180,7 @@ export default function AgentMobileDemoPage() {
             ))}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-white/10 bg-[#07111f] p-4">
+          {current ? <div className="mt-4 rounded-2xl border border-white/10 bg-[#07111f] p-4">
             <div className="flex items-center justify-between"><div><p className="text-xs font-black">{current.contactName}</p><p className="text-[9px] text-slate-500">{current.audience} · {current.channel}</p></div>{current.audience === 'CLIENT' ? <Users className="h-4 w-4 text-blue-300" /> : <MessageCircle className="h-4 w-4 text-orange-300" />}</div>
 
             <div className="mt-3 space-y-2">
@@ -182,7 +191,7 @@ export default function AgentMobileDemoPage() {
 
             <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center gap-2 text-[9px] font-black text-slate-300"><Bell className="h-3.5 w-3.5" /> Notification plan</div><p className="mt-2 text-[9px] text-slate-400">Primary: <b className="text-white">{notificationPlan.primary ?? 'None'}</b> · Fallback: <b className="text-white">{notificationPlan.fallback ?? 'None'}</b></p></div>
 
-            {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : '—'}</b>. Claim lock prevents a second specialist from replying.</p>}
+            {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : 'Unknown / not in pilot'}</b>. Claim lock prevents a second specialist from replying.</p>}
 
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button disabled={!me || current.status !== 'WAITING_FOR_AGENT' || actionState === 'saving'} onClick={() => void runConversationAction('claim')} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {operatorLabel}</button>
@@ -190,7 +199,7 @@ export default function AgentMobileDemoPage() {
               <button disabled className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI — blocked during QA</button>
             </div>
             {actionState === 'error' && <p className="mt-2 text-[9px] text-rose-300">The protected backend rejected the action. Refresh and verify assignment.</p>}
-          </div>
+          </div> : <div className="mt-4 rounded-2xl border border-white/10 bg-[#07111f] p-4 text-[10px] text-slate-400">Select a synthetic conversation after protected data is available.</div>}
 
           <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3">
             <textarea disabled rows={3} placeholder="Real sending remains disabled during authenticated QA." className="w-full resize-none rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] text-slate-400 outline-none" />
