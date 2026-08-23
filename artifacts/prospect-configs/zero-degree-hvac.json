@@ -1,0 +1,34 @@
+{
+  "companyName": "Zero Degree HVAC",
+  "shortName": "Zero Degree HVAC",
+  "website": "https://zerodegreehvac.co/",
+  "emailDomain": "zerodegreehvac.co",
+  "publicEmail": null,
+  "phoneDisplay": "(470) 738-3570",
+  "serviceArea": "Loganville, Gwinnett County and surrounding listed service areas",
+  "publicContact": null,
+  "plannedDemoRoute": "zero-degree-hvac-demo",
+  "verifiedServices": [
+    "Residential HVAC service and repair",
+    "Commercial HVAC service",
+    "HVAC maintenance",
+    "HVAC installation",
+    "New-home and custom-build HVAC work"
+  ],
+  "verifiedHighlights": [
+    "The official website presents Zero Degree HVAC as a faith-based, family-owned and operated HVAC company with more than 12 years of hands-on experience.",
+    "The official website publishes phone 470-738-3570 and a business-controlled free-quote form.",
+    "No public direct email or decision-maker identity is asserted in this research config."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path to the existing quote funnel while preserving only verified service and contact claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
