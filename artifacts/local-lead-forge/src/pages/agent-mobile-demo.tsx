@@ -24,6 +24,7 @@ export default function AgentMobileDemoPage() {
   const [realtimeState, setRealtimeState] = useState<SyntheticRealtimeState>('CONNECTING');
   const [actionState, setActionState] = useState<'idle' | 'saving' | 'error'>('idle');
   const refreshChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
+  const sessionGenerationRef = useRef(0);
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
 
   const invalidateProtectedView = () => {
@@ -32,11 +33,28 @@ export default function AgentMobileDemoPage() {
     setDataState('error');
   };
 
+  const resetSessionBoundUi = (next: LLFAgentSession | null) => {
+    const nextAgent = resolvePilotAgentId(next?.agentUserId);
+    const nextAvailability = (next?.availability ?? 'OFFLINE') as AgentAvailability;
+    setAvailability({
+      CARLOS: nextAgent === 'CARLOS' ? nextAvailability : 'OFFLINE',
+      MARIA: nextAgent === 'MARIA' ? nextAvailability : 'OFFLINE',
+    });
+    setAvailabilityState('idle');
+    setActionState('idle');
+    setRealtimeState('CONNECTING');
+    setConversations([]);
+    setSelectedId('');
+    setDataState(next ? 'loading' : 'error');
+  };
+
   useEffect(() => {
     const syncSession = () => {
       const next = getStoredAgentSession();
+      sessionGenerationRef.current += 1;
+      refreshChainRef.current = Promise.resolve(false);
       setSession(next);
-      if (!next) invalidateProtectedView();
+      resetSessionBoundUi(next);
     };
     window.addEventListener(AGENT_SESSION_CHANGED_EVENT, syncSession);
     return () => window.removeEventListener(AGENT_SESSION_CHANGED_EVENT, syncSession);
@@ -44,16 +62,18 @@ export default function AgentMobileDemoPage() {
 
   const loadSyntheticConversations = (): Promise<boolean> => {
     const execute = async (): Promise<boolean> => {
+      const generation = sessionGenerationRef.current;
       if (!me) { invalidateProtectedView(); return false; }
       try {
         const result = await callAgentOps<{ ok: boolean; conversations: BackendConversation[] }>({ action: 'list_synthetic_conversations' });
+        if (generation !== sessionGenerationRef.current) return false;
         const mapped = result.conversations.map(mapBackendConversation);
         setConversations(mapped);
         setSelectedId((value) => mapped.some((item) => item.id === value) ? value : (mapped[0]?.id ?? ''));
         setDataState('ready');
         return true;
       } catch {
-        invalidateProtectedView();
+        if (generation === sessionGenerationRef.current) invalidateProtectedView();
         return false;
       }
     };
@@ -90,27 +110,35 @@ export default function AgentMobileDemoPage() {
 
   const runConversationAction = async (action: 'claim' | 'resolve') => {
     if (!me || !current || actionState === 'saving') { setActionState('error'); return; }
+    const generation = sessionGenerationRef.current;
     setActionState('saving');
     try {
       await callAgentOps({ action, conversation_id: current.id });
+      if (generation !== sessionGenerationRef.current) return;
       const refreshed = await loadSyntheticConversations();
-      setActionState(refreshed ? 'idle' : 'error');
-    } catch { setActionState('error'); }
+      if (generation === sessionGenerationRef.current) setActionState(refreshed ? 'idle' : 'error');
+    } catch {
+      if (generation === sessionGenerationRef.current) setActionState('error');
+    }
   };
 
   const updateAvailability = async (next: AgentAvailability) => {
     if (!me || availabilityState === 'saving') { setAvailabilityState('error'); return; }
+    const generation = sessionGenerationRef.current;
     const previous = availability[me];
     setAvailability((value) => ({ ...value, [me]: next }));
     setAvailabilityState('saving');
     try {
       const result = await callAgentOps<{ ok: boolean; availability: AgentAvailability }>({ action: 'set_availability', availability: next });
+      if (generation !== sessionGenerationRef.current) return;
       if (!result.ok || !['AVAILABLE','BUSY','OFFLINE'].includes(result.availability)) throw new Error('availability_confirmation_invalid');
       setAvailability((value) => ({ ...value, [me]: result.availability }));
       setAvailabilityState('saved');
     } catch {
-      setAvailability((value) => ({ ...value, [me]: previous }));
-      setAvailabilityState('error');
+      if (generation === sessionGenerationRef.current) {
+        setAvailability((value) => ({ ...value, [me]: previous }));
+        setAvailabilityState('error');
+      }
     }
   };
 
