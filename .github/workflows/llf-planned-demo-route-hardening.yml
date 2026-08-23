@@ -1,0 +1,18 @@
+name: LLF Planned Demo Route Hardening
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static-access-hardening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate staging-route static access remains non-executable
+        run: node scripts/verify-planned-demo-route-static-access.mjs
