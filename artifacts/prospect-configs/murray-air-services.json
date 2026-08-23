@@ -1,0 +1,33 @@
+{
+  "companyName": "Murray Air Services LLC",
+  "shortName": "Murray Air Services",
+  "website": "https://murrayairservices.com/",
+  "emailDomain": null,
+  "publicEmail": null,
+  "phoneDisplay": "(470) 940-8635",
+  "serviceArea": "Grayson, Snellville and Loganville",
+  "publicContact": null,
+  "plannedDemoRoute": "murray-air-services-demo",
+  "verifiedServices": [
+    "Residential air conditioning and heating service",
+    "Commercial air conditioning and heating service",
+    "HVAC diagnostics and repair",
+    "HVAC equipment installation"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Murray Air Services as a state-certified and licensed residential and commercial heating and air conditioning service and repair company with more than 23 years of industry experience.",
+    "The official website says the company serves Grayson, Snellville and Loganville and publishes phone 470-940-8635.",
+    "The official website publishes license CN211147 and provides a simple Name, Email and Message contact form."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual qualification step to a simple contact-form path while preserving only verified residential, commercial, service-area and licensing claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
