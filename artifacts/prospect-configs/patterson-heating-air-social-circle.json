@@ -1,0 +1,34 @@
+{
+  "companyName": "Patterson Heating & Air Conditioning, Inc.",
+  "shortName": "Patterson Heating & Air Conditioning",
+  "website": "https://pattersonairconditioning.com/",
+  "emailDomain": null,
+  "publicEmail": null,
+  "phoneDisplay": "(770) 464-5500",
+  "serviceArea": "Social Circle, Covington, Madison, Lake Oconee and surrounding listed communities",
+  "publicContact": null,
+  "plannedDemoRoute": "patterson-heating-air-social-circle-demo",
+  "verifiedServices": [
+    "Residential heating and air conditioning service",
+    "Commercial HVAC service",
+    "HVAC repair and maintenance",
+    "HVAC installation and replacement",
+    "Indoor air quality and duct service"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Patterson Heating & Air Conditioning, Inc. as family owned and operated and lists service across Social Circle, Covington, Madison, Lake Oconee and surrounding communities.",
+    "The official website publishes office address 2384 Hancock Rd, Social Circle, GA 30025 and phone 770-464-5500.",
+    "The official website uses a business-controlled friendly-quote/contact form and lists residential and commercial heating, cooling, maintenance, installation and indoor-air services."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path ahead of the existing quote/contact form while keeping this Social Circle company clearly separated from unrelated similarly named HVAC businesses.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
