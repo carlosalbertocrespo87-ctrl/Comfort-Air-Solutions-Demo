@@ -1,0 +1,31 @@
+{
+  "companyName": "S. J. Moore Heating & Air Conditioning, Inc.",
+  "shortName": "S. J. Moore Heating & Air Conditioning",
+  "website": "https://sjmoorehvac.com/",
+  "emailDomain": "sjmoorehvac.com",
+  "publicEmail": null,
+  "phoneDisplay": "(770) 982-3939",
+  "serviceArea": "Dacula, Gwinnett County and surrounding listed service areas",
+  "publicContact": "Stephen Moore",
+  "plannedDemoRoute": "sj-moore-heating-air-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service"
+  ],
+  "verifiedHighlights": [
+    "The official website presents S. J. Moore Heating & Air Conditioning as a family-owned residential and commercial HVAC business with more than 32 years of experience.",
+    "The official website publishes phone 770-982-3939 and a business-controlled contact form.",
+    "The official website is signed by Stephen Moore; any owner/officer-directed outreach must separately revalidate the current role before personalization."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path to the existing HVAC site while preserving only verified service and contact claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
