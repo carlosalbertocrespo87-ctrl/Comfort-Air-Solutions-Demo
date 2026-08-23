@@ -1,0 +1,34 @@
+{
+  "companyName": "JSR Heating and Cooling Inc.",
+  "shortName": "JSR Heating and Cooling",
+  "website": "https://www.jsrheatingandcooling.com/",
+  "emailDomain": "jsrheatingandcooling.com",
+  "publicEmail": "info@jsrheatingandcooling.com",
+  "phoneDisplay": "(770) 784-1618",
+  "serviceArea": "Covington and surrounding areas",
+  "publicContact": null,
+  "plannedDemoRoute": "jsr-heating-cooling-demo",
+  "verifiedServices": [
+    "Heating and cooling repair",
+    "Residential HVAC installation",
+    "Light commercial HVAC installation",
+    "Preventive maintenance and service agreements",
+    "Indoor air quality and air purification"
+  ],
+  "verifiedHighlights": [
+    "The official website states that JSR Heating and Cooling was founded in 2003 and operates from Covington, Georgia.",
+    "The official website describes JSR as family-owned and operated and serving residential and light commercial heating, cooling, and air-purification needs.",
+    "The official website publishes phone 770-784-1618, email info@jsrheatingandcooling.com, address 8316 Hazelbrand Rd., Covington, and a written contact form."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual lead qualification and follow-up path to a long-established local HVAC site while preserving only verified residential and light-commercial service claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
