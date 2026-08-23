@@ -1,0 +1,35 @@
+{
+  "companyName": "Horne Reliable Services, LLC",
+  "shortName": "Horne Reliable Services",
+  "website": "https://hornereliable.com/",
+  "emailDomain": "hornereliableservice.com",
+  "publicEmail": "lhorne@hornereliableservice.com",
+  "phoneDisplay": "(706) 431-3644",
+  "serviceArea": "Monroe, Winder, Madison, Watkinsville and surrounding cities",
+  "publicContact": null,
+  "plannedDemoRoute": "horne-reliable-services-demo",
+  "verifiedServices": [
+    "HVAC diagnostics and repair",
+    "HVAC system replacement and installation",
+    "Heating and cooling tune-ups",
+    "Mini-split installation",
+    "Duct cleaning and indoor air quality service",
+    "Residential and commercial HVAC maintenance contracts"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Horne Reliable Services as local, family owned and operated, with more than 40 years of experience across construction, HVAC and home remodeling.",
+    "The official website publishes phone 706-431-3644, email lhorne@hornereliableservice.com and license GA108317R.",
+    "The official website lists Monroe, Winder, Madison and Watkinsville among its service areas and provides contact, schedule and free-estimate paths."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual lead qualification path ahead of the existing contact and scheduling options while preserving only verified HVAC, service-area and experience claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
