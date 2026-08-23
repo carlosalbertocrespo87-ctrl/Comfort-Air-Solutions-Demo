@@ -5,6 +5,7 @@ const edge = await readFile(new URL('../supabase/functions/llf-agent-ops/index.t
 const sql = await readFile(new URL('../backend/012_synthetic_realtime_console.sql', import.meta.url), 'utf8');
 const page = await readFile(new URL('../src/pages/agent-mobile-demo.tsx', import.meta.url), 'utf8');
 const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts', import.meta.url), 'utf8');
+const model = await readFile(new URL('../src/lib/conversation-model.ts', import.meta.url), 'utf8');
 const session = await readFile(new URL('../src/lib/supabase-session.ts', import.meta.url), 'utf8');
 const realtime = await readFile(new URL('../src/lib/synthetic-realtime.ts', import.meta.url), 'utf8');
 const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md', import.meta.url), 'utf8');
@@ -27,6 +28,11 @@ const checks = [
   ['claim remains atomic on waiting and unassigned state', edge.includes(".eq('status', 'WAITING_FOR_AGENT').is('assigned_agent_user_id', null)") && edge.includes('conversation_not_claimable')],
   ['resolve requires active agent state', edge.includes(".eq('status', 'AGENT_ACTIVE')")],
   ['resolve fails closed when no row matches', edge.includes('conversation_not_resolvable') && edge.includes("{ error: 'conversation_not_resolvable' }, 409")],
+  ['pilot operator identity is centralized by auth user id', model.includes('PILOT_AGENT_USER_IDS') && model.includes('resolvePilotAgentId')],
+  ['display-name heuristics do not choose operator identity', !page.includes("displayName.toLowerCase().includes('maria')")],
+  ['page does not duplicate pilot auth UUID mapping', !page.includes('1c1e7606-b9dc-4604-8047-df86760809d7') && !page.includes('31cd8575-1b51-4c95-9d07-ffec6ce21fde')],
+  ['unknown pilot operator blocks protected data load', page.includes("if (!me) {\n      setDataState('error');\n      return false;")],
+  ['unknown pilot operator blocks protected actions', page.includes("if (!me) {\n      setActionState('error');") && page.includes("if (!me) {\n      setAvailabilityState('error');")],
   ['invalid token expiry fails closed', session.includes("throw new Error('invalid_token_expiry')") && session.includes('Number.isFinite(session.expiresAt)')],
   ['trusted-device client guard remains fail closed', session.includes("session.deviceTrustStatus !== 'TRUSTED'")],
   ['auth hash is cleared from visible URL before network use', session.includes('history.replaceState({}, document.title, window.location.pathname + window.location.search)')],
