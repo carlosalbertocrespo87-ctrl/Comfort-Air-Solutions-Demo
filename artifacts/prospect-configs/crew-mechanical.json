@@ -1,0 +1,35 @@
+{
+  "companyName": "Crew Mechanical (L.L.L.P.)",
+  "shortName": "Crew Mechanical",
+  "website": "https://crewmechanical.com/",
+  "emailDomain": "crewmechanical.com",
+  "publicEmail": "info@crewmechanical.com",
+  "phoneDisplay": "(770) 847-6526",
+  "serviceArea": "Greater Atlanta Area",
+  "publicContact": null,
+  "plannedDemoRoute": "crew-mechanical-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "Preventative HVAC maintenance",
+    "HVAC installation and replacement",
+    "Indoor air quality service",
+    "Commercial refrigeration service"
+  ],
+  "verifiedHighlights": [
+    "The official website presents Crew Mechanical as bonded, licensed and insured and serving the Greater Atlanta Area.",
+    "The official contact page publishes phone 770-847-6526, email info@crewmechanical.com, an after-hours maintenance line and a basic free-quote/contact path.",
+    "The Georgia Secretary of State lists Crew Mechanical (L.L.L.P.) as Active/Compliance for 2026 and classifies the entity under plumbing, heating and air-conditioning contractors."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual qualification step ahead of the existing free-quote/contact path for residential, commercial and after-hours inquiries while preserving verified company and service claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
