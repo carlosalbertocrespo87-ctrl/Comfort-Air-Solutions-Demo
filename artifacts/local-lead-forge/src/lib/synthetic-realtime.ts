@@ -17,6 +17,7 @@ export async function subscribeToSyntheticRefresh(
 ): Promise<RealtimeChannel> {
   const session = getStoredAgentSession();
   if (!session) throw new Error('authentication_required');
+  if (session.deviceTrustStatus !== 'TRUSTED') throw new Error('trusted_device_required');
 
   await realtimeClient.realtime.setAuth(session.accessToken);
   const channel = realtimeClient
