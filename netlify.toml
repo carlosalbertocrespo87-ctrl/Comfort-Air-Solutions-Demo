@@ -1,0 +1,12 @@
+# QA carrier only: ensure the private Agent Console SPA route resolves on Netlify Deploy Preview.
+# PR #94 remains DO NOT MERGE; this file exists only to make physical QA reachable.
+
+[[redirects]]
+  from = "/agent-demo"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/agent-demo/*"
+  to = "/index.html"
+  status = 200
