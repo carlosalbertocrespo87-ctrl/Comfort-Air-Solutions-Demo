@@ -5,6 +5,7 @@ on:
     paths:
       - "artifacts/local-lead-forge/backend/**"
       - "artifacts/local-lead-forge/src/lib/agent-notification-policy.ts"
+      - "artifacts/local-lead-forge/src/lib/conversation-model.ts"
       - "artifacts/local-lead-forge/src/lib/supabase-session.ts"
       - "artifacts/local-lead-forge/src/lib/synthetic-realtime.ts"
       - "artifacts/local-lead-forge/src/pages/agent-mobile-demo.tsx"
@@ -24,6 +25,7 @@ on:
     paths:
       - "artifacts/local-lead-forge/backend/**"
       - "artifacts/local-lead-forge/src/lib/agent-notification-policy.ts"
+      - "artifacts/local-lead-forge/src/lib/conversation-model.ts"
       - "artifacts/local-lead-forge/src/lib/supabase-session.ts"
       - "artifacts/local-lead-forge/src/lib/synthetic-realtime.ts"
       - "artifacts/local-lead-forge/src/pages/agent-mobile-demo.tsx"
