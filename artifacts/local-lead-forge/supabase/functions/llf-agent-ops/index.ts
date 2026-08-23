@@ -176,10 +176,18 @@ Deno.serve(async (req: Request) => {
 
   if (action === 'resolve') {
     const now = new Date().toISOString();
-    const { error } = await admin.from('llf_conversations').update({ status: 'RESOLVED', resolved_at: now, updated_at: now }).eq('id', conversationId).eq('is_synthetic', true).eq('assigned_agent_user_id', user.id);
+    const { data: resolved, error } = await admin.from('llf_conversations')
+      .update({ status: 'RESOLVED', resolved_at: now, updated_at: now })
+      .eq('id', conversationId)
+      .eq('is_synthetic', true)
+      .eq('status', 'AGENT_ACTIVE')
+      .eq('assigned_agent_user_id', user.id)
+      .select('id,audience,channel')
+      .maybeSingle();
     if (error) return json(req, { error: 'resolve_failed' }, 500);
+    if (!resolved) return json(req, { error: 'conversation_not_resolvable' }, 409);
     await audit(admin, conversationId, user.id, 'RESOLVE_CONVERSATION', { synthetic: true, trusted_device_id: trustedDevice.id });
-    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: conversation.audience, channel: conversation.channel, interaction_type: 'RESOLUTION', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, outcome: 'RESOLVED' });
+    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: resolved.audience, channel: resolved.channel, interaction_type: 'RESOLUTION', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, outcome: 'RESOLVED' });
     return json(req, { ok: true, resolved_at: now });
   }
 
