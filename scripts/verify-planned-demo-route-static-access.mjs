@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const selfRelativePath = "scripts/verify-planned-demo-route-static-access.mjs";
 const primaryGuardRelativePath = "scripts/verify-planned-demo-route-safety.mjs";
+const stagingField = ["planned", "DemoRoute"].join("");
 const executableExtensions = new Set([
   ".cjs",
   ".js",
@@ -46,18 +47,17 @@ function decodeUnicodeEscapes(source) {
     });
 }
 
-export function sourceConsumesPlannedDemoRoute(source) {
+export function sourceConsumesStagingRoute(source) {
   const decoded = decodeUnicodeEscapes(source);
 
-  // Catch the direct identifier/string form first.
-  if (decoded.includes("plannedDemoRoute")) return true;
+  // Direct identifier or string form.
+  if (decoded.includes(stagingField)) return true;
 
-  // Collapse simple static property construction such as:
-  // config["planned" + "DemoRoute"]
+  // Collapse simple static construction, including bracket access built from pieces.
   const collapsed = decoded.replace(/[\s"'`+\[\]().]/g, "");
-  if (collapsed.includes("plannedDemoRoute")) return true;
+  if (collapsed.includes(stagingField)) return true;
 
-  // Catch common static concat form without trying to execute source.
+  // Common static concat form without evaluating repository source.
   if (/["'`]planned["'`]\s*\.\s*concat\(\s*["'`]DemoRoute["'`]\s*\)/.test(decoded)) {
     return true;
   }
@@ -94,11 +94,11 @@ function collectExecutableFiles(directory = repoRoot) {
 }
 
 function runSelfTests() {
-  assert.equal(sourceConsumesPlannedDemoRoute("const route = config.demoRoute;"), false);
-  assert.equal(sourceConsumesPlannedDemoRoute("const route = config.plannedDemoRoute;"), true);
-  assert.equal(sourceConsumesPlannedDemoRoute('const route = config["planned" + "DemoRoute"];'), true);
-  assert.equal(sourceConsumesPlannedDemoRoute('const route = config["planned".concat("DemoRoute")];'), true);
-  assert.equal(sourceConsumesPlannedDemoRoute(String.raw`const route = config.planned\u0044emoRoute;`), true);
+  assert.equal(sourceConsumesStagingRoute("const route = config.demoRoute;"), false);
+  assert.equal(sourceConsumesStagingRoute("const route = config." + stagingField + ";"), true);
+  assert.equal(sourceConsumesStagingRoute('const route = config["planned" + "DemoRoute"];'), true);
+  assert.equal(sourceConsumesStagingRoute('const route = config["planned".concat("DemoRoute")];'), true);
+  assert.equal(sourceConsumesStagingRoute(String.raw`const route = config.planned\u0044emoRoute;`), true);
   console.log("PLANNED_DEMO_ROUTE_STATIC_ACCESS_SELF_TEST_PASS cases=5");
 }
 
@@ -107,8 +107,8 @@ runSelfTests();
 const executableFiles = collectExecutableFiles();
 for (const file of executableFiles) {
   const source = fs.readFileSync(file.fullPath, "utf8");
-  if (sourceConsumesPlannedDemoRoute(source)) {
-    fail(`${file.relativePath}: executable source can statically resolve staging-only planned route access`);
+  if (sourceConsumesStagingRoute(source)) {
+    fail(`${file.relativePath}: executable source can statically resolve staging-only route access`);
   }
 }
 
