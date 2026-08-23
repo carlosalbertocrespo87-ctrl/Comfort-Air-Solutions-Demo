@@ -1,0 +1,33 @@
+{
+  "companyName": "Infinity Heating & Air LLC",
+  "shortName": "Infinity Heating & Air",
+  "website": "https://www.infinityairga.com/",
+  "emailDomain": "infinityairga.com",
+  "publicEmail": "info@infinityairga.com",
+  "phoneDisplay": "(678) 769-8790",
+  "serviceArea": "Winder, Georgia and surrounding service area",
+  "publicContact": null,
+  "plannedDemoRoute": "infinity-heating-air-demo",
+  "verifiedServices": [
+    "Heating and air conditioning repair",
+    "HVAC installation",
+    "HVAC maintenance",
+    "Residential and business comfort service"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Infinity Heating & Air as an experienced professional HVAC contractor based in Winder, Georgia.",
+    "The official website publishes phone 678-769-8790 and business email info@infinityairga.com.",
+    "The official website provides Request A Service Call and Contact Us paths and lists repair, installation and maintenance service for home or business comfort needs."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual qualification path to a simple service-call/contact funnel while preserving only verified service and contact claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
