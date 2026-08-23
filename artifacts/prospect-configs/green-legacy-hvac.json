@@ -1,0 +1,33 @@
+{
+  "companyName": "Green Legacy HVAC LLC",
+  "shortName": "Green Legacy HVAC",
+  "website": "https://greenlegacyhvac.com/",
+  "emailDomain": "greenlegacyhvac.com",
+  "publicEmail": null,
+  "phoneDisplay": "(404) 596-3087",
+  "serviceArea": "Covington and Metro Atlanta",
+  "publicContact": "Ethan Green",
+  "plannedDemoRoute": "green-legacy-hvac-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "HVAC maintenance",
+    "HVAC installation and replacement"
+  ],
+  "verifiedHighlights": [
+    "The official website identifies Green Legacy HVAC as owned by Ethan Green, a Covington native and third-generation business owner.",
+    "The official website describes the company as local and family-owned and serving Metro Atlanta from Covington, Georgia.",
+    "The official website publishes phone 404-596-3087 and lists residential HVAC, commercial HVAC, maintenance, and installation/replacement services."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual lead qualification path to a local owner-led HVAC site while preserving only verified service and ownership claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
