@@ -42,12 +42,28 @@ function describeDevice(): { deviceLabel: string; platform: string; browser: str
   return { deviceLabel: `${platform} · ${browser}`, platform, browser };
 }
 
+function parseTokenExpiry(params: URLSearchParams): number | undefined {
+  const expiresAtRaw = params.get('expires_at');
+  const expiresInRaw = params.get('expires_in');
+  if (!expiresAtRaw && !expiresInRaw) return undefined;
+
+  if (expiresAtRaw) {
+    const parsed = Number(expiresAtRaw);
+    if (!Number.isFinite(parsed) || parsed <= 0) throw new Error('invalid_token_expiry');
+    return parsed;
+  }
+
+  const expiresIn = Number(expiresInRaw);
+  if (!Number.isFinite(expiresIn) || expiresIn <= 0) throw new Error('invalid_token_expiry');
+  return Math.floor(Date.now() / 1000) + expiresIn;
+}
+
 export function getStoredAgentSession(): LLFAgentSession | null {
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw) as LLFAgentSession;
-    if (session.expiresAt && Date.now() >= session.expiresAt * 1000) {
+    if (session.expiresAt !== undefined && (!Number.isFinite(session.expiresAt) || Date.now() >= session.expiresAt * 1000)) {
       window.sessionStorage.removeItem(SESSION_KEY);
       return null;
     }
@@ -93,6 +109,7 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
   }
 
   try {
+    const expiresAt = parseTokenExpiry(params);
     const sessionInfo = await callWithToken<{
       ok: boolean;
       agent?: { user_id: string; display_name: string; availability: 'AVAILABLE' | 'BUSY' | 'OFFLINE' };
@@ -120,14 +137,6 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
       clearStoredAgentSession();
       return 'error';
     }
-
-    const expiresAtRaw = params.get('expires_at');
-    const expiresInRaw = params.get('expires_in');
-    const expiresAt = expiresAtRaw
-      ? Number(expiresAtRaw)
-      : expiresInRaw
-        ? Math.floor(Date.now() / 1000) + Number(expiresInRaw)
-        : undefined;
 
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({
       accessToken,
