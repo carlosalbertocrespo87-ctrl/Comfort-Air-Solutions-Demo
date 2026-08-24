@@ -1,0 +1,32 @@
+{
+  "companyName": "Seasons Choice",
+  "shortName": "Seasons Choice",
+  "website": "https://seasonschoice.com/",
+  "emailDomain": null,
+  "publicEmail": "seasonschoice@icloud.com",
+  "phoneDisplay": "(678) 316-3005",
+  "serviceArea": "Buford and surrounding listed service areas",
+  "publicContact": null,
+  "plannedDemoRoute": "seasons-choice-demo",
+  "verifiedServices": [
+    "Heating service",
+    "Air conditioning service",
+    "Duct service"
+  ],
+  "verifiedHighlights": [
+    "The official website presents Seasons Choice as a family-owned HVAC business in the Buford area.",
+    "The official website publishes seasonschoice@icloud.com, phone 678-316-3005 and a simple contact/free-quote form.",
+    "The reviewed first-party site is comparatively lightweight and no true online booking or live-chat flow was observed."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification step before the existing contact/free-quote path while preserving only verified service and contact claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
