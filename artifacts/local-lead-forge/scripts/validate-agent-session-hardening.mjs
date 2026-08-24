@@ -10,7 +10,7 @@ const hashClearIndex = session.indexOf('history.replaceState({}, document.title,
 const establishIndex = session.indexOf('await establishAgentSession(accessToken, expiresAt)');
 
 const checks = [
-  ['Option A remains the documented first-live recommendation', hardening.includes('Option A — ephemeral Agent session for first live release') && hardening.includes('implement Option A first')],
+  ['Option A remains the documented first-live candidate', hardening.includes('Option A — ephemeral Agent session for first live release') && hardening.includes('Selected implementation candidate: DRAFT PR #211')],
   ['Issue #210 remains the pre-live controller', hardening.includes('Controller: GitHub Issue #210')],
   ['agent session is written only to sessionStorage', session.includes('window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))') && !session.includes('window.localStorage.setItem(SESSION_KEY')],
   ['durable localStorage writes are limited to the non-secret device install identifier', durableSessionWrites.length === 1 && durableSessionWrites[0] === 'DEVICE_INSTALL_KEY'],
