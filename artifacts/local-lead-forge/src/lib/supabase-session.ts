@@ -131,6 +131,30 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
   }
 }
 
+export async function reconcileStoredDeviceTrust(): Promise<LLFAgentSession | null> {
+  const session = getStoredAgentSession();
+  if (!session || session.deviceTrustStatus === 'TRUSTED' || session.deviceTrustStatus === 'REVOKED') return session;
+  try {
+    const deviceHash = await getCurrentDeviceHash();
+    const result = await callWithToken<{ ok: boolean; device?: { id: string; trust_status: DeviceTrustStatus } | null }>(session.accessToken, {
+      action: 'device_status',
+      device_hash: deviceHash,
+    });
+    if (!result.ok || !result.device) return session;
+    const updated: LLFAgentSession = {
+      ...session,
+      deviceId: result.device.id,
+      deviceTrustStatus: result.device.trust_status,
+    };
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+    if (updated.deviceTrustStatus !== session.deviceTrustStatus) emitSessionChanged();
+    return updated;
+  } catch (error) {
+    if (error instanceof Error && (error.message.endsWith('_401') || error.message.endsWith('_403'))) clearStoredAgentSession();
+    return getStoredAgentSession();
+  }
+}
+
 export async function callAgentOps<T = unknown>(body: Record<string, unknown>): Promise<T> {
   const session = getStoredAgentSession();
   if (!session) throw new Error('authentication_required');
