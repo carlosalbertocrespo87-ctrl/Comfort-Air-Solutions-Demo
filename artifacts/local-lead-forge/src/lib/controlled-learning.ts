@@ -25,6 +25,8 @@ export type LearningQueueItem = {
   mergedIntoId?: string;
 };
 
+export const MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW = 3;
+
 const QUEUE_STATUSES = new Set<LearningQueueStatus>(['OBSERVING','REVIEW_READY','RESOLVED','DISMISSED','MERGED','ARCHIVED']);
 const ANSWER_STATUSES = new Set<LearningAnswerStatus>(['DRAFT_ONLY','APPROVED','ARCHIVED']);
 
@@ -111,11 +113,15 @@ export function updateLearningDraft(items: LearningQueueItem[], itemId: string, 
     : item);
 }
 
+export function hasLearningEvidenceForReview(item: LearningQueueItem): boolean {
+  return new Set(item.conversationIds).size >= MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW;
+}
+
 export function submitLearningForReview(items: LearningQueueItem[], itemId: string, notes = ''): LearningQueueItem[] {
   const sanitizedNotes = notes.trim() ? sanitizeLearningDraft(notes) : null;
   if (notes.trim() && !sanitizedNotes) return items;
   const reviewNotes = sanitizedNotes ?? undefined;
-  return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && item.status === 'OBSERVING' && Boolean(item.draftAnswer)
+  return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && item.status === 'OBSERVING' && Boolean(item.draftAnswer) && hasLearningEvidenceForReview(item)
     ? { ...item, status: 'REVIEW_READY', reviewNotes }
     : item);
 }

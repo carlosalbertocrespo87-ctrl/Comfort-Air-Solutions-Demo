@@ -1,5 +1,5 @@
 import { Archive, BookOpenCheck, PlusCircle, SendToBack } from 'lucide-react';
-import type { LearningQueueItem } from '@/lib/controlled-learning';
+import { MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW, hasLearningEvidenceForReview, type LearningQueueItem } from '@/lib/controlled-learning';
 
 type ControlledLearningPanelProps = {
   items: LearningQueueItem[];
@@ -22,6 +22,7 @@ export function ControlledLearningPanel({ items, candidateQuestion = '', disable
         draft: 'Borrador interno; no se publica',
         submit: 'Enviar a revisión humana',
         awaiting: 'Pendiente de aprobación humana',
+        evidence: 'conversaciones independientes',
         empty: 'No hay preguntas nuevas en revisión.',
         occurrences: 'apariciones',
         archive: 'Archivar borrador',
@@ -33,6 +34,7 @@ export function ControlledLearningPanel({ items, candidateQuestion = '', disable
         draft: 'Internal draft; never published',
         submit: 'Submit for human review',
         awaiting: 'Awaiting human approval',
+        evidence: 'independent conversations',
         empty: 'No new questions are under review.',
         occurrences: 'occurrences',
         archive: 'Archive draft',
@@ -46,7 +48,8 @@ export function ControlledLearningPanel({ items, candidateQuestion = '', disable
         {active.map((item) => <div key={item.id} className="rounded-lg border border-white/10 bg-black/20 p-2.5">
           <div className="flex items-start justify-between gap-2"><div><p className="line-clamp-2 text-[9px] leading-4 text-slate-300">{item.normalizedQuestion}</p><p className="mt-1 text-[8px] font-bold text-amber-300">{item.answerStatus} · {item.occurrenceCount} {copy.occurrences}</p></div><button type="button" disabled={disabled} aria-label={copy.archive} onClick={() => onArchive(item.id)} className="grid min-h-10 min-w-10 place-items-center rounded-lg border border-white/10 text-slate-500 disabled:opacity-30"><Archive className="h-3.5 w-3.5" /></button></div>
           <textarea disabled={disabled || item.status === 'REVIEW_READY'} rows={3} value={item.draftAnswer ?? ''} onChange={(event) => onUpdateDraft(item.id, event.target.value)} placeholder={copy.draft} className="mt-2 w-full resize-none rounded-lg border border-white/10 bg-black/20 p-2 text-[9px] text-slate-300 outline-none disabled:opacity-40" />
-          {item.status === 'REVIEW_READY' ? <p className="mt-2 text-[8px] font-bold text-emerald-300">{copy.awaiting}</p> : <button type="button" disabled={disabled || !item.draftAnswer} onClick={() => onSubmitForReview(item.id)} className="mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 text-[9px] font-black text-emerald-200 disabled:opacity-30"><SendToBack className="h-3.5 w-3.5" /> {copy.submit}</button>}
+          <p className="mt-2 text-[8px] text-slate-500">{new Set(item.conversationIds).size}/{MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW} {copy.evidence}</p>
+          {item.status === 'REVIEW_READY' ? <p className="mt-2 text-[8px] font-bold text-emerald-300">{copy.awaiting}</p> : <button type="button" disabled={disabled || !item.draftAnswer || !hasLearningEvidenceForReview(item)} onClick={() => onSubmitForReview(item.id)} className="mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 text-[9px] font-black text-emerald-200 disabled:opacity-30"><SendToBack className="h-3.5 w-3.5" /> {copy.submit}</button>}
         </div>)}
         {active.length === 0 && <p className="py-2 text-[9px] text-slate-500">{copy.empty}</p>}
       </div>

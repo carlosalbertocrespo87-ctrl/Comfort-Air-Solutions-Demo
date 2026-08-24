@@ -1,4 +1,4 @@
-import { archiveLearningItem, buildLearningFingerprint, isLearningQueueItem, mergeLearningItems, queueLearningCandidate, submitLearningForReview, updateLearningDraft, type LearningQueueItem } from '../src/lib/controlled-learning.ts';
+import { archiveLearningItem, buildLearningFingerprint, hasLearningEvidenceForReview, isLearningQueueItem, mergeLearningItems, queueLearningCandidate, submitLearningForReview, updateLearningDraft, type LearningQueueItem } from '../src/lib/controlled-learning.ts';
 
 Deno.test('controlled learning deduplicates equivalent questions without publishing an answer', () => {
   let queue: LearningQueueItem[] = [];
@@ -26,9 +26,21 @@ Deno.test('potential secrets and payment data are refused before queueing', () =
   }
 });
 
+Deno.test('isolated learning signal cannot enter human review', () => {
+  let queue: LearningQueueItem[] = [];
+  queue = queueLearningCandidate(queue, { question: 'What is the exception policy?', language: 'EN', conversationId: 'conversation-a' });
+  queue = updateLearningDraft(queue, queue[0].id, 'Draft response requiring a human decision.');
+  if (hasLearningEvidenceForReview(queue[0])) throw new Error('isolated signal met evidence threshold');
+  const before = JSON.stringify(queue);
+  queue = submitLearningForReview(queue, queue[0].id);
+  if (JSON.stringify(queue) !== before || queue[0].status !== 'OBSERVING') throw new Error('isolated signal entered review');
+});
+
 Deno.test('human draft can enter review but can never auto-approve', () => {
   let queue: LearningQueueItem[] = [];
   queue = queueLearningCandidate(queue, { question: 'What is the exception policy?', language: 'EN', conversationId: 'conversation-a' });
+  queue = queueLearningCandidate(queue, { question: 'What is the exception policy?', language: 'EN', conversationId: 'conversation-b' });
+  queue = queueLearningCandidate(queue, { question: 'What is the exception policy?', language: 'EN', conversationId: 'conversation-c' });
   queue = updateLearningDraft(queue, queue[0].id, 'Draft response requiring a human decision.');
   if (queue[0].status !== 'OBSERVING' || queue[0].answerStatus !== 'DRAFT_ONLY') throw new Error('draft escaped controlled state');
   queue = submitLearningForReview(queue, queue[0].id);
