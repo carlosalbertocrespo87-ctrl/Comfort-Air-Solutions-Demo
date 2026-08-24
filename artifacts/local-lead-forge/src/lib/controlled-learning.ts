@@ -1,11 +1,11 @@
-import type { MacroLanguage } from './agent-macros';
+export type LearningLanguage = 'EN' | 'ES';
 
 export type LearningQueueStatus = 'OBSERVING' | 'REVIEW_READY' | 'RESOLVED' | 'DISMISSED' | 'MERGED' | 'ARCHIVED';
 export type LearningAnswerStatus = 'DRAFT_ONLY' | 'APPROVED' | 'ARCHIVED';
 
 export type LearningCandidate = {
   question: string;
-  language: MacroLanguage;
+  language: LearningLanguage;
   conversationId: string;
   sourceMessageId?: string;
 };
@@ -14,7 +14,7 @@ export type LearningQueueItem = {
   id: string;
   fingerprint: string;
   normalizedQuestion: string;
-  language: MacroLanguage;
+  language: LearningLanguage;
   status: LearningQueueStatus;
   answerStatus: LearningAnswerStatus;
   occurrenceCount: number;
@@ -36,7 +36,7 @@ export function normalizeLearningQuestion(value: string): string | null {
   return trimmed.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9¿?¡!\s/_-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-export function buildLearningFingerprint(question: string, language: MacroLanguage): string | null {
+export function buildLearningFingerprint(question: string, language: LearningLanguage): string | null {
   const normalized = normalizeLearningQuestion(question);
   return normalized ? `${language}:${normalized}` : null;
 }
