@@ -1,0 +1,31 @@
+{
+  "companyName": "Hixon Heating & Air Conditioning",
+  "shortName": "Hixon Heating & Air Conditioning",
+  "website": "https://hixonheatingandair.com/",
+  "emailDomain": null,
+  "publicEmail": "richardhixon7@gmail.com",
+  "phoneDisplay": "(770) 513-3558",
+  "serviceArea": "Dacula and surrounding listed service areas",
+  "publicContact": "Richard Hixon",
+  "plannedDemoRoute": "hixon-heating-air-demo",
+  "verifiedServices": [
+    "HVAC repair",
+    "HVAC replacement"
+  ],
+  "verifiedHighlights": [
+    "The official website identifies Richard Hixon as owner and publishes phone 770-513-3558.",
+    "Official site privacy/accessibility pages publish richardhixon7@gmail.com.",
+    "The current official Contact page contains visible template/placeholder content, including unrelated Orlando/Affinity copy and a missing contact-form block; no placeholder details are treated as company facts."
+  ],
+  "opportunity": "Add a clean mobile-first bilingual qualification path that avoids the current broken/placeholder contact experience while preserving only verified owner, service and contact claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
