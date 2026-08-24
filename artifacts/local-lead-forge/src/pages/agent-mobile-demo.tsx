@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
+import { AgentMacroDrawer } from '@/components/agent-macro-drawer';
+import { detectConversationLanguage, type MacroLanguage } from '@/lib/agent-macros';
 import { INITIAL_AGENTS, resolvePilotAgentId, type AgentId, type Conversation } from '@/lib/conversation-model';
 import { planAgentNotification, type AgentAvailability, type NotificationPlan } from '@/lib/agent-notification-policy';
 import { AGENT_SESSION_CHANGED_EVENT, callAgentOps, getStoredAgentSession, type LLFAgentSession } from '@/lib/supabase-session';
@@ -23,6 +25,8 @@ export default function AgentMobileDemoPage() {
   const [dataState, setDataState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [realtimeState, setRealtimeState] = useState<SyntheticRealtimeState>('CONNECTING');
   const [actionState, setActionState] = useState<'idle' | 'saving' | 'error'>('idle');
+  const [composerDrafts, setComposerDrafts] = useState<Record<string, string>>({});
+  const [languageByConversation, setLanguageByConversation] = useState<Record<string, MacroLanguage>>({});
   const refreshChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
   const sessionGenerationRef = useRef(0);
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
@@ -43,6 +47,8 @@ export default function AgentMobileDemoPage() {
     setAvailabilityState('idle');
     setActionState('idle');
     setRealtimeState('CONNECTING');
+    setComposerDrafts({});
+    setLanguageByConversation({});
     setConversations([]);
     setSelectedId('');
     setDataState(next ? 'loading' : 'error');
@@ -106,7 +112,31 @@ export default function AgentMobileDemoPage() {
     { agent: 'MARIA', availability: availability.MARIA },
   ]) : EMPTY_NOTIFICATION_PLAN, [current, availability]);
 
+  const latestCustomerMessage = useMemo(() => {
+    if (!current) return '';
+    return [...current.messages].reverse().find((message) => message.author === 'VISITOR')?.body ?? '';
+  }, [current]);
+
+  useEffect(() => {
+    if (!current || !latestCustomerMessage.trim()) return;
+    setLanguageByConversation((value) => {
+      const nextLanguage = detectConversationLanguage(latestCustomerMessage, value[current.id] ?? 'EN');
+      return value[current.id] === nextLanguage ? value : { ...value, [current.id]: nextLanguage };
+    });
+  }, [current?.id, latestCustomerMessage]);
+
+  const detectedLanguage = current ? (languageByConversation[current.id] ?? detectConversationLanguage(latestCustomerMessage, 'EN')) : 'EN';
   const assignedElsewhere = !me || Boolean(current?.status === 'AGENT_ACTIVE' && current.assignedAgent !== me);
+  const canDraft = Boolean(me && current?.status === 'AGENT_ACTIVE' && !assignedElsewhere);
+  const composerDraft = current ? (composerDrafts[current.id] ?? '') : '';
+
+  const insertMacroDraft = (text: string) => {
+    if (!current || !canDraft) return;
+    setComposerDrafts((value) => {
+      const previous = value[current.id]?.trim();
+      return { ...value, [current.id]: previous ? `${previous}\n\n${text}` : text };
+    });
+  };
 
   const runConversationAction = async (action: 'claim' | 'resolve') => {
     if (!me || !current || actionState === 'saving') { setActionState('error'); return; }
@@ -180,7 +210,30 @@ export default function AgentMobileDemoPage() {
             {actionState === 'error' && <p className="mt-2 text-[9px] text-rose-300">The action could not be safely confirmed. Protected data was invalidated; refresh and verify assignment before retrying.</p>}
           </div> : <div className="mt-4 rounded-2xl border border-white/10 bg-[#07111f] p-4 text-[10px] text-slate-400">Select a synthetic conversation after protected data is available.</div>}
 
-          <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3"><textarea disabled rows={3} placeholder="Real sending remains disabled during authenticated QA." className="w-full resize-none rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] text-slate-400 outline-none" /><button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — blocked until conversation backend QA</button></div>
+          <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3">
+            {current && <AgentMacroDrawer
+              language={detectedLanguage}
+              context={{
+                firstName: current.contactName?.replace(/^\[QA\]\s*/i, '').split(/\s+/)[0],
+                companyName: current.companyName?.replace(/^\[QA\]\s*/i, ''),
+                operatorName: operatorLabel,
+              }}
+              latestCustomerMessage={latestCustomerMessage}
+              disabled={!canDraft}
+              storageKey={`llf-agent-macros:${me ?? 'unmapped'}`}
+              onInsert={insertMacroDraft}
+            />}
+            <textarea
+              disabled={!canDraft}
+              rows={4}
+              value={composerDraft}
+              onChange={(event) => current && setComposerDrafts((value) => ({ ...value, [current.id]: event.target.value }))}
+              placeholder={canDraft ? (detectedLanguage === 'ES' ? 'Borrador interno para revisión…' : 'Internal draft for review…') : 'Claim this synthetic conversation to prepare a draft.'}
+              className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] text-slate-300 outline-none disabled:cursor-not-allowed disabled:opacity-40"
+            />
+            <p className="mt-2 text-[9px] text-slate-500">Detected language: <b className="text-white">{detectedLanguage}</b> · Draft only · no automatic send</p>
+            <button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — blocked until final GO</button>
+          </div>
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Auth, trusted-device checks, synthetic persistence and private Realtime are active for QA. Live customer messages and push remain blocked.</div>
         </section>
       </div>
