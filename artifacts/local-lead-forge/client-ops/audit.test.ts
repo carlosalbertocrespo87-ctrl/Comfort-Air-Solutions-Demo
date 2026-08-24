@@ -5,3 +5,6 @@ Deno.test('audit event requires evidence and reason', () => {
   if (isValidAuditEvent({ ...base, evidenceRef:'' })) throw new Error('missing evidence accepted');
   if (isValidAuditEvent({ ...base, reason:'' })) throw new Error('missing reason accepted');
 });
+Deno.test('audit event rejects invalid timestamp', () => {
+  if (isValidAuditEvent({ ...base, at:'not-a-date' })) throw new Error('invalid timestamp accepted');
+});

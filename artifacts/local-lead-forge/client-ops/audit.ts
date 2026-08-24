@@ -10,5 +10,8 @@ export interface AuditEvent {
 }
 
 export function isValidAuditEvent(e: AuditEvent): boolean {
-  return [e.actorId, e.at, e.clientId, e.action, e.evidenceRef, e.reason].every((v) => Boolean(v?.trim()));
+  const requiredPresent = [e.actorId, e.at, e.clientId, e.action, e.evidenceRef, e.reason]
+    .every((v) => Boolean(v?.trim()));
+  if (!requiredPresent) return false;
+  return !Number.isNaN(Date.parse(e.at));
 }

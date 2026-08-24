@@ -21,16 +21,29 @@ permissions:
 jobs:
   lifecycle-guards:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Run lifecycle guards
-        run: deno test artifacts/local-lead-forge/client-ops/*.test.ts
-      - name: Guard live capabilities
+      - name: Typecheck full client operations surface
+        shell: bash
         run: |
-          ! grep -R "checkout.sessions.create" artifacts/local-lead-forge/client-ops
-          ! grep -R "paymentLinks.create" artifacts/local-lead-forge/client-ops
-          ! grep -R "onboarding_triggered: true" artifacts/local-lead-forge/client-ops
-          ! grep -R "send.*push" artifacts/local-lead-forge/client-ops
+          set -euo pipefail
+          deno check artifacts/local-lead-forge/client-ops/*.ts
+      - name: Run all client operations guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          deno test artifacts/local-lead-forge/client-ops/*.test.ts
+      - name: Guard live capabilities fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R -E '(checkout\.sessions\.create|paymentLinks\.create|sendRealOutreach|sendLiveCustomerMessage|sendRealSms|sendRealEmail|placeRealCall|writeLiveCrm|chargeRealCustomer|activateProduction)[[:space:]]*\(' artifacts/local-lead-forge/client-ops
+          ! grep -R -E 'onboarding_triggered:[[:space:]]*true' artifacts/local-lead-forge/client-ops
+          ! grep -R -E 'send.*push' artifacts/local-lead-forge/client-ops
+          grep -F "'SEND_CUSTOMER_MESSAGE'" artifacts/local-lead-forge/client-ops/automation.ts
+          grep -F "'CHARGE_CUSTOMER'" artifacts/local-lead-forge/client-ops/automation.ts
+          grep -F "'ACTIVATE_PRODUCTION'" artifacts/local-lead-forge/client-ops/automation.ts

@@ -41,7 +41,31 @@ Deno.test('ACTIVE requires explicit approval and all release gates', () => {
   }
 });
 
+Deno.test('PAUSED recovery requires evidence, approval and release gates', () => {
+  if (canTransition('PAUSED', 'ACTIVE', { ...base, recoveryEvidence: true, explicitActivationApproval: true })) {
+    throw new Error('paused client reactivated without release gates');
+  }
+  if (canTransition('PAUSED', 'ACTIVE', { ...base, recoveryEvidence: true, allReleaseGatesPassed: true })) {
+    throw new Error('paused client reactivated without explicit approval');
+  }
+  if (!canTransition('PAUSED', 'ACTIVE', { ...base, recoveryEvidence: true, explicitActivationApproval: true, allReleaseGatesPassed: true })) {
+    throw new Error('valid paused recovery blocked');
+  }
+});
+
+Deno.test('AT_RISK cannot silently jump back to ACTIVE', () => {
+  if (canTransition('AT_RISK', 'ACTIVE', { ...base, explicitActivationApproval: true, allReleaseGatesPassed: true })) {
+    throw new Error('at-risk client bypassed pause/recovery workflow');
+  }
+});
+
 Deno.test('offboarding always requires authorization', () => {
   if (canTransition('ACTIVE', 'OFFBOARDED', base)) throw new Error('unauthorized offboarding allowed');
   if (!canTransition('ACTIVE', 'OFFBOARDED', { ...base, authorizedOffboarding: true })) throw new Error('authorized offboarding blocked');
+});
+
+Deno.test('OFFBOARDED cannot be reactivated', () => {
+  if (canTransition('OFFBOARDED', 'ACTIVE', { ...base, recoveryEvidence: true, explicitActivationApproval: true, allReleaseGatesPassed: true })) {
+    throw new Error('offboarded client reactivated');
+  }
 });
