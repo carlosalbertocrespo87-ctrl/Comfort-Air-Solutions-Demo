@@ -1,3 +1,5 @@
+> **CURRENT RECONCILIATION — 24 Aug 2026.** Agent Console synthetic physical QA is no longer generically `PENDING_PHYSICAL`: PR #188 provides trusted-device/two-iPhone claim/resolve evidence, and PR #199 provides Carlos + María iPhone Face ID plus Carlos desktop passkey/open-console evidence. Do not recreate the old PR #94/#148 PC↔iPhone blocker. Real customer data remains blocked by the separate pre-live Agent session security hold in Issue #210. Real push also remains separately blocked; a local/synthetic notification rehearsal is not approval for PushManager or customer notifications. This Phase 2 checklist remains fail-closed and any regression test must target the exact final session architecture chosen under Issue #210.
+
 # Local Lead Forge — Phase 2 Exit Criteria
 
 Status: INTERNAL / FAIL-CLOSED
@@ -48,6 +50,7 @@ Phase 2 is not complete merely because the UI builds. Every required item below 
 - Device Trust required before push.
 - No service-role secret exists in browser assets.
 - Retention policy is explicitly configured before real data activation.
+- Persistent Agent session architecture passes the Issue #210 pre-live security gate before real customer data activation.
 
 ## F. Realtime + push
 - Backend adapter implementation is authenticated and environment-specific.
@@ -57,6 +60,7 @@ Phase 2 is not complete merely because the UI builds. Every required item below 
 - Push payload contains minimum context only.
 - Notification deep-link requires authenticated Agent Console session.
 - Push permission is requested only from an explicit user gesture on a trusted device.
+- Local/synthetic notification rehearsal must never be treated as authorization for real push transport.
 
 ## G. Capability orchestration
 - Capability state transitions are auditable.
@@ -74,7 +78,8 @@ Phase 2 is not complete merely because the UI builds. Every required item below 
 - Human request + claim scenario pass.
 - Second-agent duplicate-claim scenario blocked.
 - Negative authorization/security matrix pass.
-- iPhone Home Screen PWA notification rehearsal pass after secure backend is available.
+- Agent physical regression pass against the exact final session architecture selected under Issue #210 before real customer data activation.
+- iPhone Home Screen PWA local/synthetic notification rehearsal pass after its secure QA prerequisites are available; real push remains a separate release gate.
 - Drive Source of Truth updated with final Phase 2 status.
 
 ## Phase 2 closure rule

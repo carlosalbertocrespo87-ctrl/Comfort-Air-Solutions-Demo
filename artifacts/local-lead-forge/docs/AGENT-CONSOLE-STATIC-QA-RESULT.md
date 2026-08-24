@@ -1,3 +1,5 @@
+> **ARCHIVED STATIC CHECKPOINT — superseded 24 Aug 2026.** This file records the pre-physical PR #94 / PR #148 state and must not be read as the current action list. Physical Agent Console QA later passed under PR #188; subsequent iOS/desktop device-security work through PR #199 also has physical PASS evidence. Current controller: `docs/AGENT-CONSOLE-CURRENT-OPERATING-CONTROLLER.md`.
+
 # Local Lead Forge — Agent Console Static QA Result
 
 Date: 2026-08-21

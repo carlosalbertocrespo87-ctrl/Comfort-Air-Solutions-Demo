@@ -1,3 +1,5 @@
+> **HISTORICAL DEFECT / SUPERSEDED DECISION PATH — 24 Aug 2026.** This file records the physical iOS defect that led to PR #195. Subsequent PRs #198 and #199 changed the practical sign-in/device-security path, and Issue #210 now controls the pre-live persistent-session architecture. Do not schedule the exact “30-day bridge survives restart” retest below as a generic blocker until Issue #210 selects whether LLF will keep persistent browser tokens or move to the recommended ephemeral first-live session. The defect evidence remains useful history.
+
 # PR #190 — iPhone PWA authentication bridge QA
 
 Date: August 24, 2026

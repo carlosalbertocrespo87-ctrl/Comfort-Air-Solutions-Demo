@@ -1,3 +1,5 @@
+> **ARCHIVED / SUPERSEDED — 24 Aug 2026.** The PR #94 / PR #148 procedure below is historical. Physical synthetic Agent Console QA later passed under PR #188, followed by iPhone/desktop authentication and device-security corrections through PR #199. Current Agent Console source has not changed since PR #199; later commits only added staged prospect configs. Use `docs/AGENT-CONSOLE-CURRENT-OPERATING-CONTROLLER.md` for current action status. Do not rerun this old procedure merely because this historical section says `HOLD` or `PENDING_PHYSICAL`.
+
 # LLF — Consola Realtime sintética: despliegue y QA
 
 **Fecha de reconciliación:** 21 de agosto de 2026  
