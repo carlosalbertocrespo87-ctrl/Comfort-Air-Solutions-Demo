@@ -16,6 +16,8 @@ export function requestAgentLock(): void {
 
 export function AgentBiometricGate({ session, children }: { session: LLFAgentSession; children: ReactNode }) {
   const supported = biometricLockSupported();
+  const isIPhone = /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+  const securityName = isIPhone ? 'Face ID' : 'device passkey';
   const [configured, setConfigured] = useState(() => biometricLockConfigured());
   const [unlocked, setUnlocked] = useState(false);
   const [working, setWorking] = useState(false);
@@ -56,18 +58,24 @@ export function AgentBiometricGate({ session, children }: { session: LLFAgentSes
           <ScanFace className="h-9 w-9" />
         </div>
         <div className="mt-4 text-sm font-black text-orange-400">LLF Agent Console</div>
-        <h1 className="mt-2 text-2xl font-black">{configured ? 'Unlock with Face ID' : 'Protect with Face ID'}</h1>
+        <h1 className="mt-2 text-2xl font-black">{configured ? `Unlock with ${securityName}` : `Protect with ${securityName}`}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">
           {configured
             ? `Confirm that you are ${session.displayName} to open the protected Agent Console.`
-            : 'Set up Face ID once on this trusted iPhone. Your email sign-in and device approval remain unchanged.'}
+            : isIPhone
+              ? 'Set up Face ID once on this trusted iPhone. Your email sign-in and device approval remain unchanged.'
+              : 'Set up a passkey once on this trusted computer. Windows Hello, Touch ID, or the device PIN may be used.'}
         </p>
         <button type="button" disabled={working} onClick={() => void run()} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-3 text-sm font-black disabled:opacity-50">
           <ShieldCheck className="h-5 w-5" />
-          {working ? 'Waiting for Face ID…' : configured ? 'Use Face ID' : 'Enable Face ID'}
+          {working ? `Waiting for ${securityName}…` : configured ? `Use ${securityName}` : `Enable ${securityName}`}
         </button>
-        {error && <p className="mt-3 text-xs text-rose-300">Face ID was not completed. Try again to enter.</p>}
-        <p className="mt-4 text-[11px] leading-5 text-slate-500">Face ID is handled by your iPhone. Local Lead Forge does not receive or store your face.</p>
+        {error && <p className="mt-3 text-xs text-rose-300">{securityName} verification was not completed. Try again to enter.</p>}
+        <p className="mt-4 text-[11px] leading-5 text-slate-500">
+          {isIPhone
+            ? 'Face ID is handled by your iPhone. Local Lead Forge does not receive or store your face.'
+            : 'Your passkey and device verification are handled by this computer. Local Lead Forge does not receive or store your biometrics or device PIN.'}
+        </p>
       </div>
     </main>
   );
