@@ -1,5 +1,9 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
+const LEARNING_QUEUE_WRITE_ENABLED = false;
+const LEARNING_QUEUE_WRITE_ACTIONS = new Set(['queue_learning_signal', 'save_learning_draft', 'submit_learning_for_review']);
+const LEARNING_QUEUE_FORBIDDEN_ACTIONS = new Set(['approve_learning_answer', 'publish_learning_answer']);
+
 const ALLOWED_ORIGINS = new Set([
   'https://localleadforge.com',
   'https://www.localleadforge.com',
@@ -133,6 +137,9 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: 'trusted_device_required' }, 403);
   }
   await admin.from('llf_trusted_devices').update({ last_seen_at: new Date().toISOString() }).eq('id', trustedDevice.id);
+
+  if (LEARNING_QUEUE_FORBIDDEN_ACTIONS.has(action)) return json(req, { error: 'learning_approval_or_publication_blocked' }, 403);
+  if (LEARNING_QUEUE_WRITE_ACTIONS.has(action) && !LEARNING_QUEUE_WRITE_ENABLED) return json(req, { error: 'learning_queue_write_blocked' }, 403);
 
   if (action === 'set_availability') {
     const availability = String(body.availability ?? '');

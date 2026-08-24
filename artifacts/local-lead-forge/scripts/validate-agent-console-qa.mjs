@@ -70,6 +70,8 @@ const checks = [
 ['controlled learning persists only in mapped-agent preview namespace', page.includes('llf-controlled-learning:${me}') && page.includes('saved.filter(isLearningQueueItem)')],
 ['controlled learning refuses sensitive material', learning.includes('SENSITIVE_PATTERNS') && learning.includes("return null")],
 ['controlled learning cannot auto-approve answers', learning.includes("answerStatus: 'DRAFT_ONLY'") && learningPanel.includes('Approved content is never created automatically.')],
+['shared learning writes remain release-gated', edge.includes('LEARNING_QUEUE_WRITE_ENABLED = false') && edge.includes('learning_queue_write_blocked')],
+['learning approval and publication are backend-forbidden', edge.includes("'approve_learning_answer', 'publish_learning_answer'") && edge.includes('learning_approval_or_publication_blocked')],
 ['isolated learning signals cannot enter review', learning.includes('MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW = 3') && learning.includes('hasLearningEvidenceForReview(item)') && learningPanel.includes('!hasLearningEvidenceForReview(item)')],
 ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
 ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL')],
