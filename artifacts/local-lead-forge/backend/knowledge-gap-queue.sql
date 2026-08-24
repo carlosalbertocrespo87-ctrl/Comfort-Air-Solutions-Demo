@@ -10,7 +10,7 @@ create table if not exists llf_knowledge_gap_queue (
   audience llf_conversation_audience not null,
   severity text not null default 'LOW' check (severity in ('LOW','MEDIUM','HIGH')),
   status text not null default 'OBSERVING' check (status in ('OBSERVING','REVIEW_READY','RESOLVED','DISMISSED','MERGED','ARCHIVED')),
-  answer_status text not null default 'DRAFT_ONLY' check (answer_status in ('DRAFT_ONLY','APPROVED','ARCHIVED')),
+  answer_status text not null default 'DRAFT_ONLY' check (answer_status in ('DRAFT_ONLY','ARCHIVED')),
   draft_answer text,
   review_notes text,
   merged_into_gap_id uuid references llf_knowledge_gap_queue(id) on delete restrict,
@@ -72,7 +72,26 @@ alter table llf_knowledge_gap_queue
 alter table llf_knowledge_gap_queue drop constraint if exists llf_knowledge_gap_queue_answer_status_check;
 alter table llf_knowledge_gap_queue
   add constraint llf_knowledge_gap_queue_answer_status_check
-  check (answer_status in ('DRAFT_ONLY','APPROVED','ARCHIVED'));
+  check (answer_status in ('DRAFT_ONLY','ARCHIVED'));
+
+alter table llf_knowledge_gap_queue drop constraint if exists llf_knowledge_gap_review_ready_evidence_check;
+alter table llf_knowledge_gap_queue
+  add constraint llf_knowledge_gap_review_ready_evidence_check
+  check (
+    status <> 'REVIEW_READY'
+    or (
+      answer_status = 'DRAFT_ONLY'
+      and nullif(btrim(draft_answer), '') is not null
+      and distinct_conversation_count >= 3
+    )
+  );
+
+alter table llf_knowledge_gap_queue drop constraint if exists llf_knowledge_gap_draft_length_check;
+alter table llf_knowledge_gap_queue
+  add constraint llf_knowledge_gap_draft_length_check
+  check (draft_answer is null or char_length(draft_answer) <= 2000);
+
+-- APPROVED is intentionally absent until a separately authorized release migration exists.
 
 -- Intentionally no permissive policies in this migration.
 -- Review queue and evidence are internal agent/admin data only.

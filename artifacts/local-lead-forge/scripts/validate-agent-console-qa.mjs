@@ -10,6 +10,7 @@ const realtime = await readFile(new URL('../src/lib/synthetic-realtime.ts', impo
 const serviceWorker = await readFile(new URL('../public/llf-agent-sw.js', import.meta.url), 'utf8');
 const learning = await readFile(new URL('../src/lib/controlled-learning.ts', import.meta.url), 'utf8');
 const learningPanel = await readFile(new URL('../src/components/controlled-learning-panel.tsx', import.meta.url), 'utf8');
+const learningSql = await readFile(new URL('../backend/knowledge-gap-queue.sql', import.meta.url), 'utf8');
 const manifest = JSON.parse(await readFile(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
 const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md', import.meta.url), 'utf8');
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
@@ -73,6 +74,8 @@ const checks = [
 ['shared learning writes remain release-gated', edge.includes('LEARNING_QUEUE_WRITE_ENABLED = false') && edge.includes('learning_queue_write_blocked')],
 ['learning approval and publication are backend-forbidden', edge.includes("'approve_learning_answer', 'publish_learning_answer'") && edge.includes('learning_approval_or_publication_blocked')],
 ['learning write contract remains non-mutating behind two gates', edge.includes('parseLearningWriteCommand(body)') && edge.includes('learning_queue_contract_not_activated') && edge.indexOf('!LEARNING_QUEUE_WRITE_ENABLED') < edge.indexOf('parseLearningWriteCommand(body)')],
+['database cannot store approved learning answers', learningSql.includes("answer_status in ('DRAFT_ONLY','ARCHIVED')") && !learningSql.includes("answer_status in ('DRAFT_ONLY','APPROVED','ARCHIVED')")],
+['database enforces evidence before review ready', learningSql.includes('llf_knowledge_gap_review_ready_evidence_check') && learningSql.includes('distinct_conversation_count >= 3') && learningSql.includes("nullif(btrim(draft_answer), '') is not null")],
 ['isolated learning signals cannot enter review', learning.includes('MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW = 3') && learning.includes('hasLearningEvidenceForReview(item)') && learningPanel.includes('!hasLearningEvidenceForReview(item)')],
 ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
 ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL')],
