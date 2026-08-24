@@ -6,10 +6,11 @@ const page = await readFile(new URL('../src/pages/agent-mobile-demo.tsx', import
 const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts', import.meta.url), 'utf8');
 const model = await readFile(new URL('../src/lib/conversation-model.ts', import.meta.url), 'utf8');
 const session = await readFile(new URL('../src/lib/supabase-session.ts', import.meta.url), 'utf8');
+const biometric = await readFile(new URL('../src/lib/agent-biometric-lock.ts', import.meta.url), 'utf8');
+const biometricGate = await readFile(new URL('../src/components/agent-biometric-gate.tsx', import.meta.url), 'utf8');
+const bootstrap = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8');
 const realtime = await readFile(new URL('../src/lib/synthetic-realtime.ts', import.meta.url), 'utf8');
 const serviceWorker = await readFile(new URL('../public/llf-agent-sw.js', import.meta.url), 'utf8');
-const main = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8');
-const qaNotifications = await readFile(new URL('../src/lib/agent-qa-notifications.ts', import.meta.url), 'utf8');
 const learning = await readFile(new URL('../src/lib/controlled-learning.ts', import.meta.url), 'utf8');
 const learningPanel = await readFile(new URL('../src/components/controlled-learning-panel.tsx', import.meta.url), 'utf8');
 const learningSql = await readFile(new URL('../backend/knowledge-gap-queue.sql', import.meta.url), 'utf8');
@@ -19,13 +20,10 @@ const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOC
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
-const pagesWorkflow = await readFile(new URL('../../../.github/workflows/local-lead-forge-pages.yml', import.meta.url), 'utf8');
 const qaPreviewOrigin = 'https://deploy-preview-190--llf-agent-qa.netlify.app';
-const correctiveQaPreviewOrigin = 'https://deploy-preview-195--llf-agent-qa.netlify.app';
 const checks = [
 ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
 ['current dedicated QA preview origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
-['corrective iOS auth preview origin is exactly allowlisted', edge.includes(`'${correctiveQaPreviewOrigin}'`)],
 ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
 ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'")],
 ['active agent required', edge.includes(".eq('is_active', true)")],
@@ -58,10 +56,12 @@ const checks = [
 ['availability uses backend-confirmed state', page.includes("callAgentOps<{ ok: boolean; availability: AgentAvailability }>") && page.includes('result.availability') && page.includes('availability_confirmation_invalid')],
 ['session invalidation is reactive', session.includes('AGENT_SESSION_CHANGED_EVENT') && session.includes('emitSessionChanged()') && page.includes('window.addEventListener(AGENT_SESSION_CHANGED_EVENT, syncSession)')],
 ['invalid token expiry fails closed', session.includes("throw new Error('invalid_token_expiry')") && session.includes('Number.isFinite(session.expiresAt)')],
-['agent session persists inside the installed web app', session.includes('window.localStorage.setItem(SESSION_KEY') && session.includes('hydratePersistedAgentSession')],
-['iOS install bridge is secure and time bounded', session.includes("AUTH_BRIDGE_COOKIE = '__Host-llf_agent_auth_bridge_v1'") && session.includes('Max-Age=${AUTH_BRIDGE_MAX_AGE_SECONDS}') && session.includes('Secure; SameSite=Strict')],
-['expired access tokens use rotating refresh tokens', session.includes('grant_type=refresh_token') && session.includes('refreshed.refresh_token') && session.includes('writeAuthBridge(next)')],
 ['trusted-device client guard remains fail closed', session.includes("session.deviceTrustStatus !== 'TRUSTED'")],
+['Face ID gate wraps only an authenticated trusted session', bootstrap.includes("agentSession?.deviceTrustStatus === 'TRUSTED'") && bootstrap.includes('<AgentBiometricGate session={agentSession}>')],
+['Face ID requires a platform authenticator and user verification', biometric.includes("authenticatorAttachment: 'platform'") && biometric.match(/userVerification: 'required'/g)?.length >= 2],
+['Face ID credential identifier remains device-local', biometric.includes("window.localStorage.setItem(CREDENTIAL_KEY") && !biometric.includes('fetch(')],
+['Face ID cancellation fails closed', biometricGate.includes('if (unlocked) return') && biometricGate.includes('setError(true)') && !biometricGate.includes('Continue without Face ID')],
+['Agent Console provides explicit lock and sign-out controls', page.includes('requestAgentLock') && page.includes('clearStoredAgentSession()') && page.includes("window.location.replace('/agent-sign-in')")],
 ['auth hash is cleared from visible URL before network use', session.includes('history.replaceState({}, document.title, window.location.pathname + window.location.search)')],
 ['realtime requires trusted stored session before subscription', realtime.includes("session.deviceTrustStatus !== 'TRUSTED'")],
 ['private realtime topic', sql.includes("'llf-agent-console-synthetic'") && sql.includes("extension = 'broadcast'")],
@@ -74,14 +74,9 @@ const checks = [
 ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
 ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
 ['PWA opens only on protected Agent Console', manifest.id === '/agent-demo/' && manifest.start_url === '/agent-demo/' && manifest.display === 'standalone'],
-['Pages deep links load root-absolute application assets', pagesWorkflow.includes('env: { BASE_PATH: / }') && pagesWorkflow.match(/src="\/assets\//g)?.length >= 2 && pagesWorkflow.match(/localleadforge\.com\$\{asset_path\}/g)?.length >= 2],
-['Agent route registers the notification-only service worker', main.includes('registerAgentQaServiceWorker()') && qaNotifications.includes("navigator.serviceWorker.register('/llf-agent-sw.js', { scope: '/' })")],
 ['service worker never caches protected conversation data', !serviceWorker.includes("addEventListener('fetch'") && !serviceWorker.includes('caches.open') && !serviceWorker.includes('caches.match') && !serviceWorker.includes('cache.put')],
 ['push display is synthetic-QA only', serviceWorker.includes("payload.mode !== 'SYNTHETIC_QA'") && !serviceWorker.includes('payload.body') && !serviceWorker.includes('payload.title')],
 ['notification deep links stay on protected Agent Console', serviceWorker.includes("deepLink.startsWith('/agent-demo')")],
-['local notification rehearsal requires installed Agent app', qaNotifications.includes("display-mode: standalone") && qaNotifications.includes("return 'INSTALL_REQUIRED'")],
-['local notification rehearsal uses fixed synthetic copy', qaNotifications.includes("const QA_NOTIFICATION_TITLE = '[QA] Local Lead Forge'") && qaNotifications.includes("data: { mode: 'SYNTHETIC_QA', deepLink: '/agent-demo/' }")],
-['local notification rehearsal has no push subscription or recipient transport', !qaNotifications.includes('pushManager.subscribe') && !qaNotifications.includes('PushManager') && !qaNotifications.includes('fetch(')],
 ['controlled learning persists only in mapped-agent preview namespace', page.includes('llf-controlled-learning:${me}') && page.includes('saved.filter(isLearningQueueItem)')],
 ['controlled learning refuses sensitive material', learning.includes('SENSITIVE_PATTERNS') && learning.includes("return null")],
 ['controlled learning rejects unsafe control characters', learning.includes('UNSAFE_CONTROL_CHARACTERS') && learningContract.includes('UNSAFE_CONTROL_CHARACTERS')],
