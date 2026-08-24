@@ -7,14 +7,20 @@ const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts',
 const model = await readFile(new URL('../src/lib/conversation-model.ts', import.meta.url), 'utf8');
 const session = await readFile(new URL('../src/lib/supabase-session.ts', import.meta.url), 'utf8');
 const realtime = await readFile(new URL('../src/lib/synthetic-realtime.ts', import.meta.url), 'utf8');
+const serviceWorker = await readFile(new URL('../public/llf-agent-sw.js', import.meta.url), 'utf8');
+const learning = await readFile(new URL('../src/lib/controlled-learning.ts', import.meta.url), 'utf8');
+const learningPanel = await readFile(new URL('../src/components/controlled-learning-panel.tsx', import.meta.url), 'utf8');
+const learningSql = await readFile(new URL('../backend/knowledge-gap-queue.sql', import.meta.url), 'utf8');
+const learningContract = await readFile(new URL('../supabase/functions/llf-agent-ops/learning-write-contract.ts', import.meta.url), 'utf8');
+const manifest = JSON.parse(await readFile(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
 const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md', import.meta.url), 'utf8');
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
-const qaPreviewOrigin = 'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app';
+const qaPreviewOrigin = 'https://deploy-preview-190--llf-agent-qa.netlify.app';
 const checks = [
 ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
-['synchronized QA carrier origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+['current dedicated QA preview origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
 ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
 ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'")],
 ['active agent required', edge.includes(".eq('is_active', true)")],
@@ -59,6 +65,25 @@ const checks = [
 ['reply UI disabled', page.includes('Real sending remains disabled during authenticated QA.')],
 ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
 ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
+['PWA opens only on protected Agent Console', manifest.id === '/agent-demo/' && manifest.start_url === '/agent-demo/' && manifest.display === 'standalone'],
+['service worker never caches protected conversation data', !serviceWorker.includes("addEventListener('fetch'") && !serviceWorker.includes('caches.open') && !serviceWorker.includes('caches.match') && !serviceWorker.includes('cache.put')],
+['push display is synthetic-QA only', serviceWorker.includes("payload.mode !== 'SYNTHETIC_QA'") && !serviceWorker.includes('payload.body') && !serviceWorker.includes('payload.title')],
+['notification deep links stay on protected Agent Console', serviceWorker.includes("deepLink.startsWith('/agent-demo')")],
+['controlled learning persists only in mapped-agent preview namespace', page.includes('llf-controlled-learning:${me}') && page.includes('saved.filter(isLearningQueueItem)')],
+['controlled learning refuses sensitive material', learning.includes('SENSITIVE_PATTERNS') && learning.includes("return null")],
+['controlled learning rejects unsafe control characters', learning.includes('UNSAFE_CONTROL_CHARACTERS') && learningContract.includes('UNSAFE_CONTROL_CHARACTERS')],
+['controlled learning cannot represent approved answers', learning.includes("answerStatus: 'DRAFT_ONLY'") && !learning.includes("'APPROVED'") && learningPanel.includes('Approved content is never created automatically.')],
+['persisted learning state is fingerprint and lifecycle checked', learning.includes('buildLearningFingerprint(item.normalizedQuestion, item.language) !== item.fingerprint') && learning.includes("(terminal ? 'ARCHIVED' : 'DRAFT_ONLY') !== item.answerStatus")],
+['learning merges cannot cross language or workflow state', learning.includes('source.language !== target.language') && learning.includes("source.status !== 'OBSERVING' || target.status !== 'OBSERVING'")],
+['shared learning writes remain release-gated', edge.includes('LEARNING_QUEUE_WRITE_ENABLED = false') && edge.includes('learning_queue_write_blocked')],
+['learning approval and publication are backend-forbidden', edge.includes("'approve_learning_answer', 'publish_learning_answer'") && edge.includes('learning_approval_or_publication_blocked')],
+['learning write contract remains non-mutating behind two gates', edge.includes('parseLearningWriteCommand(body)') && edge.includes('learning_queue_contract_not_activated') && edge.indexOf('!LEARNING_QUEUE_WRITE_ENABLED') < edge.indexOf('parseLearningWriteCommand(body)')],
+['database cannot store approved learning answers', learningSql.includes("answer_status in ('DRAFT_ONLY','ARCHIVED')") && !learningSql.includes("answer_status in ('DRAFT_ONLY','APPROVED','ARCHIVED')")],
+['database enforces evidence before review ready', learningSql.includes('llf_knowledge_gap_review_ready_evidence_check') && learningSql.includes('distinct_conversation_count >= 3') && learningSql.includes("nullif(btrim(draft_answer), '') is not null")],
+['database learning tables remain private by explicit privilege', learningSql.includes('revoke all on table llf_knowledge_gap_queue from anon, authenticated') && learningSql.includes('revoke all on table llf_knowledge_gap_evidence from anon, authenticated')],
+['database learning lifecycle and count bounds are constrained', learningSql.includes('llf_knowledge_gap_lifecycle_check') && learningSql.includes('llf_knowledge_gap_count_bounds_check') && learningSql.includes("status = 'MERGED' and merged_into_gap_id is not null")],
+['database learning foreign-key delete paths are indexed', learningSql.includes('idx_llf_knowledge_gap_evidence_conversation') && learningSql.includes('idx_llf_knowledge_gap_evidence_source_message') && learningSql.includes('idx_llf_knowledge_gap_evidence_signal') && learningSql.includes('idx_llf_knowledge_gap_queue_updated_by_agent')],
+['isolated learning signals cannot enter review', learning.includes('MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW = 3') && learning.includes('hasLearningEvidenceForReview(item)') && learningPanel.includes('!hasLearningEvidenceForReview(item)')],
 ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
 ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL')],
 ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('## Physical QA still required')],
