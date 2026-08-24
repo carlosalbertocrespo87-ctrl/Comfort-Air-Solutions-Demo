@@ -21,9 +21,11 @@ const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-Q
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
 const pagesWorkflow = await readFile(new URL('../../../.github/workflows/local-lead-forge-pages.yml', import.meta.url), 'utf8');
 const qaPreviewOrigin = 'https://deploy-preview-190--llf-agent-qa.netlify.app';
+const correctiveQaPreviewOrigin = 'https://deploy-preview-195--llf-agent-qa.netlify.app';
 const checks = [
 ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
 ['current dedicated QA preview origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+['corrective iOS auth preview origin is exactly allowlisted', edge.includes(`'${correctiveQaPreviewOrigin}'`)],
 ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
 ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'")],
 ['active agent required', edge.includes(".eq('is_active', true)")],
@@ -56,6 +58,9 @@ const checks = [
 ['availability uses backend-confirmed state', page.includes("callAgentOps<{ ok: boolean; availability: AgentAvailability }>") && page.includes('result.availability') && page.includes('availability_confirmation_invalid')],
 ['session invalidation is reactive', session.includes('AGENT_SESSION_CHANGED_EVENT') && session.includes('emitSessionChanged()') && page.includes('window.addEventListener(AGENT_SESSION_CHANGED_EVENT, syncSession)')],
 ['invalid token expiry fails closed', session.includes("throw new Error('invalid_token_expiry')") && session.includes('Number.isFinite(session.expiresAt)')],
+['agent session persists inside the installed web app', session.includes('window.localStorage.setItem(SESSION_KEY') && session.includes('hydratePersistedAgentSession')],
+['iOS install bridge is secure and time bounded', session.includes("AUTH_BRIDGE_COOKIE = '__Host-llf_agent_auth_bridge_v1'") && session.includes('Max-Age=${AUTH_BRIDGE_MAX_AGE_SECONDS}') && session.includes('Secure; SameSite=Strict')],
+['expired access tokens use rotating refresh tokens', session.includes('grant_type=refresh_token') && session.includes('refreshed.refresh_token') && session.includes('writeAuthBridge(next)')],
 ['trusted-device client guard remains fail closed', session.includes("session.deviceTrustStatus !== 'TRUSTED'")],
 ['auth hash is cleared from visible URL before network use', session.includes('history.replaceState({}, document.title, window.location.pathname + window.location.search)')],
 ['realtime requires trusted stored session before subscription', realtime.includes("session.deviceTrustStatus !== 'TRUSTED'")],
