@@ -68,6 +68,13 @@ Repeat the same protected copied-link, trusted-device, Face ID, lock/sign-out an
 
 Those results remain evidence for unchanged trusted-device/biometric/console controls, but PR #211 changes executable persistence behavior, so the focused regression above is required before Issue #210 can close.
 
+## Preview reachability checkpoint — 24 Aug 2026
+
+- Owner reported both PR #211 Netlify preview URLs were unreachable from the secure PC.
+- Independent assistant-side network probing could not establish DNS reachability for either preview hostname at the same checkpoint.
+- This documentation-only commit intentionally retriggers the PR preview/deploy checks without changing Agent Console runtime behavior.
+- Do not perform physical regression until the refreshed dedicated `llf-agent-qa` preview reports ready and is actually reachable.
+
 ## Release boundary
 
 A PASS here can satisfy the Agent session-security gate only. It does not enable real customer data, real Send, real push, payments, outreach, legal release or production AI/voice.
