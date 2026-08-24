@@ -1,7 +1,7 @@
 export type LearningLanguage = 'EN' | 'ES';
 
 export type LearningQueueStatus = 'OBSERVING' | 'REVIEW_READY' | 'RESOLVED' | 'DISMISSED' | 'MERGED' | 'ARCHIVED';
-export type LearningAnswerStatus = 'DRAFT_ONLY' | 'APPROVED' | 'ARCHIVED';
+export type LearningAnswerStatus = 'DRAFT_ONLY' | 'ARCHIVED';
 
 export type LearningCandidate = {
   question: string;
@@ -28,25 +28,34 @@ export type LearningQueueItem = {
 export const MIN_DISTINCT_CONVERSATIONS_FOR_REVIEW = 3;
 
 const QUEUE_STATUSES = new Set<LearningQueueStatus>(['OBSERVING','REVIEW_READY','RESOLVED','DISMISSED','MERGED','ARCHIVED']);
-const ANSWER_STATUSES = new Set<LearningAnswerStatus>(['DRAFT_ONLY','APPROVED','ARCHIVED']);
+const ANSWER_STATUSES = new Set<LearningAnswerStatus>(['DRAFT_ONLY','ARCHIVED']);
+const UNSAFE_CONTROL_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u206f]/;
 
 export function isLearningQueueItem(value: unknown): value is LearningQueueItem {
   if (!value || typeof value !== 'object') return false;
   const item = value as Partial<LearningQueueItem>;
-  return typeof item.id === 'string'
-    && typeof item.fingerprint === 'string'
-    && typeof item.normalizedQuestion === 'string'
-    && (item.language === 'EN' || item.language === 'ES')
-    && QUEUE_STATUSES.has(item.status as LearningQueueStatus)
-    && ANSWER_STATUSES.has(item.answerStatus as LearningAnswerStatus)
-    && Number.isInteger(item.occurrenceCount)
-    && Number(item.occurrenceCount) > 0
-    && Array.isArray(item.conversationIds)
-    && item.conversationIds.every((id) => typeof id === 'string')
-    && Array.isArray(item.sourceMessageIds)
-    && item.sourceMessageIds.every((id) => typeof id === 'string')
-    && (item.draftAnswer === undefined || typeof item.draftAnswer === 'string')
-    && (item.reviewNotes === undefined || typeof item.reviewNotes === 'string');
+  if (typeof item.id !== 'string' || item.id.length < 1 || item.id.length > 520) return false;
+  if (item.language !== 'EN' && item.language !== 'ES') return false;
+  if (typeof item.normalizedQuestion !== 'string' || item.normalizedQuestion.length < 4 || item.normalizedQuestion.length > 500) return false;
+  if (typeof item.fingerprint !== 'string' || buildLearningFingerprint(item.normalizedQuestion, item.language) !== item.fingerprint) return false;
+  if (!QUEUE_STATUSES.has(item.status as LearningQueueStatus) || !ANSWER_STATUSES.has(item.answerStatus as LearningAnswerStatus)) return false;
+  if (!Number.isInteger(item.occurrenceCount) || Number(item.occurrenceCount) < 1) return false;
+  if (!isUniqueEvidenceList(item.conversationIds) || item.conversationIds.length < 1) return false;
+  if (!isUniqueEvidenceList(item.sourceMessageIds)) return false;
+  if (Number(item.occurrenceCount) < item.conversationIds.length) return false;
+  if (item.draftAnswer !== undefined && sanitizeLearningDraft(item.draftAnswer) !== item.draftAnswer) return false;
+  if (item.reviewNotes !== undefined && sanitizeLearningReviewNotes(item.reviewNotes) !== item.reviewNotes) return false;
+
+  const terminal = item.status === 'MERGED' || item.status === 'ARCHIVED';
+  if ((terminal ? 'ARCHIVED' : 'DRAFT_ONLY') !== item.answerStatus) return false;
+  if (item.status === 'MERGED') {
+    if (typeof item.mergedIntoId !== 'string' || item.mergedIntoId.length < 1 || item.mergedIntoId === item.id) return false;
+  } else if (item.mergedIntoId !== undefined) {
+    return false;
+  }
+  if (item.status === 'REVIEW_READY' && (!item.draftAnswer || !hasLearningEvidenceForReview(item as LearningQueueItem))) return false;
+
+  return true;
 }
 
 const SENSITIVE_PATTERNS = [
@@ -61,14 +70,23 @@ function containsSensitiveMaterial(value: string): boolean {
 }
 
 export function normalizeLearningQuestion(value: string): string | null {
+  if (UNSAFE_CONTROL_CHARACTERS.test(value)) return null;
   const trimmed = value.replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
   if (trimmed.length < 4 || containsSensitiveMaterial(trimmed)) return null;
   return trimmed.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s/_-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 export function sanitizeLearningDraft(value: string): string | null {
+  if (UNSAFE_CONTROL_CHARACTERS.test(value)) return null;
   const trimmed = value.replace(/[<>]/g, ' ').replace(/\r\n/g, '\n').trim().slice(0, 2000);
   if (trimmed.length < 4 || containsSensitiveMaterial(trimmed)) return null;
+  return trimmed;
+}
+
+export function sanitizeLearningReviewNotes(value: string): string | null {
+  if (UNSAFE_CONTROL_CHARACTERS.test(value)) return null;
+  const trimmed = value.replace(/[<>]/g, ' ').replace(/\r\n/g, '\n').trim();
+  if (trimmed.length < 4 || trimmed.length > 1000 || containsSensitiveMaterial(trimmed)) return null;
   return trimmed;
 }
 
@@ -78,6 +96,7 @@ export function buildLearningFingerprint(question: string, language: LearningLan
 }
 
 export function queueLearningCandidate(items: LearningQueueItem[], candidate: LearningCandidate): LearningQueueItem[] {
+  if (!isEvidenceId(candidate.conversationId) || (candidate.sourceMessageId !== undefined && !isEvidenceId(candidate.sourceMessageId))) return items;
   const fingerprint = buildLearningFingerprint(candidate.question, candidate.language);
   const normalizedQuestion = normalizeLearningQuestion(candidate.question);
   if (!fingerprint || !normalizedQuestion) return items;
@@ -108,8 +127,8 @@ export function queueLearningCandidate(items: LearningQueueItem[], candidate: Le
 export function updateLearningDraft(items: LearningQueueItem[], itemId: string, value: string): LearningQueueItem[] {
   const draftAnswer = sanitizeLearningDraft(value);
   if (!draftAnswer) return items;
-  return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && !['MERGED', 'ARCHIVED'].includes(item.status)
-    ? { ...item, draftAnswer, status: 'OBSERVING' }
+  return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && ['OBSERVING', 'REVIEW_READY'].includes(item.status)
+    ? { ...item, draftAnswer, status: 'OBSERVING', reviewNotes: undefined }
     : item);
 }
 
@@ -118,7 +137,7 @@ export function hasLearningEvidenceForReview(item: LearningQueueItem): boolean {
 }
 
 export function submitLearningForReview(items: LearningQueueItem[], itemId: string, notes = ''): LearningQueueItem[] {
-  const sanitizedNotes = notes.trim() ? sanitizeLearningDraft(notes) : null;
+  const sanitizedNotes = notes.trim() ? sanitizeLearningReviewNotes(notes) : null;
   if (notes.trim() && !sanitizedNotes) return items;
   const reviewNotes = sanitizedNotes ?? undefined;
   return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && item.status === 'OBSERVING' && Boolean(item.draftAnswer) && hasLearningEvidenceForReview(item)
@@ -130,7 +149,11 @@ export function mergeLearningItems(items: LearningQueueItem[], sourceId: string,
   if (sourceId === targetId) return items;
   const source = items.find((item) => item.id === sourceId);
   const target = items.find((item) => item.id === targetId);
-  if (!source || !target || source.draftAnswer || target.draftAnswer || ['MERGED', 'ARCHIVED'].includes(source.status) || ['MERGED', 'ARCHIVED'].includes(target.status)) return items;
+  if (!source || !target
+    || source.language !== target.language
+    || source.status !== 'OBSERVING' || target.status !== 'OBSERVING'
+    || source.answerStatus !== 'DRAFT_ONLY' || target.answerStatus !== 'DRAFT_ONLY'
+    || source.draftAnswer || target.draftAnswer || source.reviewNotes || target.reviewNotes) return items;
 
   return items.map((item) => {
     if (item.id === targetId) return {
@@ -152,4 +175,14 @@ export function archiveLearningItem(items: LearningQueueItem[], itemId: string):
 
 function unique(values: string[]): string[] {
   return [...new Set(values)];
+}
+
+function isEvidenceId(value: string): boolean {
+  return value.trim().length > 0 && value.length <= 200 && !UNSAFE_CONTROL_CHARACTERS.test(value);
+}
+
+function isUniqueEvidenceList(value: unknown): value is string[] {
+  return Array.isArray(value)
+    && value.every((id) => typeof id === 'string' && isEvidenceId(id))
+    && new Set(value).size === value.length;
 }

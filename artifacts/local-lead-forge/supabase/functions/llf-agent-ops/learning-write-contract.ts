@@ -8,6 +8,7 @@ export type LearningWriteParseResult =
   | { ok: false; error: 'unsupported_learning_action' | 'invalid_identifier' | 'invalid_language' | 'invalid_question' | 'invalid_draft' | 'invalid_review_notes' };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UNSAFE_CONTROL_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u206f]/;
 const SENSITIVE = [
   /\b(?:sk|rk)_(?:live|test)_[a-z0-9_]+\b/i,
   /\bbearer\s+[a-z0-9._~+/=-]+\b/i,
@@ -16,7 +17,7 @@ const SENSITIVE = [
 ];
 
 function safeText(value: unknown, max: number): string | null {
-  if (typeof value !== 'string') return null;
+  if (typeof value !== 'string' || UNSAFE_CONTROL_CHARACTERS.test(value)) return null;
   const trimmed = value.replace(/[<>]/g, ' ').replace(/\r\n/g, '\n').trim();
   if (trimmed.length < 4 || trimmed.length > max || SENSITIVE.some((pattern) => pattern.test(trimmed))) return null;
   return trimmed;

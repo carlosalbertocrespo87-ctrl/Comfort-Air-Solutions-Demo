@@ -23,11 +23,22 @@ Deno.test('queue and draft contracts reject secrets and payment-card-like values
   }
 });
 
+Deno.test('write contract rejects unsafe control and bidirectional characters', () => {
+  const values = ['Safe\u0000question', 'Safe\u202etoken: hidden-value', 'Safe\u200blooking draft'];
+  for (const value of values) {
+    if (parseLearningWriteCommand({ action: 'queue_learning_signal', conversation_id: conversationId, language: 'EN', question: value }).ok) throw new Error('unsafe question accepted');
+    if (parseLearningWriteCommand({ action: 'save_learning_draft', gap_id: gapId, draft_answer: value }).ok) throw new Error('unsafe draft accepted');
+    if (parseLearningWriteCommand({ action: 'submit_learning_for_review', gap_id: gapId, review_notes: value }).ok) throw new Error('unsafe review note accepted');
+  }
+});
+
 Deno.test('draft and review commands accept bounded non-sensitive text only', () => {
   const draft = parseLearningWriteCommand({ action: 'save_learning_draft', gap_id: gapId, draft_answer: 'Internal draft for human review.' });
   if (!draft.ok || draft.command.action !== 'save_learning_draft') throw new Error('valid draft rejected');
   const review = parseLearningWriteCommand({ action: 'submit_learning_for_review', gap_id: gapId, review_notes: 'Evidence threshold checked by reviewer.' });
   if (!review.ok || review.command.action !== 'submit_learning_for_review') throw new Error('valid review rejected');
+  if (parseLearningWriteCommand({ action: 'save_learning_draft', gap_id: gapId, draft_answer: 'd'.repeat(2001) }).ok) throw new Error('oversized draft accepted');
+  if (parseLearningWriteCommand({ action: 'submit_learning_for_review', gap_id: gapId, review_notes: 'n'.repeat(1001) }).ok) throw new Error('oversized review notes accepted');
 });
 
 Deno.test('approval and publication are not part of the write contract', () => {
