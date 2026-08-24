@@ -1,4 +1,4 @@
-import { archiveLearningItem, buildLearningFingerprint, mergeLearningItems, queueLearningCandidate, type LearningQueueItem } from '../src/lib/controlled-learning.ts';
+import { archiveLearningItem, buildLearningFingerprint, isLearningQueueItem, mergeLearningItems, queueLearningCandidate, type LearningQueueItem } from '../src/lib/controlled-learning.ts';
 
 Deno.test('controlled learning deduplicates equivalent questions without publishing an answer', () => {
   let queue: LearningQueueItem[] = [];
@@ -43,4 +43,8 @@ Deno.test('archive cannot turn a draft into an approved answer', () => {
   queue = queueLearningCandidate(queue, { question: 'What is the exception policy?', language: 'EN', conversationId: 'conversation-a' });
   queue = archiveLearningItem(queue, queue[0].id);
   if (queue[0].status !== 'ARCHIVED' || queue[0].answerStatus !== 'ARCHIVED') throw new Error('archive transition invalid');
+});
+
+Deno.test('malformed persisted queue state is rejected', () => {
+  if (isLearningQueueItem({ id: 'unsafe', status: 'APPROVED', occurrenceCount: 0 })) throw new Error('malformed local state was trusted');
 });
