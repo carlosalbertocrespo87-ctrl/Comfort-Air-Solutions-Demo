@@ -39,7 +39,7 @@ export default function AgentSignInPage() {
         <div className="text-sm font-black text-orange-400">LLF Agent Console · QA</div>
         <h1 className="mt-3 text-2xl font-black">Approved agent sign-in</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">
-          QA-only passwordless sign-in. The link returns to this exact preview origin and does not create new users.
+          QA-only passwordless sign-in. The link returns to this protected origin and does not create new users.
         </p>
 
         <form className="mt-6 space-y-3" onSubmit={submit}>
