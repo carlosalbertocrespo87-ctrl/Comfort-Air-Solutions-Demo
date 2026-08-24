@@ -31,6 +31,8 @@ PR #211 removes the long-lived refresh credential from durable JavaScript-readab
 
 Option A is not equivalent to a server-managed HttpOnly session. The active bearer access token is still JavaScript-readable while the SPA session is running. A successful same-origin script/XSS compromise during an active session could still attempt to act with that token.
 
+The durable device-install identifier is intentionally non-secret and should be treated as an operational device-continuity signal, not as an anti-XSS security boundary. A same-origin script compromise could read it. Backend authorization must therefore continue to depend on a valid active-agent access token plus trusted-device policy, while CSP/XSS controls remain the primary defense against same-origin script compromise.
+
 Therefore:
 
 1. keep CSP/XSS prevention, dependency integrity and strict output handling as defense-in-depth;
