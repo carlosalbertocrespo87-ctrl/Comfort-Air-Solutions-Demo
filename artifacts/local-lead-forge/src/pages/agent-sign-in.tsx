@@ -15,6 +15,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 export default function AgentSignInPage() {
   const [email, setEmail] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [copiedLink, setCopiedLink] = useState('');
+  const [linkError, setLinkError] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,13 +35,32 @@ export default function AgentSignInPage() {
     setState(error ? 'error' : 'sent');
   };
 
+  const openCopiedLink = () => {
+    setLinkError(false);
+    try {
+      const approved = new URL(copiedLink.trim());
+      const redirect = new URL(approved.searchParams.get('redirect_to') ?? '');
+      const valid = approved.protocol === 'https:'
+        && approved.hostname === 'iogjlzizzegqarkfyzzx.supabase.co'
+        && approved.pathname === '/auth/v1/verify'
+        && approved.searchParams.get('type') === 'magiclink'
+        && Boolean(approved.searchParams.get('token'))
+        && redirect.origin === window.location.origin
+        && redirect.pathname.replace(/\/+$/, '') === '/agent-demo';
+      if (!valid) throw new Error('unapproved_magic_link');
+      window.location.assign(approved.toString());
+    } catch {
+      setLinkError(true);
+    }
+  };
+
   return (
     <main className="grid min-h-screen place-items-center bg-[#020711] px-6 text-white">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#07111f] p-6">
         <div className="text-sm font-black text-orange-400">LLF Agent Console · QA</div>
         <h1 className="mt-3 text-2xl font-black">Approved agent sign-in</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">
-          QA-only passwordless sign-in. The link returns to this protected origin and does not create new users.
+          QA-only passwordless sign-in. The link returns to this exact preview origin and does not create new users.
         </p>
 
         <form className="mt-6 space-y-3" onSubmit={submit}>
@@ -64,9 +85,26 @@ export default function AgentSignInPage() {
         </form>
 
         {state === 'sent' && (
-          <p className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs leading-5 text-emerald-300">
-            Sign-in link sent. Open the newest email on the device being tested. It will return to this preview's /agent-demo route.
-          </p>
+          <div className="mt-4 space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+            <p className="text-xs leading-5 text-emerald-300">
+              Link sent. In Gmail, press and hold the newest sign-in link and choose Copy Link. Return to LLF Agent and paste it below.
+            </p>
+            <label className="block text-xs font-bold text-slate-300" htmlFor="agent-magic-link">Copied approved link</label>
+            <textarea
+              id="agent-magic-link"
+              value={copiedLink}
+              onChange={(event) => setCopiedLink(event.target.value)}
+              rows={3}
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="w-full resize-none rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none focus:border-orange-500/50"
+              placeholder="https://iogjlzizzegqarkfyzzx.supabase.co/auth/v1/verify?..."
+            />
+            <button type="button" disabled={!copiedLink.trim()} onClick={openCopiedLink} className="w-full rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-200 disabled:opacity-40">
+              Open approved link in LLF Agent
+            </button>
+            {linkError && <p className="text-xs leading-5 text-rose-300">That is not the newest approved LLF sign-in link. Copy the complete link from the latest email and try again.</p>}
+          </div>
         )}
         {state === 'error' && (
           <p className="mt-4 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs leading-5 text-rose-300">
