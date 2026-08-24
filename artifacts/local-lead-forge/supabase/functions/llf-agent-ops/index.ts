@@ -1,27 +1,52 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { parseLearningWriteCommand } from './learning-write-contract.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const LEARNING_QUEUE_WRITE_ENABLED = false;
+const LEARNING_QUEUE_WRITE_ACTIONS = new Set(['queue_learning_signal', 'save_learning_draft', 'submit_learning_for_review']);
+const LEARNING_QUEUE_FORBIDDEN_ACTIONS = new Set(['approve_learning_answer', 'publish_learning_answer']);
+
+const ALLOWED_ORIGINS = new Set([
+  'https://localleadforge.com',
+  'https://www.localleadforge.com',
+  'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app',
+  'https://6a8b9a2642822600081ab72a--llf-agent-qa.netlify.app',
+  'https://deploy-preview-188--llf-agent-qa.netlify.app',
+  'https://deploy-preview-190--llf-agent-qa.netlify.app',
+]);
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin');
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+  if (origin && ALLOWED_ORIGINS.has(origin)) headers['Access-Control-Allow-Origin'] = origin;
+  return headers;
+}
+
+function originAllowed(req: Request): boolean {
+  const origin = req.headers.get('Origin');
+  return !origin || ALLOWED_ORIGINS.has(origin);
+}
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+  if (!originAllowed(req)) return json(req, { error: 'origin_not_allowed' }, 403);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
+  if (req.method !== 'POST') return json(req, { error: 'method_not_allowed' }, 405);
 
   const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return json({ error: 'authentication_required' }, 401);
+  if (!authHeader?.startsWith('Bearer ')) return json(req, { error: 'authentication_required' }, 401);
 
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!url || !serviceRoleKey) return json({ error: 'server_configuration_error' }, 500);
+  if (!url || !serviceRoleKey) return json(req, { error: 'server_configuration_error' }, 500);
 
   const admin = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const token = authHeader.slice('Bearer '.length);
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   const user = userData?.user;
-  if (userError || !user) return json({ error: 'invalid_session' }, 401);
+  if (userError || !user) return json(req, { error: 'invalid_session' }, 401);
 
   const { data: agent, error: agentError } = await admin
     .from('llf_agent_profiles')
@@ -29,20 +54,20 @@ Deno.serve(async (req: Request) => {
     .eq('user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
-  if (agentError) return json({ error: 'agent_lookup_failed' }, 500);
-  if (!agent) return json({ error: 'active_agent_required' }, 403);
+  if (agentError) return json(req, { error: 'agent_lookup_failed' }, 500);
+  if (!agent) return json(req, { error: 'active_agent_required' }, 403);
 
   let body: Record<string, unknown>;
-  try { body = await req.json(); } catch { return json({ error: 'invalid_json' }, 400); }
+  try { body = await req.json(); } catch { return json(req, { error: 'invalid_json' }, 400); }
   const action = String(body.action ?? '');
 
   if (action === 'session_info') {
-    return json({ ok: true, agent: { user_id: agent.user_id, display_name: agent.display_name, role_label: agent.role_label, availability: agent.availability } });
+    return json(req, { ok: true, agent: { user_id: agent.user_id, display_name: agent.display_name, role_label: agent.role_label, availability: agent.availability } });
   }
 
   if (action === 'register_device') {
     const deviceHash = typeof body.device_hash === 'string' ? body.device_hash.toLowerCase() : '';
-    if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json({ error: 'invalid_device_hash' }, 400);
+    if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json(req, { error: 'invalid_device_hash' }, 400);
     const deviceLabel = cleanText(body.device_label, 120);
     const platform = cleanText(body.platform, 80);
     const browser = cleanText(body.browser, 80);
@@ -54,7 +79,7 @@ Deno.serve(async (req: Request) => {
       .eq('agent_user_id', user.id)
       .eq('device_fingerprint_hash', deviceHash)
       .maybeSingle();
-    if (lookupError) return json({ error: 'device_lookup_failed' }, 500);
+    if (lookupError) return json(req, { error: 'device_lookup_failed' }, 500);
 
     if (existing) {
       const { data: updated, error } = await admin
@@ -63,9 +88,9 @@ Deno.serve(async (req: Request) => {
         .eq('id', existing.id)
         .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at,last_seen_at')
         .single();
-      if (error) return json({ error: 'device_update_failed' }, 500);
+      if (error) return json(req, { error: 'device_update_failed' }, 500);
       await admin.from('llf_device_security_events').insert({ agent_user_id: user.id, trusted_device_id: existing.id, event_type: 'DEVICE_SEEN', metadata: { trust_status: existing.trust_status } });
-      return json({ ok: true, device: updated });
+      return json(req, { ok: true, device: updated });
     }
 
     const { data: created, error } = await admin
@@ -73,77 +98,116 @@ Deno.serve(async (req: Request) => {
       .insert({ agent_user_id: user.id, device_fingerprint_hash: deviceHash, device_label: deviceLabel || null, platform: platform || null, browser: browser || null, trust_status: 'PENDING', first_seen_at: now, last_seen_at: now })
       .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at,last_seen_at')
       .single();
-    if (error) return json({ error: 'device_registration_failed' }, 500);
+    if (error) return json(req, { error: 'device_registration_failed' }, 500);
     await admin.from('llf_device_security_events').insert({ agent_user_id: user.id, trusted_device_id: created.id, event_type: 'DEVICE_REGISTERED', metadata: { trust_status: 'PENDING' } });
     await audit(admin, null, user.id, 'REGISTER_DEVICE', { trusted_device_id: created.id, trust_status: 'PENDING' });
-    return json({ ok: true, device: created });
+    return json(req, { ok: true, device: created });
   }
 
   if (action === 'device_status') {
     const deviceHash = typeof body.device_hash === 'string' ? body.device_hash.toLowerCase() : '';
-    if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json({ error: 'invalid_device_hash' }, 400);
+    if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json(req, { error: 'invalid_device_hash' }, 400);
     const { data: device, error } = await admin
       .from('llf_trusted_devices')
       .select('id,trust_status,device_label,platform,browser,trusted_at,revoked_at,last_seen_at')
       .eq('agent_user_id', user.id)
       .eq('device_fingerprint_hash', deviceHash)
       .maybeSingle();
-    if (error) return json({ error: 'device_lookup_failed' }, 500);
-    return json({ ok: true, device: device ?? null });
+    if (error) return json(req, { error: 'device_lookup_failed' }, 500);
+    return json(req, { ok: true, device: device ?? null });
+  }
+
+  const deviceHash = typeof body.device_hash === 'string' ? body.device_hash.toLowerCase() : '';
+  if (!/^[a-f0-9]{64}$/.test(deviceHash)) return json(req, { error: 'trusted_device_required' }, 403);
+  const { data: trustedDevice, error: trustedDeviceError } = await admin
+    .from('llf_trusted_devices')
+    .select('id,trust_status')
+    .eq('agent_user_id', user.id)
+    .eq('device_fingerprint_hash', deviceHash)
+    .maybeSingle();
+  if (trustedDeviceError) return json(req, { error: 'device_lookup_failed' }, 500);
+  if (!trustedDevice || trustedDevice.trust_status !== 'TRUSTED') {
+    if (trustedDevice?.id) {
+      await admin.from('llf_device_security_events').insert({
+        agent_user_id: user.id,
+        trusted_device_id: trustedDevice.id,
+        event_type: 'UNTRUSTED_DEVICE_BLOCKED',
+        metadata: { action, trust_status: trustedDevice.trust_status },
+      });
+    }
+    return json(req, { error: 'trusted_device_required' }, 403);
+  }
+  await admin.from('llf_trusted_devices').update({ last_seen_at: new Date().toISOString() }).eq('id', trustedDevice.id);
+
+  if (LEARNING_QUEUE_FORBIDDEN_ACTIONS.has(action)) return json(req, { error: 'learning_approval_or_publication_blocked' }, 403);
+  if (LEARNING_QUEUE_WRITE_ACTIONS.has(action) && !LEARNING_QUEUE_WRITE_ENABLED) return json(req, { error: 'learning_queue_write_blocked' }, 403);
+  if (LEARNING_QUEUE_WRITE_ACTIONS.has(action)) {
+    const parsed = parseLearningWriteCommand(body);
+    if (!parsed.ok) return json(req, { error: parsed.error }, 400);
+    return json(req, { error: 'learning_queue_contract_not_activated' }, 503);
   }
 
   if (action === 'set_availability') {
     const availability = String(body.availability ?? '');
-    if (!['AVAILABLE','BUSY','OFFLINE'].includes(availability)) return json({ error: 'invalid_availability' }, 400);
+    if (!['AVAILABLE','BUSY','OFFLINE'].includes(availability)) return json(req, { error: 'invalid_availability' }, 400);
     const { error } = await admin.from('llf_agent_profiles').update({ availability, updated_at: new Date().toISOString() }).eq('user_id', user.id);
-    if (error) return json({ error: 'availability_update_failed' }, 500);
-    await audit(admin, null, user.id, 'SET_AVAILABILITY', { availability });
-    return json({ ok: true, availability });
+    if (error) return json(req, { error: 'availability_update_failed' }, 500);
+    await audit(admin, null, user.id, 'SET_AVAILABILITY', { availability, trusted_device_id: trustedDevice.id });
+    return json(req, { ok: true, availability });
+  }
+
+  if (action === 'list_synthetic_conversations') {
+    const { data: conversations, error } = await admin
+      .from('llf_conversations')
+      .select('id,audience,channel,status,contact_name,company_name,assigned_agent_user_id,handoff_reason,handoff_user_intent,handoff_unresolved_question,handoff_suggested_next_action,updated_at,llf_conversation_messages(id,author,author_user_id,author_label,body,created_at),llf_conversation_handoff_facts(fact)')
+      .eq('is_synthetic', true)
+      .order('updated_at', { ascending: false });
+    if (error) return json(req, { error: 'synthetic_conversation_lookup_failed' }, 500);
+    return json(req, { ok: true, conversations: conversations ?? [] });
   }
 
   const conversationId = typeof body.conversation_id === 'string' ? body.conversation_id : null;
-  if (!conversationId) return json({ error: 'conversation_id_required' }, 400);
+  if (!conversationId) return json(req, { error: 'conversation_id_required' }, 400);
 
   if (action === 'claim') {
     const now = new Date().toISOString();
     const { data: claimed, error } = await admin.from('llf_conversations')
       .update({ status: 'AGENT_ACTIVE', assigned_agent_user_id: user.id, claimed_at: now, updated_at: now })
-      .eq('id', conversationId).eq('status', 'WAITING_FOR_AGENT').is('assigned_agent_user_id', null)
+      .eq('id', conversationId).eq('is_synthetic', true).eq('status', 'WAITING_FOR_AGENT').is('assigned_agent_user_id', null)
       .select('id,status,assigned_agent_user_id,claimed_at,audience,channel').maybeSingle();
-    if (error) return json({ error: 'claim_failed' }, 500);
-    if (!claimed) return json({ error: 'conversation_not_claimable' }, 409);
-    await audit(admin, conversationId, user.id, 'CLAIM_CONVERSATION', {});
+    if (error) return json(req, { error: 'claim_failed' }, 500);
+    if (!claimed) return json(req, { error: 'conversation_not_claimable' }, 409);
+    await audit(admin, conversationId, user.id, 'CLAIM_CONVERSATION', { synthetic: true, trusted_device_id: trustedDevice.id });
     await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: claimed.audience, channel: claimed.channel, interaction_type: 'CLAIM', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name });
-    return json({ ok: true, conversation: claimed });
+    return json(req, { ok: true, conversation: claimed });
   }
 
   const { data: conversation, error: conversationError } = await admin.from('llf_conversations')
-    .select('id,status,assigned_agent_user_id,audience,channel').eq('id', conversationId).maybeSingle();
-  if (conversationError) return json({ error: 'conversation_lookup_failed' }, 500);
-  if (!conversation) return json({ error: 'conversation_not_found' }, 404);
-  if (conversation.assigned_agent_user_id !== user.id) return json({ error: 'conversation_not_owned_by_agent' }, 403);
+    .select('id,status,assigned_agent_user_id,audience,channel,is_synthetic').eq('id', conversationId).eq('is_synthetic', true).maybeSingle();
+  if (conversationError) return json(req, { error: 'conversation_lookup_failed' }, 500);
+  if (!conversation) return json(req, { error: 'synthetic_conversation_not_found' }, 404);
+  if (conversation.assigned_agent_user_id !== user.id) return json(req, { error: 'conversation_not_owned_by_agent' }, 403);
 
-  if (action === 'send_message') {
-    if (conversation.status !== 'AGENT_ACTIVE') return json({ error: 'conversation_not_agent_active' }, 409);
-    const message = typeof body.message === 'string' ? body.message.trim() : '';
-    if (!message || message.length > 10000) return json({ error: 'invalid_message' }, 400);
-    const { data: row, error } = await admin.from('llf_conversation_messages').insert({ conversation_id: conversationId, author: 'AGENT', author_user_id: user.id, author_label: `${agent.display_name} · LLF Specialist`, body: message }).select('id,created_at').single();
-    if (error) return json({ error: 'message_insert_failed' }, 500);
-    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: conversation.audience, channel: conversation.channel, interaction_type: 'AGENT_MESSAGE', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, message_id: row.id });
-    await audit(admin, conversationId, user.id, 'SEND_AGENT_MESSAGE', { message_id: row.id });
-    return json({ ok: true, message_id: row.id, created_at: row.created_at });
-  }
+  if (action === 'send_message') return json(req, { error: 'messaging_capability_blocked' }, 403);
 
   if (action === 'resolve') {
     const now = new Date().toISOString();
-    const { error } = await admin.from('llf_conversations').update({ status: 'RESOLVED', resolved_at: now, updated_at: now }).eq('id', conversationId).eq('assigned_agent_user_id', user.id);
-    if (error) return json({ error: 'resolve_failed' }, 500);
-    await audit(admin, conversationId, user.id, 'RESOLVE_CONVERSATION', {});
-    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: conversation.audience, channel: conversation.channel, interaction_type: 'RESOLUTION', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, outcome: 'RESOLVED' });
-    return json({ ok: true, resolved_at: now });
+    const { data: resolved, error } = await admin.from('llf_conversations')
+      .update({ status: 'RESOLVED', resolved_at: now, updated_at: now })
+      .eq('id', conversationId)
+      .eq('is_synthetic', true)
+      .eq('status', 'AGENT_ACTIVE')
+      .eq('assigned_agent_user_id', user.id)
+      .select('id,audience,channel')
+      .maybeSingle();
+    if (error) return json(req, { error: 'resolve_failed' }, 500);
+    if (!resolved) return json(req, { error: 'conversation_not_resolvable' }, 409);
+    await audit(admin, conversationId, user.id, 'RESOLVE_CONVERSATION', { synthetic: true, trusted_device_id: trustedDevice.id });
+    await admin.from('llf_interaction_ledger').insert({ conversation_id: conversationId, audience: resolved.audience, channel: resolved.channel, interaction_type: 'RESOLUTION', actor_type: 'AGENT', actor_user_id: user.id, actor_label: agent.display_name, outcome: 'RESOLVED' });
+    return json(req, { ok: true, resolved_at: now });
   }
 
-  return json({ error: 'unsupported_action' }, 400);
+  return json(req, { error: 'unsupported_action' }, 400);
 });
 
 function cleanText(value: unknown, max: number): string {
@@ -154,6 +218,6 @@ async function audit(admin: ReturnType<typeof createClient>, conversationId: str
   await admin.from('llf_agent_audit_log').insert({ conversation_id: conversationId, agent_user_id: agentUserId, action, metadata });
 }
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+function json(req: Request, body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders(req), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
