@@ -1,4 +1,5 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { parseLearningWriteCommand } from './learning-write-contract.ts';
 
 const LEARNING_QUEUE_WRITE_ENABLED = false;
 const LEARNING_QUEUE_WRITE_ACTIONS = new Set(['queue_learning_signal', 'save_learning_draft', 'submit_learning_for_review']);
@@ -140,6 +141,11 @@ Deno.serve(async (req: Request) => {
 
   if (LEARNING_QUEUE_FORBIDDEN_ACTIONS.has(action)) return json(req, { error: 'learning_approval_or_publication_blocked' }, 403);
   if (LEARNING_QUEUE_WRITE_ACTIONS.has(action) && !LEARNING_QUEUE_WRITE_ENABLED) return json(req, { error: 'learning_queue_write_blocked' }, 403);
+  if (LEARNING_QUEUE_WRITE_ACTIONS.has(action)) {
+    const parsed = parseLearningWriteCommand(body);
+    if (!parsed.ok) return json(req, { error: parsed.error }, 400);
+    return json(req, { error: 'learning_queue_contract_not_activated' }, 503);
+  }
 
   if (action === 'set_availability') {
     const availability = String(body.availability ?? '');
