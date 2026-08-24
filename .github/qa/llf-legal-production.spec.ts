@@ -36,7 +36,11 @@ test('/start/ remains fail-closed in production', async ({ page }) => {
   await expect(checkbox).not.toBeChecked();
   await expect(checkbox).toBeDisabled();
 
-  const continueLink = page.getByRole('link', { name: 'Continue to secure payment' });
-  await expect(continueLink).toHaveAttribute('aria-disabled', 'true');
-  await expect(continueLink).not.toHaveAttribute('href', /.+/);
+  // An anchor without href is intentionally absent from the accessibility
+  // tree's link role while checkout is locked. Select the rendered control
+  // directly so the gate verifies the fail-closed attributes themselves.
+  const continueControl = page.locator('a').filter({ hasText: 'Continue to secure payment' });
+  await expect(continueControl).toHaveCount(1);
+  await expect(continueControl).toHaveAttribute('aria-disabled', 'true');
+  await expect(continueControl).not.toHaveAttribute('href', /.+/);
 });
