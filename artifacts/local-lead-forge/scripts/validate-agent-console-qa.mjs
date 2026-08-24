@@ -62,7 +62,7 @@ const checks = [
 ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
 ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
 ['PWA opens only on protected Agent Console', manifest.id === '/agent-demo/' && manifest.start_url === '/agent-demo/' && manifest.display === 'standalone'],
-['service worker never caches protected conversation data', !/addEventListener\\(['\"]fetch['\"]/.test(serviceWorker) && !/caches\\.(open|match)|cache\\.put/.test(serviceWorker)],
+['service worker never caches protected conversation data', !serviceWorker.includes("addEventListener('fetch'") && !serviceWorker.includes('caches.open') && !serviceWorker.includes('caches.match') && !serviceWorker.includes('cache.put')],
 ['push display is synthetic-QA only', serviceWorker.includes("payload.mode !== 'SYNTHETIC_QA'") && !serviceWorker.includes('payload.body') && !serviceWorker.includes('payload.title')],
 ['notification deep links stay on protected Agent Console', serviceWorker.includes("deepLink.startsWith('/agent-demo')")],
 ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
