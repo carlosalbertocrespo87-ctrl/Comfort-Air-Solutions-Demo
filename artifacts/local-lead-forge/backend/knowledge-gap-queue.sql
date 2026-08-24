@@ -59,6 +59,21 @@ alter table llf_knowledge_gap_queue add column if not exists merged_into_gap_id 
 alter table llf_knowledge_gap_queue add column if not exists archived_at timestamptz;
 alter table llf_knowledge_gap_queue add column if not exists updated_by_agent_user_id uuid references llf_agent_profiles(user_id) on delete set null;
 
+alter table llf_knowledge_gap_queue drop constraint if exists llf_knowledge_gap_queue_status_check;
+alter table llf_knowledge_gap_queue
+  add constraint llf_knowledge_gap_queue_status_check
+  check (status in ('OBSERVING','REVIEW_READY','RESOLVED','DISMISSED','MERGED','ARCHIVED'));
+
+alter table llf_knowledge_gap_queue drop constraint if exists llf_knowledge_gap_queue_detected_language_check;
+alter table llf_knowledge_gap_queue
+  add constraint llf_knowledge_gap_queue_detected_language_check
+  check (detected_language in ('EN','ES'));
+
+alter table llf_knowledge_gap_queue drop constraint if exists llf_knowledge_gap_queue_answer_status_check;
+alter table llf_knowledge_gap_queue
+  add constraint llf_knowledge_gap_queue_answer_status_check
+  check (answer_status in ('DRAFT_ONLY','APPROVED','ARCHIVED'));
+
 -- Intentionally no permissive policies in this migration.
 -- Review queue and evidence are internal agent/admin data only.
 -- No task-system integration is activated here; external task creation must be idempotent,
