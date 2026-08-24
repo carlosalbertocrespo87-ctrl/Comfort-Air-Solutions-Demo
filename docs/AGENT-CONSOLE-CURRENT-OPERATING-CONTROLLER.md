@@ -1,8 +1,10 @@
 # LLF — Agent Console current operating controller
 
 Last reconciled: 24 Aug 2026
-Current protected `main`: `9eb570f456a48607f94af856f852efa94071bb46`
-Status: **PHYSICAL INTERNAL QA PASSED / NO CUSTOMER TRAFFIC / NO REAL SEND / NO REAL PUSH**
+Current protected `main` before PR #211: `d5e6df0ec913ab98efb43191a1e7932e7577cae4`
+Current security candidate: **DRAFT PR #211 — Option A ephemeral Agent session**
+Status: **PHYSICAL INTERNAL QA PASSED FOR EXISTING CONTROLS / SESSION-PERSISTENCE REGRESSION REQUIRED / NO CUSTOMER TRAFFIC / NO REAL SEND / NO REAL PUSH**
+Controller: GitHub Issue #210
 
 ## Authoritative current evidence
 
@@ -16,19 +18,41 @@ Subsequent protected Agent Console work through PRs #195–#199 corrected the iO
 - María iPhone: Face ID PASS;
 - Carlos desktop: device passkey PASS and Agent Console opened as Carlos.
 
-PR #199 merged as `72cb651e421963a7f3e6923fba74f0ec546acba9`. A compare from that merge commit to current `main` shows only prospect-config additions; no Agent Console executable surface changed afterward. Therefore the latest physical Agent Console evidence remains current for the present source tree.
+PR #199 merged as `72cb651e421963a7f3e6923fba74f0ec546acba9`. Later work through PR #209 did not change Agent Console runtime behavior; PR #209 reconciled the documentation and made Issue #210 the controlling pre-live session-security hold.
+
+## New executable candidate: PR #211
+
+PR #211 intentionally changes one security-sensitive runtime area: Agent session persistence.
+
+Candidate behavior:
+
+- Agent access-token session lives only in `sessionStorage` for the current browser/PWA session;
+- refresh token is not captured, retained or browser-refreshed;
+- legacy durable Agent-session `localStorage` state is purged;
+- legacy JavaScript-readable credential bridge cookie is expired and no longer written with credentials;
+- the non-secret device-install identifier remains durable for trusted-device identity;
+- active-agent validation, trusted-device enforcement, Face ID/device-passkey, lock/sign-out and copied approved magic-link controls remain.
+
+Because this is executable auth behavior after PR #199, the old physical PASS cannot by itself clear PR #211. Focused iPhone/PWA and desktop auth/device regression QA is required on the exact final PR #211 head before Issue #210 can close.
 
 ## What is NOT a current owner action
 
-Do **not** rerun the old PR #94 / PR #148 physical-QA carrier procedure merely because an archived document says `PENDING_PHYSICAL` or `HOLD`.
+Do **not** rerun the old PR #94 / PR #148 generic physical-QA carrier procedure.
 
-Do **not** change Supabase Auth, CORS, credentials, trusted-device policy, payment configuration, or notification transport to reproduce historical QA.
+Do **not** change Supabase Auth, CORS, credentials, trusted-device policy, payment configuration or notification transport to validate PR #211.
 
-A new physical regression session is required only if a later Agent Console executable/auth/device-security change invalidates the current evidence or a separate current launch controller explicitly requires it.
+The only current Agent Console physical work created by PR #211 is the focused auth/session regression defined in `artifacts/local-lead-forge/docs/AGENT_AUTH_CALLBACK_TEST.md`:
+
+- copied approved magic-link sign-in;
+- trusted-device fail-closed behavior;
+- Face ID/device-passkey;
+- current-session reload continuity;
+- explicit lock/sign-out;
+- session-end/new-sign-in behavior with no silent refresh-token restoration.
 
 ## Still intentionally blocked
 
-The following remain outside the physical-QA PASS and require separate release authorization/gates:
+The following remain outside the Agent-session work and require separate release authorization/gates:
 
 - customer/prospect traffic;
 - real outbound messaging / Send;
@@ -40,17 +64,8 @@ The following remain outside the physical-QA PASS and require separate release a
 - production AI/voice activation;
 - knowledge-base approval/publication or any automatic promotion of draft-only learning.
 
-Synthetic/local QA capability does not authorize any of the above.
-
-## Related historical evidence
-
-- PR #188 — hardened Agent Console + two-iPhone synthetic physical QA PASS.
-- PR #195 — corrected installed iPhone PWA session persistence.
-- PR #196 — local platform-authenticator / Face ID gate.
-- PR #197 — explicit lock and sign-out controls.
-- PR #198 — protected copied-magic-link handoff for installed iOS PWA.
-- PR #199 — device-specific security wording and current physical security basis.
+Synthetic/local QA capability and an eventual Issue #210 PASS do not authorize any of the above.
 
 ## Controller rule
 
-For any future question of “what still needs the PC?”, consult this file plus the newest release/payment/legal controllers before scheduling work. Archived PR #94/#148 documents are evidence history, not current instructions.
+For any future question of “what still needs the PC?”, consult this file plus the newest release/payment/legal controllers. While PR #211 is DRAFT, protected `main` remains internal/synthetic only. Archived PR #94/#148 documents are evidence history, not current instructions.
