@@ -21,9 +21,11 @@ const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-Q
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
 const pagesWorkflow = await readFile(new URL('../../../.github/workflows/local-lead-forge-pages.yml', import.meta.url), 'utf8');
 const qaPreviewOrigin = 'https://deploy-preview-190--llf-agent-qa.netlify.app';
+const correctiveQaPreviewOrigin = 'https://deploy-preview-195--llf-agent-qa.netlify.app';
 const checks = [
 ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
 ['current dedicated QA preview origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+['corrective iOS auth preview origin is exactly allowlisted', edge.includes(`'${correctiveQaPreviewOrigin}'`)],
 ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
 ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'")],
 ['active agent required', edge.includes(".eq('is_active', true)")],

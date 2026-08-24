@@ -12,6 +12,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://6a8b9a2642822600081ab72a--llf-agent-qa.netlify.app',
   'https://deploy-preview-188--llf-agent-qa.netlify.app',
   'https://deploy-preview-190--llf-agent-qa.netlify.app',
+  'https://deploy-preview-195--llf-agent-qa.netlify.app',
 ]);
 
 function corsHeaders(req: Request): Record<string, string> {

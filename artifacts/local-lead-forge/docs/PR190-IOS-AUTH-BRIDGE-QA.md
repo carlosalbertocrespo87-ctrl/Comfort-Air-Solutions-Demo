@@ -34,4 +34,4 @@ This was a real PWA handoff defect, not operator error. No customer, prospect, e
 7. If Device Trust is pending, approve only the newly registered Carlos QA device and reopen the app.
 8. Fully close and reopen the app; confirm it does not request another email link.
 
-Status: `CORRECTION_IMPLEMENTED_LOCALLY — PENDING_CORRECTIVE_PREVIEW_DEPLOY_AND_PHYSICAL_RETEST`.
+Status: `CORRECTION_IN_PR_195 — PENDING_EXACT_QA_BACKEND_ORIGIN_AND_PHYSICAL_RETEST`.
