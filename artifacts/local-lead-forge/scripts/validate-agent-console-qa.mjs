@@ -8,6 +8,8 @@ const model = await readFile(new URL('../src/lib/conversation-model.ts', import.
 const session = await readFile(new URL('../src/lib/supabase-session.ts', import.meta.url), 'utf8');
 const realtime = await readFile(new URL('../src/lib/synthetic-realtime.ts', import.meta.url), 'utf8');
 const serviceWorker = await readFile(new URL('../public/llf-agent-sw.js', import.meta.url), 'utf8');
+const main = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8');
+const qaNotifications = await readFile(new URL('../src/lib/agent-qa-notifications.ts', import.meta.url), 'utf8');
 const learning = await readFile(new URL('../src/lib/controlled-learning.ts', import.meta.url), 'utf8');
 const learningPanel = await readFile(new URL('../src/components/controlled-learning-panel.tsx', import.meta.url), 'utf8');
 const learningSql = await readFile(new URL('../backend/knowledge-gap-queue.sql', import.meta.url), 'utf8');
@@ -17,6 +19,7 @@ const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOC
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
+const pagesWorkflow = await readFile(new URL('../../../.github/workflows/local-lead-forge-pages.yml', import.meta.url), 'utf8');
 const qaPreviewOrigin = 'https://deploy-preview-190--llf-agent-qa.netlify.app';
 const checks = [
 ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
@@ -66,9 +69,14 @@ const checks = [
 ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
 ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
 ['PWA opens only on protected Agent Console', manifest.id === '/agent-demo/' && manifest.start_url === '/agent-demo/' && manifest.display === 'standalone'],
+['Pages deep links load root-absolute application assets', pagesWorkflow.includes('env: { BASE_PATH: / }') && pagesWorkflow.match(/src="\/assets\//g)?.length >= 2 && pagesWorkflow.match(/localleadforge\.com\$\{asset_path\}/g)?.length >= 2],
+['Agent route registers the notification-only service worker', main.includes('registerAgentQaServiceWorker()') && qaNotifications.includes("navigator.serviceWorker.register('/llf-agent-sw.js', { scope: '/' })")],
 ['service worker never caches protected conversation data', !serviceWorker.includes("addEventListener('fetch'") && !serviceWorker.includes('caches.open') && !serviceWorker.includes('caches.match') && !serviceWorker.includes('cache.put')],
 ['push display is synthetic-QA only', serviceWorker.includes("payload.mode !== 'SYNTHETIC_QA'") && !serviceWorker.includes('payload.body') && !serviceWorker.includes('payload.title')],
 ['notification deep links stay on protected Agent Console', serviceWorker.includes("deepLink.startsWith('/agent-demo')")],
+['local notification rehearsal requires installed Agent app', qaNotifications.includes("display-mode: standalone") && qaNotifications.includes("return 'INSTALL_REQUIRED'")],
+['local notification rehearsal uses fixed synthetic copy', qaNotifications.includes("const QA_NOTIFICATION_TITLE = '[QA] Local Lead Forge'") && qaNotifications.includes("data: { mode: 'SYNTHETIC_QA', deepLink: '/agent-demo/' }")],
+['local notification rehearsal has no push subscription or recipient transport', !qaNotifications.includes('pushManager.subscribe') && !qaNotifications.includes('PushManager') && !qaNotifications.includes('fetch(')],
 ['controlled learning persists only in mapped-agent preview namespace', page.includes('llf-controlled-learning:${me}') && page.includes('saved.filter(isLearningQueueItem)')],
 ['controlled learning refuses sensitive material', learning.includes('SENSITIVE_PATTERNS') && learning.includes("return null")],
 ['controlled learning rejects unsafe control characters', learning.includes('UNSAFE_CONTROL_CHARACTERS') && learningContract.includes('UNSAFE_CONTROL_CHARACTERS')],

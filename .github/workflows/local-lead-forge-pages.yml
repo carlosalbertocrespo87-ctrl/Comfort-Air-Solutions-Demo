@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build Local Lead Forge
-        env: { BASE_PATH: ./ }
+        env: { BASE_PATH: / }
         run: pnpm --dir artifacts/local-lead-forge run build
       - name: Build Wade Demo
         env: { PORT: 3000, BASE_PATH: /wade-demo/ }
@@ -190,7 +190,11 @@ jobs:
           ok=0
           for attempt in {1..12}; do
             html=$(curl --fail --silent --show-error --location --max-time 20 "$url" 2>/tmp/agent-route-error || true)
-            if [ -n "$html" ] && grep -Fqi '<div id="root"></div>' <<<"$html"; then
+            asset_path=$(grep -oE 'src="/assets/[^"]+\.js"' <<<"$html" | head -n 1 | cut -d'"' -f2 || true)
+            if [ -n "$html" ] \
+              && grep -Fqi '<div id="root"></div>' <<<"$html" \
+              && [ -n "$asset_path" ] \
+              && curl --fail --silent --show-error --location --max-time 20 "https://localleadforge.com${asset_path}" >/dev/null; then
               ok=1
               break
             fi
@@ -210,7 +214,11 @@ jobs:
           ok=0
           for attempt in {1..12}; do
             html=$(curl --fail --silent --show-error --location --max-time 20 "$url" 2>/tmp/agent-sign-in-route-error || true)
-            if [ -n "$html" ] && grep -Fqi '<div id="root"></div>' <<<"$html"; then
+            asset_path=$(grep -oE 'src="/assets/[^"]+\.js"' <<<"$html" | head -n 1 | cut -d'"' -f2 || true)
+            if [ -n "$html" ] \
+              && grep -Fqi '<div id="root"></div>' <<<"$html" \
+              && [ -n "$asset_path" ] \
+              && curl --fail --silent --show-error --location --max-time 20 "https://localleadforge.com${asset_path}" >/dev/null; then
               ok=1
               break
             fi

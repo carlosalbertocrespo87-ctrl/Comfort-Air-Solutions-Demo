@@ -4,6 +4,7 @@ import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
+import { registerAgentQaServiceWorker } from '@/lib/agent-qa-notifications';
 import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
 import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
@@ -59,6 +60,9 @@ async function bootstrap() {
   await reconcileStoredDeviceTrust();
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (normalizedPath === '/agent-demo') {
+    void registerAgentQaServiceWorker().catch((error) => console.warn('Agent QA service worker registration failed.', error));
+  }
   const isOnboarding = normalizedPath === '/onboarding';
   const agentSession = getStoredAgentSession();
 
