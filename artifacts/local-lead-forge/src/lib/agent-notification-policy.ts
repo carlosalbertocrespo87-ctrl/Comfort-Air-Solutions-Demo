@@ -10,6 +10,8 @@ export type AgentPresence = {
 export type NotificationPlan = {
   shouldNotify: boolean;
   recipients: AgentId[];
+  primary?: AgentId;
+  fallback?: AgentId;
   escalationLabel: 'NORMAL' | 'HIGH';
   reason: string;
 };
@@ -23,12 +25,16 @@ export function planAgentNotification(
   }
 
   const available = presence.filter((item) => item.availability === 'AVAILABLE').map((item) => item.agent);
-  const fallback = presence.filter((item) => item.availability !== 'OFFLINE').map((item) => item.agent);
-  const recipients = available.length > 0 ? available : fallback;
+  const fallbackPool = presence.filter((item) => item.availability !== 'OFFLINE').map((item) => item.agent);
+  const recipients = available.length > 0 ? available : fallbackPool;
+  const primary = recipients[0];
+  const fallback = recipients.length > 1 ? recipients[1] : undefined;
 
   return {
     shouldNotify: recipients.length > 0,
     recipients,
+    primary,
+    fallback,
     escalationLabel: conversation.audience === 'CLIENT' ? 'HIGH' : 'NORMAL',
     reason: recipients.length > 0
       ? 'Human handoff requested; notify authorized LLF agents.'
