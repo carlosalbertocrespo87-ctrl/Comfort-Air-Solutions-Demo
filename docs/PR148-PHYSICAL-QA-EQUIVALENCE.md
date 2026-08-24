@@ -1,3 +1,5 @@
+> **ARCHIVED / SUPERSEDED — 24 Aug 2026.** This file is historical evidence for the old PR #94 / PR #148 QA-carrier decision. It is **not** the current operating runbook. Physical Agent Console QA later passed under PR #188, and the latest device-security physical basis is recorded in PR #199. See `docs/AGENT-CONSOLE-CURRENT-OPERATING-CONTROLLER.md`. Do not rerun this old carrier procedure unless a new regression controller explicitly requires it.
+
 # PR #148 — Physical QA Equivalence Evidence
 
 Date: 2026-08-21
