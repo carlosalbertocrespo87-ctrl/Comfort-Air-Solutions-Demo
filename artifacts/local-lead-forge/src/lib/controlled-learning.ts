@@ -112,8 +112,9 @@ export function updateLearningDraft(items: LearningQueueItem[], itemId: string, 
 }
 
 export function submitLearningForReview(items: LearningQueueItem[], itemId: string, notes = ''): LearningQueueItem[] {
-  const reviewNotes = notes.trim() ? sanitizeLearningDraft(notes) : undefined;
-  if (notes.trim() && !reviewNotes) return items;
+  const sanitizedNotes = notes.trim() ? sanitizeLearningDraft(notes) : null;
+  if (notes.trim() && !sanitizedNotes) return items;
+  const reviewNotes = sanitizedNotes ?? undefined;
   return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && item.status === 'OBSERVING' && Boolean(item.draftAnswer)
     ? { ...item, status: 'REVIEW_READY', reviewNotes }
     : item);
