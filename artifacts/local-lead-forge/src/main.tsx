@@ -5,7 +5,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
 import { registerAgentQaServiceWorker } from '@/lib/agent-qa-notifications';
-import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
+import { consumeSupabaseAuthHash, getStoredAgentSession, hydratePersistedAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
 import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
 import DpaPage from '@/pages/dpa';
@@ -57,6 +57,7 @@ async function bootstrap() {
     history.replaceState({}, document.title, '/agent-demo');
   }
 
+  await hydratePersistedAgentSession();
   await reconcileStoredDeviceTrust();
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
