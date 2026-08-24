@@ -1,183 +1,227 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
-import {
-  INITIAL_AGENTS,
-  claimConversation,
-  resolveConversation,
-  returnConversationToAI,
-  type AgentId,
-  type Conversation,
-} from '@/lib/conversation-model';
-import { planAgentNotification, type AgentAvailability } from '@/lib/agent-notification-policy';
-import { callAgentOps, getStoredAgentSession } from '@/lib/supabase-session';
+import { INITIAL_AGENTS, resolvePilotAgentId, type AgentId, type Conversation } from '@/lib/conversation-model';
+import { planAgentNotification, type AgentAvailability, type NotificationPlan } from '@/lib/agent-notification-policy';
+import { AGENT_SESSION_CHANGED_EVENT, callAgentOps, getStoredAgentSession, type LLFAgentSession } from '@/lib/supabase-session';
+import { subscribeToSyntheticRefresh, unsubscribeFromSyntheticRefresh, type SyntheticRealtimeState } from '@/lib/synthetic-realtime';
 
 const seed: Conversation[] = [
-  {
-    id: 'conv-client-001',
-    audience: 'CLIENT',
-    channel: 'CLIENT_PORTAL',
-    status: 'WAITING_FOR_AGENT',
-    contactName: 'Alex Morgan',
-    companyName: 'ABC Heating & Air',
-    messages: [
-      { id: '1', author: 'VISITOR', authorLabel: 'Alex', body: 'I need future website leads sent to a different email. Can someone help?', createdAt: '8:21 PM' },
-      { id: '2', author: 'AI', authorLabel: 'LLF AI Assistant', body: 'Yes. This change needs an LLF specialist. I will preserve this conversation so you do not have to repeat yourself.', createdAt: '8:21 PM' },
-    ],
-    handoffSummary: {
-      reason: 'Lead-routing change requires authorized human action.',
-      userIntent: 'Change lead delivery destination',
-      knownFacts: ['Active client', 'Source: Client Portal', 'No billing issue reported'],
-      unresolvedQuestion: 'What new email should receive future leads?',
-      suggestedNextAction: 'Claim the chat, confirm the new destination, then run a test lead before resolving.',
-    },
-  },
-  {
-    id: 'conv-prospect-001',
-    audience: 'PROSPECT',
-    channel: 'PUBLIC_WEB',
-    status: 'WAITING_FOR_AGENT',
-    contactName: 'Jordan',
-    companyName: 'Peachtree HVAC',
-    messages: [
-      { id: '1', author: 'VISITOR', authorLabel: 'Jordan', body: 'I like the demo. Before I buy, can a person explain how long setup usually takes?', createdAt: '8:24 PM' },
-      { id: '2', author: 'AI', authorLabel: 'LLF AI Assistant', body: 'I can explain the normal process, and I can also connect you with an LLF specialist for your specific situation.', createdAt: '8:24 PM' },
-    ],
-    handoffSummary: {
-      reason: 'High-intent prospect requested a human specialist.',
-      userIntent: 'Clarify implementation timeline before purchase',
-      knownFacts: ['Prospect', 'Source: Public Website', 'Viewed a demo'],
-      unresolvedQuestion: 'What timeline should be expected for this prospect?',
-      suggestedNextAction: 'Claim the chat and answer using the approved implementation range without promising an unsupported date.',
-    },
-  },
+  { id: '10000000-0000-4000-8000-000000000001', audience: 'CLIENT', channel: 'CLIENT_PORTAL', status: 'WAITING_FOR_AGENT', contactName: '[QA] Alex', companyName: '[QA] ABC Heating & Air', messages: [] },
+  { id: '10000000-0000-4000-8000-000000000002', audience: 'PROSPECT', channel: 'PUBLIC_WEB', status: 'WAITING_FOR_AGENT', contactName: '[QA] Jordan', companyName: '[QA] Peachtree HVAC', messages: [] },
 ];
 
-const statusLabel = {
-  AI_ACTIVE: 'AI active',
-  WAITING_FOR_AGENT: 'Waiting for agent',
-  AGENT_ACTIVE: 'Agent active',
-  RESOLVED: 'Resolved',
-} as const;
+const EMPTY_NOTIFICATION_PLAN: NotificationPlan = { shouldNotify: false, recipients: [], escalationLabel: 'NORMAL', reason: 'No synthetic conversation selected.' };
 
 export default function AgentMobileDemoPage() {
-  const session = getStoredAgentSession();
-  const me: AgentId = session?.displayName.toLowerCase().includes('maria') ? 'MARIA' : 'CARLOS';
+  const [session, setSession] = useState<LLFAgentSession | null>(() => getStoredAgentSession());
+  const me = resolvePilotAgentId(session?.agentUserId);
   const initialAvailability = (session?.availability ?? 'OFFLINE') as AgentAvailability;
   const [conversations, setConversations] = useState(seed);
   const [selectedId, setSelectedId] = useState(seed[0].id);
-  const [availability, setAvailability] = useState<Record<AgentId, AgentAvailability>>({
-    CARLOS: me === 'CARLOS' ? initialAvailability : 'OFFLINE',
-    MARIA: me === 'MARIA' ? initialAvailability : 'OFFLINE',
-  });
+  const [availability, setAvailability] = useState<Record<AgentId, AgentAvailability>>({ CARLOS: me === 'CARLOS' ? initialAvailability : 'OFFLINE', MARIA: me === 'MARIA' ? initialAvailability : 'OFFLINE' });
   const [availabilityState, setAvailabilityState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [dataState, setDataState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [realtimeState, setRealtimeState] = useState<SyntheticRealtimeState>('CONNECTING');
+  const [actionState, setActionState] = useState<'idle' | 'saving' | 'error'>('idle');
+  const refreshChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
+  const sessionGenerationRef = useRef(0);
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
 
-  const notificationPlan = useMemo(
-    () => planAgentNotification(current, [
-      { agent: 'CARLOS', availability: availability.CARLOS },
-      { agent: 'MARIA', availability: availability.MARIA },
-    ]),
-    [current, availability],
-  );
+  const invalidateProtectedView = () => {
+    setConversations([]);
+    setSelectedId('');
+    setDataState('error');
+  };
 
-  const patch = (next: Conversation) => setConversations((items) => items.map((item) => item.id === next.id ? next : item));
-  const assignedElsewhere = current.assignedAgent && current.assignedAgent !== me;
+  const resetSessionBoundUi = (next: LLFAgentSession | null) => {
+    const nextAgent = resolvePilotAgentId(next?.agentUserId);
+    const nextAvailability = (next?.availability ?? 'OFFLINE') as AgentAvailability;
+    setAvailability({
+      CARLOS: nextAgent === 'CARLOS' ? nextAvailability : 'OFFLINE',
+      MARIA: nextAgent === 'MARIA' ? nextAvailability : 'OFFLINE',
+    });
+    setAvailabilityState('idle');
+    setActionState('idle');
+    setRealtimeState('CONNECTING');
+    setConversations([]);
+    setSelectedId('');
+    setDataState(next ? 'loading' : 'error');
+  };
+
+  useEffect(() => {
+    const syncSession = () => {
+      const next = getStoredAgentSession();
+      sessionGenerationRef.current += 1;
+      refreshChainRef.current = Promise.resolve(false);
+      setSession(next);
+      resetSessionBoundUi(next);
+    };
+    window.addEventListener(AGENT_SESSION_CHANGED_EVENT, syncSession);
+    return () => window.removeEventListener(AGENT_SESSION_CHANGED_EVENT, syncSession);
+  }, []);
+
+  const loadSyntheticConversations = (): Promise<boolean> => {
+    const execute = async (): Promise<boolean> => {
+      const generation = sessionGenerationRef.current;
+      if (!me) { invalidateProtectedView(); return false; }
+      try {
+        const result = await callAgentOps<{ ok: boolean; conversations: BackendConversation[] }>({ action: 'list_synthetic_conversations' });
+        if (generation !== sessionGenerationRef.current) return false;
+        const mapped = result.conversations.map(mapBackendConversation);
+        setConversations(mapped);
+        setSelectedId((value) => mapped.some((item) => item.id === value) ? value : (mapped[0]?.id ?? ''));
+        setDataState('ready');
+        return true;
+      } catch {
+        if (generation === sessionGenerationRef.current) invalidateProtectedView();
+        return false;
+      }
+    };
+    const next = refreshChainRef.current.then(execute, execute);
+    refreshChainRef.current = next.catch(() => false);
+    return next;
+  };
+
+  useEffect(() => {
+    let active = true;
+    let channel: Awaited<ReturnType<typeof subscribeToSyntheticRefresh>> | undefined;
+    const startRealtime = async () => {
+      const loaded = await loadSyntheticConversations();
+      if (!active || !loaded) { if (active) setRealtimeState('CHANNEL_ERROR'); return; }
+      try {
+        const value = await subscribeToSyntheticRefresh(
+          () => { if (active) void loadSyntheticConversations(); },
+          (state) => { if (active) setRealtimeState(state); },
+        );
+        if (!active) { await unsubscribeFromSyntheticRefresh(value); return; }
+        channel = value;
+      } catch { if (active) setRealtimeState('CHANNEL_ERROR'); }
+    };
+    void startRealtime();
+    return () => { active = false; if (channel) void unsubscribeFromSyntheticRefresh(channel); };
+  }, [me]);
+
+  const notificationPlan = useMemo(() => current ? planAgentNotification(current, [
+    { agent: 'CARLOS', availability: availability.CARLOS },
+    { agent: 'MARIA', availability: availability.MARIA },
+  ]) : EMPTY_NOTIFICATION_PLAN, [current, availability]);
+
+  const assignedElsewhere = !me || Boolean(current?.status === 'AGENT_ACTIVE' && current.assignedAgent !== me);
+
+  const runConversationAction = async (action: 'claim' | 'resolve') => {
+    if (!me || !current || actionState === 'saving') { setActionState('error'); return; }
+    const generation = sessionGenerationRef.current;
+    setActionState('saving');
+    try {
+      await callAgentOps({ action, conversation_id: current.id });
+      if (generation !== sessionGenerationRef.current) return;
+      const refreshed = await loadSyntheticConversations();
+      if (generation === sessionGenerationRef.current) setActionState(refreshed ? 'idle' : 'error');
+    } catch {
+      if (generation === sessionGenerationRef.current) setActionState('error');
+    }
+  };
 
   const updateAvailability = async (next: AgentAvailability) => {
+    if (!me || availabilityState === 'saving') { setAvailabilityState('error'); return; }
+    const generation = sessionGenerationRef.current;
     const previous = availability[me];
     setAvailability((value) => ({ ...value, [me]: next }));
     setAvailabilityState('saving');
     try {
-      await callAgentOps({ action: 'set_availability', availability: next });
+      const result = await callAgentOps<{ ok: boolean; availability: AgentAvailability }>({ action: 'set_availability', availability: next });
+      if (generation !== sessionGenerationRef.current) return;
+      if (!result.ok || !['AVAILABLE','BUSY','OFFLINE'].includes(result.availability)) throw new Error('availability_confirmation_invalid');
+      setAvailability((value) => ({ ...value, [me]: result.availability }));
       setAvailabilityState('saved');
     } catch {
-      setAvailability((value) => ({ ...value, [me]: previous }));
-      setAvailabilityState('error');
+      if (generation === sessionGenerationRef.current) {
+        setAvailability((value) => ({ ...value, [me]: previous }));
+        setAvailabilityState('error');
+      }
     }
   };
 
+  const operatorLabel = session?.displayName ?? (me ? INITIAL_AGENTS[me].displayName : 'Unknown operator');
+
   return (
-    <main className="min-h-screen bg-[#020711] text-white">
-      <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d19] shadow-2xl">
-        <header className="sticky top-0 z-20 border-b border-white/10 bg-[#050d19]/95 px-4 pb-3 pt-[max(14px,env(safe-area-inset-top))] backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-xs font-black text-orange-400">LLF</div>
-              <div>
-                <div className="text-sm font-black">Agent Console</div>
-                <div className="text-[10px] text-slate-500">{session?.displayName ?? 'LLF Specialist'} · trusted device</div>
-              </div>
-            </div>
-            <Bell className="h-5 w-5 text-orange-400" />
-          </div>
+    <main className="min-h-screen bg-[#030913] text-white">
+      <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d18] shadow-2xl">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#050d18]/95 px-4 py-3 backdrop-blur">
+          <div className="flex items-center gap-2"><ChevronLeft className="h-4 w-4" /><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">Local Lead Forge</p><p className="text-xs font-black">Agent Console · QA</p></div></div>
+          <div className={`flex items-center gap-2 rounded-full border px-2 py-1 text-[9px] font-bold ${session ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/25 bg-rose-500/10 text-rose-300'}`}><ShieldCheck className="h-3.5 w-3.5" /> {session ? 'Authenticated' : 'Authentication required'}</div>
         </header>
 
         <section className="border-b border-white/10 px-4 py-3">
-          <div className="flex items-center justify-between"><span className="text-xs font-black">Availability</span><Smartphone className="h-4 w-4 text-slate-500" /></div>
-          <select value={availability[me]} onChange={(e) => void updateAvailability(e.target.value as AgentAvailability)} className="mt-2 w-full rounded-lg border border-white/10 bg-[#07111f] px-3 py-2.5 text-[11px] text-slate-200 outline-none">
-            <option value="AVAILABLE">Available</option>
-            <option value="BUSY">Busy</option>
-            <option value="OFFLINE">Offline</option>
-          </select>
-          <div className={`mt-1 text-[9px] ${availabilityState === 'error' ? 'text-rose-300' : 'text-slate-600'}`}>
-            {availabilityState === 'saving' ? 'Saving to secure backend…' : availabilityState === 'saved' ? 'Saved to secure backend.' : availabilityState === 'error' ? 'Could not save. Previous state restored.' : 'Backend-controlled agent presence.'}
+          <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] text-slate-400">Signed in as</p><p className="text-sm font-black">{operatorLabel}</p></div><Smartphone className="h-5 w-5 text-orange-400" /></div>
+          {!session && <p className="mt-2 text-[9px] text-rose-300">No authenticated agent session is available. Protected actions stay blocked.</p>}
+          {session && !me && <p className="mt-2 text-[9px] text-rose-300">This authenticated account is not mapped to an approved pilot operator. Protected actions stay blocked.</p>}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(['AVAILABLE','BUSY','OFFLINE'] as const).map((state) => <button key={state} disabled={!me || availabilityState === 'saving'} onClick={() => void updateAvailability(state)} className={`rounded-lg border px-2 py-2 text-[9px] font-black ${me && availability[me] === state ? 'border-orange-500/40 bg-orange-500/10 text-orange-300' : 'border-white/10 bg-white/[0.03] text-slate-400'} disabled:cursor-not-allowed disabled:opacity-30`}>{state}</button>)}
           </div>
+          {availabilityState === 'error' && <p className="mt-2 text-[9px] text-rose-300">Availability update could not be safely confirmed.</p>}
         </section>
 
         <section className="px-4 py-4">
           <div className="flex items-center justify-between"><h1 className="text-sm font-black">Needs attention</h1><span className="rounded-full bg-rose-500/10 px-2 py-1 text-[9px] font-bold text-rose-300">{conversations.filter((c) => c.status === 'WAITING_FOR_AGENT').length} waiting</span></div>
+          <div className={`mt-2 text-[9px] ${dataState === 'error' || realtimeState === 'CHANNEL_ERROR' ? 'text-rose-300' : realtimeState === 'SUBSCRIBED' ? 'text-emerald-300' : 'text-amber-300'}`}>{dataState === 'error' ? 'Secure synthetic data could not be loaded. Stale conversation data has been cleared.' : realtimeState === 'SUBSCRIBED' ? 'Private Realtime connected · synthetic data only' : 'Connecting private Realtime…'}</div>
           <div className="mt-3 space-y-2">
-            {conversations.map((conversation) => (
-              <button key={conversation.id} onClick={() => setSelectedId(conversation.id)} className={`w-full rounded-xl border p-3 text-left ${selectedId === conversation.id ? 'border-orange-500/35 bg-orange-500/[0.07]' : 'border-white/10 bg-[#07111f]'}`}>
-                <div className="flex items-center justify-between gap-2"><span className="text-xs font-black">{conversation.companyName}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold ${conversation.audience === 'CLIENT' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-orange-500/10 text-orange-300'}`}>{conversation.audience}</span></div>
-                <div className="mt-1 text-[10px] text-slate-500">{conversation.channel === 'CLIENT_PORTAL' ? 'Client Portal' : 'Public Website'} · {statusLabel[conversation.status]}</div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-t border-white/10 px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-4">
-          <div className="flex items-center gap-2 text-xs text-slate-500"><ChevronLeft className="h-4 w-4" /> Conversation</div>
-          <div className="mt-3 flex items-start justify-between gap-3"><div><h2 className="text-lg font-black">{current.companyName}</h2><p className="mt-1 text-[10px] text-slate-500">{current.contactName} · {current.channel === 'CLIENT_PORTAL' ? 'Client Portal' : 'Public Website'}</p></div><span className="rounded-full border border-white/10 px-2 py-1 text-[9px] text-slate-300">{statusLabel[current.status]}</span></div>
-
-          {current.handoffSummary && (
-            <div className="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-3">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-violet-300"><Bot className="h-4 w-4" /> AI handoff summary</div>
-              <p className="mt-2 text-xs leading-5 text-slate-300">{current.handoffSummary.reason}</p>
-              <p className="mt-2 text-xs leading-5 text-white"><b>Open question:</b> {current.handoffSummary.unresolvedQuestion}</p>
-              <p className="mt-2 text-[10px] leading-4 text-slate-500">Next: {current.handoffSummary.suggestedNextAction}</p>
-            </div>
-          )}
-
-          <div className="mt-4 space-y-2">
-            {current.messages.map((message) => (
-              <div key={message.id} className={`max-w-[88%] rounded-2xl p-3 text-xs leading-5 ${message.author === 'VISITOR' ? 'bg-white/[0.06] text-slate-200' : 'ml-auto bg-orange-600/90 text-white'}`}>
-                <div className="mb-1 text-[9px] font-black uppercase opacity-70">{message.authorLabel}</div>{message.body}
-              </div>
-            ))}
+            {conversations.length === 0 && <div className="rounded-xl border border-white/10 bg-[#07111f] p-4 text-[10px] text-slate-400">No synthetic conversations are currently available. No conversation action can be taken.</div>}
+            {conversations.map((conversation) => <button key={conversation.id} onClick={() => setSelectedId(conversation.id)} className={`w-full rounded-xl border p-3 text-left ${selectedId === conversation.id ? 'border-orange-500/35 bg-orange-500/[0.07]' : 'border-white/10 bg-[#07111f]'}`}><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black">{conversation.contactName}</p><p className="text-[9px] text-slate-400">{conversation.companyName} · {conversation.channel}</p></div><span className={`rounded-full px-2 py-1 text-[8px] font-black ${conversation.status === 'WAITING_FOR_AGENT' ? 'bg-rose-500/10 text-rose-300' : conversation.status === 'AGENT_ACTIVE' ? 'bg-orange-500/10 text-orange-300' : 'bg-emerald-500/10 text-emerald-300'}`}>{conversation.status}</span></div></button>)}
           </div>
 
-          <div className="mt-4 rounded-xl border border-white/10 bg-[#07111f] p-3">
-            <div className="flex items-center gap-2 text-[10px] font-black text-slate-300"><ShieldCheck className="h-4 w-4 text-emerald-400" /> Claim protection</div>
-            {current.status === 'WAITING_FOR_AGENT' && <p className="mt-2 text-[10px] text-slate-500">Synthetic QA conversation. Notification plan: {notificationPlan.recipients.map((id) => INITIAL_AGENTS[id].displayName).join(' + ') || 'queued'}.</p>}
-            {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : '—'}</b>. Claim lock prevents a second specialist from replying.</p>}
+          {current ? <div className="mt-4 rounded-2xl border border-white/10 bg-[#07111f] p-4">
+            <div className="flex items-center justify-between"><div><p className="text-xs font-black">{current.contactName}</p><p className="text-[9px] text-slate-500">{current.audience} · {current.channel}</p></div>{current.audience === 'CLIENT' ? <Users className="h-4 w-4 text-blue-300" /> : <MessageCircle className="h-4 w-4 text-orange-300" />}</div>
+            <div className="mt-3 space-y-2">{current.messages.map((message) => <div key={message.id} className="rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center justify-between"><span className="text-[9px] font-bold text-slate-300">{message.authorLabel}</span><span className="text-[8px] text-slate-600">{message.createdAt}</span></div><p className="mt-1 text-[10px] leading-4 text-slate-300">{message.body}</p></div>)}</div>
+            {current.handoffSummary && <div className="mt-3 rounded-xl border border-orange-500/20 bg-orange-500/[0.05] p-3"><div className="flex items-center gap-2 text-[9px] font-black text-orange-300"><Bot className="h-3.5 w-3.5" /> AI handoff summary</div><p className="mt-2 text-[10px] leading-4 text-slate-300">{current.handoffSummary.reason}</p><p className="mt-2 text-[9px] text-slate-400"><b className="text-white">Intent:</b> {current.handoffSummary.userIntent}</p><p className="mt-1 text-[9px] text-slate-400"><b className="text-white">Open:</b> {current.handoffSummary.unresolvedQuestion}</p><p className="mt-1 text-[9px] text-slate-400"><b className="text-white">Next:</b> {current.handoffSummary.suggestedNextAction}</p></div>}
+            <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center gap-2 text-[9px] font-black text-slate-300"><Bell className="h-3.5 w-3.5" /> Notification plan</div><p className="mt-2 text-[9px] text-slate-400">Primary: <b className="text-white">{notificationPlan.primary ?? 'None'}</b> · Fallback: <b className="text-white">{notificationPlan.fallback ?? 'None'}</b></p></div>
+            {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : 'Unknown / not in pilot'}</b>. Claim lock prevents a second specialist from replying.</p>}
+            <div className="mt-3 grid grid-cols-2 gap-2"><button disabled={!me || current.status !== 'WAITING_FOR_AGENT' || actionState === 'saving'} onClick={() => void runConversationAction('claim')} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {operatorLabel}</button><button disabled={!me || current.status !== 'AGENT_ACTIVE' || assignedElsewhere || actionState === 'saving'} onClick={() => void runConversationAction('resolve')} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button><button disabled className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI — blocked during QA</button></div>
+            {actionState === 'error' && <p className="mt-2 text-[9px] text-rose-300">The action could not be safely confirmed. Protected data was invalidated; refresh and verify assignment before retrying.</p>}
+          </div> : <div className="mt-4 rounded-2xl border border-white/10 bg-[#07111f] p-4 text-[10px] text-slate-400">Select a synthetic conversation after protected data is available.</div>}
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button disabled={current.status !== 'WAITING_FOR_AGENT'} onClick={() => patch(claimConversation(current, me))} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {session?.displayName ?? INITIAL_AGENTS[me].displayName}</button>
-              <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} onClick={() => patch(resolveConversation(current))} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button>
-              <button disabled={current.status !== 'AGENT_ACTIVE' || assignedElsewhere} onClick={() => patch(returnConversationToAI(current))} className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI</button>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3">
-            <div className="flex items-center gap-2 text-[10px] font-black"><MessageCircle className="h-4 w-4 text-orange-400" /> Reply as {session?.displayName ?? 'LLF Specialist'}</div>
-            <textarea disabled placeholder="Real sending remains disabled during authenticated QA." className="mt-3 min-h-20 w-full resize-none rounded-lg border border-white/10 bg-[#020711] p-3 text-xs text-white outline-none placeholder:text-slate-700 disabled:opacity-40" />
-            <button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — blocked until conversation backend QA</button>
-          </div>
-
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Auth and device trust are real. Conversations shown here remain synthetic; live customer messages, realtime delivery and push remain blocked.</div>
+          <div className="mt-3 rounded-xl border border-white/10 bg-[#07111f] p-3"><textarea disabled rows={3} placeholder="Real sending remains disabled during authenticated QA." className="w-full resize-none rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] text-slate-400 outline-none" /><button disabled className="mt-2 w-full rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white opacity-40">Send — blocked until conversation backend QA</button></div>
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-4 text-amber-200"><Users className="h-4 w-4 shrink-0" /> Auth, trusted-device checks, synthetic persistence and private Realtime are active for QA. Live customer messages and push remain blocked.</div>
         </section>
       </div>
     </main>
   );
+}
+
+type BackendConversation = {
+  id: string;
+  audience: Conversation['audience'];
+  channel: Conversation['channel'];
+  status: Conversation['status'];
+  contact_name?: string;
+  company_name?: string;
+  assigned_agent_user_id?: string;
+  handoff_reason?: string;
+  handoff_user_intent?: string;
+  handoff_unresolved_question?: string;
+  handoff_suggested_next_action?: string;
+  llf_conversation_messages?: Array<{ id: string; author: 'VISITOR' | 'AI' | 'AGENT'; author_label: string; body: string; created_at: string }>;
+  llf_conversation_handoff_facts?: Array<{ fact: string }>;
+};
+
+function mapBackendConversation(row: BackendConversation): Conversation {
+  return {
+    id: row.id,
+    audience: row.audience,
+    channel: row.channel,
+    status: row.status,
+    contactName: row.contact_name,
+    companyName: row.company_name,
+    assignedAgent: resolvePilotAgentId(row.assigned_agent_user_id),
+    messages: (row.llf_conversation_messages ?? [])
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((message) => ({ id: message.id, author: message.author, authorLabel: message.author_label, body: message.body, createdAt: new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })),
+    handoffSummary: row.handoff_reason ? {
+      reason: row.handoff_reason,
+      userIntent: row.handoff_user_intent ?? 'Synthetic QA handoff',
+      knownFacts: (row.llf_conversation_handoff_facts ?? []).map((item) => item.fact),
+      unresolvedQuestion: row.handoff_unresolved_question ?? 'No open question',
+      suggestedNextAction: row.handoff_suggested_next_action ?? 'Validate the synthetic workflow.',
+    } : undefined,
+  };
 }

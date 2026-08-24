@@ -36,6 +36,17 @@ export const INITIAL_AGENTS: Record<AgentId, { id: AgentId; displayName: string;
   MARIA: { id: 'MARIA', displayName: 'María', role: 'LLF Specialist' },
 };
 
+export const PILOT_AGENT_USER_IDS: Record<AgentId, string> = {
+  CARLOS: '1c1e7606-b9dc-4604-8047-df86760809d7',
+  MARIA: '31cd8575-1b51-4c95-9d07-ffec6ce21fde',
+};
+
+export function resolvePilotAgentId(userId?: string | null): AgentId | undefined {
+  if (!userId) return undefined;
+  return (Object.entries(PILOT_AGENT_USER_IDS) as Array<[AgentId, string]>)
+    .find(([, candidate]) => candidate === userId)?.[0];
+}
+
 export function requestHumanHandoff(
   conversation: Conversation,
   reason: string,
