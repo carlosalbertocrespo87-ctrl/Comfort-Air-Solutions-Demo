@@ -1,0 +1,33 @@
+{
+  "companyName": "Mullinax Mechanical Heating and Air Conditioning, LLC",
+  "shortName": "Mullinax Mechanical",
+  "website": "https://mullinaxmechanical.com/",
+  "emailDomain": "mullinaxmechanical.com",
+  "publicEmail": "info@mullinaxmechanical.com",
+  "phoneDisplay": "(678) 760-5480",
+  "serviceArea": "Social Circle, Covington and surrounding areas",
+  "publicContact": null,
+  "plannedDemoRoute": "mullinax-mechanical-demo",
+  "verifiedServices": [
+    "Residential HVAC installation",
+    "Residential HVAC repair and maintenance",
+    "Light commercial HVAC service",
+    "Heating and cooling system service"
+  ],
+  "verifiedHighlights": [
+    "The official website presents Mullinax Mechanical Heating and Air Conditioning, LLC as an HVAC company serving Social Circle, Covington and surrounding areas with more than 25 years of experience.",
+    "The official website publishes phone 678-760-5480 and email info@mullinaxmechanical.com.",
+    "The official website lists installation, repair and maintenance for residential and light-commercial HVAC customers and publishes Social Circle and Covington office locations."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path to the current contact journey while preserving only verified service, experience and contact claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
