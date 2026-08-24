@@ -1,0 +1,36 @@
+{
+  "companyName": "Air Experts",
+  "shortName": "Air Experts",
+  "website": "https://www.airexpertsga.com/",
+  "emailDomain": null,
+  "publicEmail": "airexpertsga@outlook.com",
+  "phoneDisplay": "(770) 787-4580",
+  "serviceArea": "Covington and surrounding listed service areas",
+  "publicContact": "Billy Cowan",
+  "plannedDemoRoute": "air-experts-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "Air conditioning installation and repair",
+    "Heating service and repair",
+    "Ductless HVAC / mini-splits",
+    "Preventive maintenance",
+    "Indoor air quality"
+  ],
+  "verifiedHighlights": [
+    "The official website identifies Billy Cowan as owner and says Air Experts is locally owned and family operated in Covington.",
+    "The official website publishes airexpertsga@outlook.com and main phone 770-787-4580.",
+    "The official website states the business was established in 2009 and serves Covington and surrounding listed areas."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path before the existing contact/service flow while preserving only verified owner, service and contact claims.",
+  "sourceReviewDate": "2026-08-23",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
