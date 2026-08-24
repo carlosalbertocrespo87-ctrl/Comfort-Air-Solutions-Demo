@@ -1,0 +1,34 @@
+{
+  "companyName": "Alpha Heating and Air LLC",
+  "shortName": "Alpha Heating and Air",
+  "website": "https://alphahvac.org/",
+  "emailDomain": "heatnair.org",
+  "publicEmail": "alpha@heatnair.org",
+  "phoneDisplay": "(678) 895-1887",
+  "serviceArea": "Lawrenceville, Duluth, Buford and surrounding areas",
+  "publicContact": null,
+  "plannedDemoRoute": "alpha-heating-air-demo",
+  "verifiedServices": [
+    "Residential air conditioning installation and repair",
+    "Residential HVAC maintenance and repair",
+    "Commercial HVAC repair and maintenance",
+    "Heating and furnace service",
+    "Emergency heating and cooling service"
+  ],
+  "verifiedHighlights": [
+    "The official website describes Alpha Heating and Air LLC as locally owned and staffed.",
+    "The official website publishes phone 678-895-1887, email alpha@heatnair.org and Georgia license CR110442.",
+    "The official website lists Lawrenceville, Duluth and Buford among its service areas and provides a written contact form."
+  ],
+  "opportunity": "Add a clearer mobile-first bilingual lead qualification path to an active local HVAC site while preserving only verified residential and commercial service claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}

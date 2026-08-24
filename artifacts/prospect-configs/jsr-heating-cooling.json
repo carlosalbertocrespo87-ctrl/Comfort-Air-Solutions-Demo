@@ -1,0 +1,35 @@
+{
+  "companyName": "JSR Heating and Cooling Inc.",
+  "shortName": "JSR Heating and Cooling",
+  "website": "https://www.jsrheatingandcooling.com/",
+  "emailDomain": "jsrheatingandcooling.com",
+  "publicEmail": "info@jsrheatingandcooling.com",
+  "phoneDisplay": "(770) 784-1618",
+  "serviceArea": "Covington, Conyers, Loganville, McDonough, Monroe, Atlanta and surrounding listed service areas",
+  "publicContact": null,
+  "plannedDemoRoute": "jsr-heating-cooling-demo",
+  "verifiedServices": [
+    "Heating and cooling repair and service",
+    "Air conditioning service and system replacement",
+    "Heat pump and furnace service",
+    "Preventive maintenance service agreements",
+    "Residential and light commercial installations",
+    "Indoor air quality service"
+  ],
+  "verifiedHighlights": [
+    "The official website says JSR Heating and Cooling was founded in 2003 and is family-owned and operated in Covington, Georgia.",
+    "The official website publishes phone 770-784-1618, business email info@jsrheatingandcooling.com and a business-controlled contact form.",
+    "The official website lists residential and light commercial HVAC work and publishes a service-area map including Covington, Conyers, Loganville, McDonough, Monroe and Atlanta."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path to an established local HVAC site while preserving only verified service, contact and service-area claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
