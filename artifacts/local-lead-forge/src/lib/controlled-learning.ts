@@ -23,6 +23,26 @@ export type LearningQueueItem = {
   mergedIntoId?: string;
 };
 
+const QUEUE_STATUSES = new Set<LearningQueueStatus>(['OBSERVING','REVIEW_READY','RESOLVED','DISMISSED','MERGED','ARCHIVED']);
+const ANSWER_STATUSES = new Set<LearningAnswerStatus>(['DRAFT_ONLY','APPROVED','ARCHIVED']);
+
+export function isLearningQueueItem(value: unknown): value is LearningQueueItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Partial<LearningQueueItem>;
+  return typeof item.id === 'string'
+    && typeof item.fingerprint === 'string'
+    && typeof item.normalizedQuestion === 'string'
+    && (item.language === 'EN' || item.language === 'ES')
+    && QUEUE_STATUSES.has(item.status as LearningQueueStatus)
+    && ANSWER_STATUSES.has(item.answerStatus as LearningAnswerStatus)
+    && Number.isInteger(item.occurrenceCount)
+    && Number(item.occurrenceCount) > 0
+    && Array.isArray(item.conversationIds)
+    && item.conversationIds.every((id) => typeof id === 'string')
+    && Array.isArray(item.sourceMessageIds)
+    && item.sourceMessageIds.every((id) => typeof id === 'string');
+}
+
 const SENSITIVE_PATTERNS = [
   /\b(?:sk|rk)_(?:live|test)_[a-z0-9_]+\b/i,
   /\bbearer\s+[a-z0-9._~+/=-]+\b/i,
