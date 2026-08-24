@@ -1,0 +1,34 @@
+{
+  "companyName": "Sanders Mechanical Services",
+  "shortName": "Sanders Mechanical Services",
+  "website": "https://www.sandersmechanicalservices.com/",
+  "emailDomain": null,
+  "publicEmail": null,
+  "phoneDisplay": "(770) 725-6003",
+  "serviceArea": "Social Circle, Northeast Metro Atlanta and surrounding listed communities",
+  "publicContact": null,
+  "plannedDemoRoute": "sanders-mechanical-services-demo",
+  "verifiedServices": [
+    "HVAC installation, repair and maintenance",
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "Indoor air quality service",
+    "Air duct sealing and sheet metal fabrication"
+  ],
+  "verifiedHighlights": [
+    "The official website says Sanders Mechanical Services serves Social Circle, Northeast Metro Atlanta and surrounding communities for home and business HVAC needs.",
+    "The official website publishes phone 770-725-6003, Georgia license CN007252 and a Good Hope mailing address.",
+    "The official website uses business-controlled contact and service-request forms and lists installation, repair, maintenance, commercial HVAC and indoor-air services."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification path ahead of the existing form-based service flow while preserving only verified service, contact and service-area claims.",
+  "sourceReviewDate": "2026-08-22",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
