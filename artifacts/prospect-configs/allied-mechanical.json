@@ -1,0 +1,36 @@
+{
+  "companyName": "Allied Mechanical Inc.",
+  "shortName": "Allied Mechanical",
+  "website": "https://www.alliedmechanicalinc.com/",
+  "emailDomain": "alliedmechanicalinc.com",
+  "publicEmail": "Info@alliedmechanicalinc.com",
+  "phoneDisplay": "(770) 861-2559",
+  "serviceArea": "Loganville and surrounding listed service areas",
+  "publicContact": null,
+  "plannedDemoRoute": "allied-mechanical-demo",
+  "verifiedServices": [
+    "Residential HVAC service",
+    "Commercial HVAC service",
+    "Heating service",
+    "Air conditioning service",
+    "HVAC installation",
+    "HVAC maintenance",
+    "Indoor air quality"
+  ],
+  "verifiedHighlights": [
+    "The official website presents Allied Mechanical as a veteran-owned heating and cooling specialist in and around Loganville, Georgia.",
+    "The official website publishes Info@alliedmechanicalinc.com, phone 770-861-2559 and address 3715 Harrison Rd SW, Loganville, GA 30052.",
+    "The reviewed official site publishes residential/commercial HVAC, maintenance, installation, indoor-air-quality, financing and contact paths."
+  ],
+  "opportunity": "Add a concise mobile-first bilingual qualification step before the existing contact and estimate paths while preserving only verified service and contact claims.",
+  "sourceReviewDate": "2026-08-23",
+  "demoRules": {
+    "unofficialDemo": true,
+    "noindex": true,
+    "noRealServiceRequest": true,
+    "noFakeReviews": true,
+    "noClickableProspectPhone": true,
+    "bilingual": ["en", "es"],
+    "pricingOrAppointmentPromises": false
+  }
+}
