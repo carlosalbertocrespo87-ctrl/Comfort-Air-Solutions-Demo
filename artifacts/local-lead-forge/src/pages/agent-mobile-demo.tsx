@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
 import { AgentMacroDrawer } from '@/components/agent-macro-drawer';
-import { detectConversationLanguage, type MacroLanguage } from '@/lib/agent-macros';
+import { ControlledLearningPanel } from '@/components/controlled-learning-panel';
+import { archiveLearningItem, queueLearningCandidate, type LearningQueueItem } from '@/lib/controlled-learning';
+import { detectConversationLanguage, shouldQueueNewQuestion, type MacroLanguage } from '@/lib/agent-macros';
 import { INITIAL_AGENTS, resolvePilotAgentId, type AgentId, type Conversation } from '@/lib/conversation-model';
 import { planAgentNotification, type AgentAvailability, type NotificationPlan } from '@/lib/agent-notification-policy';
 import { AGENT_SESSION_CHANGED_EVENT, callAgentOps, getStoredAgentSession, type LLFAgentSession } from '@/lib/supabase-session';
@@ -27,6 +29,8 @@ export default function AgentMobileDemoPage() {
   const [actionState, setActionState] = useState<'idle' | 'saving' | 'error'>('idle');
   const [composerDrafts, setComposerDrafts] = useState<Record<string, string>>({});
   const [languageByConversation, setLanguageByConversation] = useState<Record<string, MacroLanguage>>({});
+  const [learningQueue, setLearningQueue] = useState<LearningQueueItem[]>([]);
+  const [learningQueueLoaded, setLearningQueueLoaded] = useState(false);
   const refreshChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
   const sessionGenerationRef = useRef(0);
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
@@ -49,6 +53,8 @@ export default function AgentMobileDemoPage() {
     setRealtimeState('CONNECTING');
     setComposerDrafts({});
     setLanguageByConversation({});
+    setLearningQueue([]);
+    setLearningQueueLoaded(false);
     setConversations([]);
     setSelectedId('');
     setDataState(next ? 'loading' : 'error');
@@ -112,10 +118,11 @@ export default function AgentMobileDemoPage() {
     { agent: 'MARIA', availability: availability.MARIA },
   ]) : EMPTY_NOTIFICATION_PLAN, [current, availability]);
 
-  const latestCustomerMessage = useMemo(() => {
-    if (!current) return '';
-    return [...current.messages].reverse().find((message) => message.author === 'VISITOR')?.body ?? '';
+  const latestCustomerEntry = useMemo(() => {
+    if (!current) return undefined;
+    return [...current.messages].reverse().find((message) => message.author === 'VISITOR');
   }, [current]);
+  const latestCustomerMessage = latestCustomerEntry?.body ?? '';
 
   useEffect(() => {
     if (!current || !latestCustomerMessage.trim()) return;
@@ -124,6 +131,31 @@ export default function AgentMobileDemoPage() {
       return value[current.id] === nextLanguage ? value : { ...value, [current.id]: nextLanguage };
     });
   }, [current?.id, latestCustomerMessage]);
+
+  useEffect(() => {
+    if (!me) {
+      setLearningQueue([]);
+      setLearningQueueLoaded(true);
+      return;
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem(`llf-controlled-learning:${me}`) ?? '[]');
+      setLearningQueue(Array.isArray(saved) ? saved : []);
+    } catch {
+      setLearningQueue([]);
+    } finally {
+      setLearningQueueLoaded(true);
+    }
+  }, [me]);
+
+  useEffect(() => {
+    if (!me || !learningQueueLoaded) return;
+    try {
+      localStorage.setItem(`llf-controlled-learning:${me}`, JSON.stringify(learningQueue));
+    } catch {
+      // Preview-local persistence is optional; approved content remains unchanged.
+    }
+  }, [learningQueue, learningQueueLoaded, me]);
 
   const detectedLanguage = current ? (languageByConversation[current.id] ?? detectConversationLanguage(latestCustomerMessage, 'EN')) : 'EN';
   const assignedElsewhere = !me || Boolean(current?.status === 'AGENT_ACTIVE' && current.assignedAgent !== me);
@@ -136,6 +168,20 @@ export default function AgentMobileDemoPage() {
       const previous = value[current.id]?.trim();
       return { ...value, [current.id]: previous ? `${previous}\n\n${text}` : text };
     });
+  };
+
+  const learningCandidate = current && shouldQueueNewQuestion(latestCustomerMessage, detectedLanguage)
+    ? latestCustomerMessage
+    : '';
+
+  const queueCurrentLearningCandidate = () => {
+    if (!current || !latestCustomerEntry || !canDraft || !learningCandidate) return;
+    setLearningQueue((value) => queueLearningCandidate(value, {
+      question: learningCandidate,
+      language: detectedLanguage,
+      conversationId: current.id,
+      sourceMessageId: latestCustomerEntry.id,
+    }));
   };
 
   const runConversationAction = async (action: 'claim' | 'resolve') => {
@@ -223,6 +269,14 @@ export default function AgentMobileDemoPage() {
               storageKey={`llf-agent-macros:${me ?? 'unmapped'}`}
               onInsert={insertMacroDraft}
             />}
+            <ControlledLearningPanel
+              items={learningQueue}
+              candidateQuestion={learningCandidate}
+              disabled={!canDraft}
+              language={detectedLanguage}
+              onQueueCandidate={queueCurrentLearningCandidate}
+              onArchive={(itemId) => canDraft && setLearningQueue((value) => archiveLearningItem(value, itemId))}
+            />
             <textarea
               disabled={!canDraft}
               rows={4}
