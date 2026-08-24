@@ -20,6 +20,8 @@ export type LearningQueueItem = {
   occurrenceCount: number;
   conversationIds: string[];
   sourceMessageIds: string[];
+  draftAnswer?: string;
+  reviewNotes?: string;
   mergedIntoId?: string;
 };
 
@@ -40,7 +42,9 @@ export function isLearningQueueItem(value: unknown): value is LearningQueueItem 
     && Array.isArray(item.conversationIds)
     && item.conversationIds.every((id) => typeof id === 'string')
     && Array.isArray(item.sourceMessageIds)
-    && item.sourceMessageIds.every((id) => typeof id === 'string');
+    && item.sourceMessageIds.every((id) => typeof id === 'string')
+    && (item.draftAnswer === undefined || typeof item.draftAnswer === 'string')
+    && (item.reviewNotes === undefined || typeof item.reviewNotes === 'string');
 }
 
 const SENSITIVE_PATTERNS = [
@@ -50,10 +54,20 @@ const SENSITIVE_PATTERNS = [
   /\b(?:\d[ -]*?){13,19}\b/,
 ];
 
+function containsSensitiveMaterial(value: string): boolean {
+  return SENSITIVE_PATTERNS.some((pattern) => pattern.test(value));
+}
+
 export function normalizeLearningQuestion(value: string): string | null {
   const trimmed = value.replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
-  if (trimmed.length < 4 || SENSITIVE_PATTERNS.some((pattern) => pattern.test(trimmed))) return null;
+  if (trimmed.length < 4 || containsSensitiveMaterial(trimmed)) return null;
   return trimmed.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s/_-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+export function sanitizeLearningDraft(value: string): string | null {
+  const trimmed = value.replace(/[<>]/g, ' ').replace(/\r\n/g, '\n').trim().slice(0, 2000);
+  if (trimmed.length < 4 || containsSensitiveMaterial(trimmed)) return null;
+  return trimmed;
 }
 
 export function buildLearningFingerprint(question: string, language: LearningLanguage): string | null {
@@ -73,7 +87,7 @@ export function queueLearningCandidate(items: LearningQueueItem[], candidate: Le
       fingerprint,
       normalizedQuestion,
       language: candidate.language,
-      status: 'REVIEW_READY',
+      status: 'OBSERVING',
       answerStatus: 'DRAFT_ONLY',
       occurrenceCount: 1,
       conversationIds: [candidate.conversationId],
@@ -89,11 +103,27 @@ export function queueLearningCandidate(items: LearningQueueItem[], candidate: Le
   } : item);
 }
 
+export function updateLearningDraft(items: LearningQueueItem[], itemId: string, value: string): LearningQueueItem[] {
+  const draftAnswer = sanitizeLearningDraft(value);
+  if (!draftAnswer) return items;
+  return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && !['MERGED', 'ARCHIVED'].includes(item.status)
+    ? { ...item, draftAnswer, status: 'OBSERVING' }
+    : item);
+}
+
+export function submitLearningForReview(items: LearningQueueItem[], itemId: string, notes = ''): LearningQueueItem[] {
+  const reviewNotes = notes.trim() ? sanitizeLearningDraft(notes) : undefined;
+  if (notes.trim() && !reviewNotes) return items;
+  return items.map((item) => item.id === itemId && item.answerStatus === 'DRAFT_ONLY' && item.status === 'OBSERVING' && Boolean(item.draftAnswer)
+    ? { ...item, status: 'REVIEW_READY', reviewNotes }
+    : item);
+}
+
 export function mergeLearningItems(items: LearningQueueItem[], sourceId: string, targetId: string): LearningQueueItem[] {
   if (sourceId === targetId) return items;
   const source = items.find((item) => item.id === sourceId);
   const target = items.find((item) => item.id === targetId);
-  if (!source || !target || ['MERGED', 'ARCHIVED'].includes(source.status) || ['MERGED', 'ARCHIVED'].includes(target.status)) return items;
+  if (!source || !target || source.draftAnswer || target.draftAnswer || ['MERGED', 'ARCHIVED'].includes(source.status) || ['MERGED', 'ARCHIVED'].includes(target.status)) return items;
 
   return items.map((item) => {
     if (item.id === targetId) return {

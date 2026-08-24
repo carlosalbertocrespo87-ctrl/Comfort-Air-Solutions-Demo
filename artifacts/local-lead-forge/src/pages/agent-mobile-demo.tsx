@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Bot, ChevronLeft, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
 import { AgentMacroDrawer } from '@/components/agent-macro-drawer';
 import { ControlledLearningPanel } from '@/components/controlled-learning-panel';
-import { archiveLearningItem, isLearningQueueItem, queueLearningCandidate, type LearningQueueItem } from '@/lib/controlled-learning';
+import { archiveLearningItem, isLearningQueueItem, queueLearningCandidate, submitLearningForReview, updateLearningDraft, type LearningQueueItem } from '@/lib/controlled-learning';
 import { detectConversationLanguage, shouldQueueNewQuestion, type MacroLanguage } from '@/lib/agent-macros';
 import { INITIAL_AGENTS, resolvePilotAgentId, type AgentId, type Conversation } from '@/lib/conversation-model';
 import { planAgentNotification, type AgentAvailability, type NotificationPlan } from '@/lib/agent-notification-policy';
@@ -273,6 +273,8 @@ export default function AgentMobileDemoPage() {
               disabled={!canDraft}
               language={detectedLanguage}
               onQueueCandidate={queueCurrentLearningCandidate}
+              onUpdateDraft={(itemId, value) => canDraft && setLearningQueue((items) => updateLearningDraft(items, itemId, value))}
+              onSubmitForReview={(itemId) => canDraft && setLearningQueue((items) => submitLearningForReview(items, itemId))}
               onArchive={(itemId) => canDraft && setLearningQueue((value) => archiveLearningItem(value, itemId))}
             />
             <textarea
