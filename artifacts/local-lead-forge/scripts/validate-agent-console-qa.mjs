@@ -6,6 +6,7 @@ const page = await readFile(new URL('../src/pages/agent-mobile-demo.tsx', import
 const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts', import.meta.url), 'utf8');
 const model = await readFile(new URL('../src/lib/conversation-model.ts', import.meta.url), 'utf8');
 const session = await readFile(new URL('../src/lib/supabase-session.ts', import.meta.url), 'utf8');
+const signIn = await readFile(new URL('../src/pages/agent-sign-in.tsx', import.meta.url), 'utf8');
 const biometric = await readFile(new URL('../src/lib/agent-biometric-lock.ts', import.meta.url), 'utf8');
 const biometricGate = await readFile(new URL('../src/components/agent-biometric-gate.tsx', import.meta.url), 'utf8');
 const bootstrap = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8');
@@ -63,6 +64,8 @@ const checks = [
 ['Face ID cancellation fails closed', biometricGate.includes('if (unlocked) return') && biometricGate.includes('setError(true)') && !biometricGate.includes('Continue without Face ID')],
 ['Agent Console provides explicit lock and sign-out controls', page.includes('requestAgentLock') && page.includes('clearStoredAgentSession()') && page.includes("window.location.replace('/agent-sign-in')")],
 ['auth hash is cleared from visible URL before network use', session.includes('history.replaceState({}, document.title, window.location.pathname + window.location.search)')],
+['installed PWA can consume a copied approved magic link', signIn.includes('Open approved link in LLF Agent') && signIn.includes('window.location.assign(approved.toString())')],
+['copied magic-link handoff is restricted to exact Supabase project and Agent route', signIn.includes("approved.hostname === 'iogjlzizzegqarkfyzzx.supabase.co'") && signIn.includes("approved.pathname === '/auth/v1/verify'") && signIn.includes("redirect.pathname.replace(/\\/+$/, '') === '/agent-demo'")],
 ['realtime requires trusted stored session before subscription', realtime.includes("session.deviceTrustStatus !== 'TRUSTED'")],
 ['private realtime topic', sql.includes("'llf-agent-console-synthetic'") && sql.includes("extension = 'broadcast'")],
 ['fixed refresh payload', sql.includes("jsonb_build_object('reason', lower(tg_op), 'entity', tg_table_name)")],
