@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for route in onboarding privacy terms dpa start experience-demo agent-demo; do
+          for route in onboarding privacy terms dpa start experience-demo agent-demo agent-sign-in; do
             mkdir -p "pages-dist/$route"
             cp pages-dist/index.html "pages-dist/$route/index.html"
           done
@@ -200,6 +200,26 @@ jobs:
           if [ "$ok" -ne 1 ]; then
             echo "::error::Agent Console deep-link verification failed at $url"
             cat /tmp/agent-route-error 2>/dev/null || true
+            exit 1
+          fi
+      - name: Verify Agent Sign-in deep link is published
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://localleadforge.com/agent-sign-in/"
+          ok=0
+          for attempt in {1..12}; do
+            html=$(curl --fail --silent --show-error --location --max-time 20 "$url" 2>/tmp/agent-sign-in-route-error || true)
+            if [ -n "$html" ] && grep -Fqi '<div id="root"></div>' <<<"$html"; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Agent Sign-in deep-link verification failed at $url"
+            cat /tmp/agent-sign-in-route-error 2>/dev/null || true
             exit 1
           fi
       - name: Verify live demo routes
