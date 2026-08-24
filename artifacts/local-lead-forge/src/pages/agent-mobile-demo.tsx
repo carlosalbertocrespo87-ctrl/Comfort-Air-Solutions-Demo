@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Bot, ChevronLeft, LockKeyhole, LogOut, MessageCircle, ShieldCheck, Smartphone, Users } from 'lucide-react';
+import { Bell, Bot, ChevronLeft, LockKeyhole, LogOut, MessageCircle, ShieldCheck, Users } from 'lucide-react';
 import { requestAgentLock } from '@/components/agent-biometric-gate';
 import { AgentMacroDrawer } from '@/components/agent-macro-drawer';
 import { ControlledLearningPanel } from '@/components/controlled-learning-panel';
@@ -229,15 +229,17 @@ export default function AgentMobileDemoPage() {
       <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d18] shadow-2xl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#050d18]/95 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2"><ChevronLeft className="h-4 w-4" /><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">Local Lead Forge</p><p className="text-xs font-black">Agent Console · QA</p></div></div>
-          <div className="flex items-center gap-1">
-            <button type="button" onClick={requestAgentLock} aria-label="Lock Agent Console" className="rounded-lg border border-white/10 p-2 text-slate-300"><LockKeyhole className="h-4 w-4" /></button>
-            <button type="button" onClick={signOut} aria-label="Sign out" className="rounded-lg border border-white/10 p-2 text-slate-300"><LogOut className="h-4 w-4" /></button>
-            <div className={`flex items-center gap-2 rounded-full border px-2 py-1 text-[9px] font-bold ${session ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/25 bg-rose-500/10 text-rose-300'}`}><ShieldCheck className="h-3.5 w-3.5" /> {session ? 'Authenticated' : 'Authentication required'}</div>
-          </div>
+          <div className={`flex items-center gap-2 rounded-full border px-2 py-1 text-[9px] font-bold ${session ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-rose-500/25 bg-rose-500/10 text-rose-300'}`}><ShieldCheck className="h-3.5 w-3.5" /> {session ? 'Authenticated' : 'Authentication required'}</div>
         </header>
 
         <section className="border-b border-white/10 px-4 py-3">
-          <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] text-slate-400">Signed in as</p><p className="text-sm font-black">{operatorLabel}</p></div><Smartphone className="h-5 w-5 text-orange-400" /></div>
+          <div className="flex items-center justify-between gap-3">
+            <div><p className="text-[10px] text-slate-400">Signed in as</p><p className="text-sm font-black">{operatorLabel}</p></div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={requestAgentLock} className="flex items-center gap-1 rounded-lg border border-white/10 px-2 py-2 text-[9px] font-bold text-slate-300"><LockKeyhole className="h-3.5 w-3.5" /> Bloquear</button>
+              <button type="button" onClick={signOut} className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-2 py-2 text-[9px] font-bold text-rose-300"><LogOut className="h-3.5 w-3.5" /> Cerrar sesión</button>
+            </div>
+          </div>
           {!session && <p className="mt-2 text-[9px] text-rose-300">No authenticated agent session is available. Protected actions stay blocked.</p>}
           {session && !me && <p className="mt-2 text-[9px] text-rose-300">This authenticated account is not mapped to an approved pilot operator. Protected actions stay blocked.</p>}
           <div className="mt-3 grid grid-cols-3 gap-2">
