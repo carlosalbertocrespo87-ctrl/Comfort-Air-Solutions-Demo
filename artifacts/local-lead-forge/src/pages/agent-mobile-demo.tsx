@@ -53,8 +53,6 @@ export default function AgentMobileDemoPage() {
     setRealtimeState('CONNECTING');
     setComposerDrafts({});
     setLanguageByConversation({});
-    setLearningQueue([]);
-    setLearningQueueLoaded(false);
     setConversations([]);
     setSelectedId('');
     setDataState(next ? 'loading' : 'error');
