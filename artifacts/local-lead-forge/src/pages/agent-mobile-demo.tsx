@@ -4,6 +4,7 @@ import { AgentMacroDrawer } from '@/components/agent-macro-drawer';
 import { ControlledLearningPanel } from '@/components/controlled-learning-panel';
 import { archiveLearningItem, isLearningQueueItem, queueLearningCandidate, submitLearningForReview, updateLearningDraft, type LearningQueueItem } from '@/lib/controlled-learning';
 import { detectConversationLanguage, shouldQueueNewQuestion, type MacroLanguage } from '@/lib/agent-macros';
+import { showSyntheticAgentQaNotification, type AgentQaNotificationResult } from '@/lib/agent-qa-notifications';
 import { INITIAL_AGENTS, resolvePilotAgentId, type AgentId, type Conversation } from '@/lib/conversation-model';
 import { planAgentNotification, type AgentAvailability, type NotificationPlan } from '@/lib/agent-notification-policy';
 import { AGENT_SESSION_CHANGED_EVENT, callAgentOps, getStoredAgentSession, type LLFAgentSession } from '@/lib/supabase-session';
@@ -31,6 +32,7 @@ export default function AgentMobileDemoPage() {
   const [languageByConversation, setLanguageByConversation] = useState<Record<string, MacroLanguage>>({});
   const [learningQueue, setLearningQueue] = useState<LearningQueueItem[]>([]);
   const [learningQueueLoaded, setLearningQueueLoaded] = useState(false);
+  const [qaNotificationState, setQaNotificationState] = useState<AgentQaNotificationResult | 'IDLE' | 'WORKING'>('IDLE');
   const refreshChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
   const sessionGenerationRef = useRef(0);
   const current = conversations.find((item) => item.id === selectedId) ?? conversations[0];
@@ -216,6 +218,26 @@ export default function AgentMobileDemoPage() {
     }
   };
 
+  const runSyntheticQaNotification = async () => {
+    if (qaNotificationState === 'WORKING') return;
+    setQaNotificationState('WORKING');
+    try {
+      setQaNotificationState(await showSyntheticAgentQaNotification());
+    } catch {
+      setQaNotificationState('UNSUPPORTED');
+    }
+  };
+
+  const qaNotificationMessage: Record<AgentQaNotificationResult | 'IDLE' | 'WORKING', string> = {
+    IDLE: 'Install this page on the Home Screen, open the LLF Agent icon, then run this local QA-only test.',
+    WORKING: 'Preparing the local QA notification…',
+    SHOWN: 'Synthetic QA notification displayed. No message was sent to a client or external recipient.',
+    INSTALL_REQUIRED: 'Add LLF Agent to the Home Screen and open it from the installed icon before testing notifications.',
+    PERMISSION_DENIED: 'Notification permission was not granted. You can enable it later in iPhone Settings.',
+    UNSUPPORTED: 'This browser or installation cannot display the local QA notification.',
+    WRONG_ROUTE: 'Notification QA is restricted to the protected Agent Console.',
+  };
+
   const operatorLabel = session?.displayName ?? (me ? INITIAL_AGENTS[me].displayName : 'Unknown operator');
 
   return (
@@ -248,7 +270,12 @@ export default function AgentMobileDemoPage() {
             <div className="flex items-center justify-between"><div><p className="text-xs font-black">{current.contactName}</p><p className="text-[9px] text-slate-500">{current.audience} · {current.channel}</p></div>{current.audience === 'CLIENT' ? <Users className="h-4 w-4 text-blue-300" /> : <MessageCircle className="h-4 w-4 text-orange-300" />}</div>
             <div className="mt-3 space-y-2">{current.messages.map((message) => <div key={message.id} className="rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center justify-between"><span className="text-[9px] font-bold text-slate-300">{message.authorLabel}</span><span className="text-[8px] text-slate-600">{message.createdAt}</span></div><p className="mt-1 text-[10px] leading-4 text-slate-300">{message.body}</p></div>)}</div>
             {current.handoffSummary && <div className="mt-3 rounded-xl border border-orange-500/20 bg-orange-500/[0.05] p-3"><div className="flex items-center gap-2 text-[9px] font-black text-orange-300"><Bot className="h-3.5 w-3.5" /> AI handoff summary</div><p className="mt-2 text-[10px] leading-4 text-slate-300">{current.handoffSummary.reason}</p><p className="mt-2 text-[9px] text-slate-400"><b className="text-white">Intent:</b> {current.handoffSummary.userIntent}</p><p className="mt-1 text-[9px] text-slate-400"><b className="text-white">Open:</b> {current.handoffSummary.unresolvedQuestion}</p><p className="mt-1 text-[9px] text-slate-400"><b className="text-white">Next:</b> {current.handoffSummary.suggestedNextAction}</p></div>}
-            <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center gap-2 text-[9px] font-black text-slate-300"><Bell className="h-3.5 w-3.5" /> Notification plan</div><p className="mt-2 text-[9px] text-slate-400">Primary: <b className="text-white">{notificationPlan.primary ?? 'None'}</b> · Fallback: <b className="text-white">{notificationPlan.fallback ?? 'None'}</b></p></div>
+            <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
+              <div className="flex items-center gap-2 text-[9px] font-black text-slate-300"><Bell className="h-3.5 w-3.5" /> Notification plan</div>
+              <p className="mt-2 text-[9px] text-slate-400">Primary: <b className="text-white">{notificationPlan.primary ?? 'None'}</b> · Fallback: <b className="text-white">{notificationPlan.fallback ?? 'None'}</b></p>
+              <button type="button" disabled={qaNotificationState === 'WORKING'} onClick={() => void runSyntheticQaNotification()} className="mt-3 w-full rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-[9px] font-black text-orange-200 disabled:cursor-not-allowed disabled:opacity-40">Test local QA notification</button>
+              <p className={`mt-2 text-[9px] ${qaNotificationState === 'SHOWN' ? 'text-emerald-300' : qaNotificationState === 'PERMISSION_DENIED' || qaNotificationState === 'UNSUPPORTED' ? 'text-rose-300' : 'text-slate-500'}`}>{qaNotificationMessage[qaNotificationState]}</p>
+            </div>
             {current.status === 'AGENT_ACTIVE' && <p className="mt-2 text-[10px] text-slate-500">Assigned to <b className="text-white">{current.assignedAgent ? INITIAL_AGENTS[current.assignedAgent].displayName : 'Unknown / not in pilot'}</b>. Claim lock prevents a second specialist from replying.</p>}
             <div className="mt-3 grid grid-cols-2 gap-2"><button disabled={!me || current.status !== 'WAITING_FOR_AGENT' || actionState === 'saving'} onClick={() => void runConversationAction('claim')} className="rounded-lg bg-orange-600 px-3 py-2.5 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:opacity-30">Take as {operatorLabel}</button><button disabled={!me || current.status !== 'AGENT_ACTIVE' || assignedElsewhere || actionState === 'saving'} onClick={() => void runConversationAction('resolve')} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-[10px] font-black text-emerald-300 disabled:opacity-30">Resolve</button><button disabled className="col-span-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[10px] font-bold text-slate-300 disabled:opacity-30">Return to AI — blocked during QA</button></div>
             {actionState === 'error' && <p className="mt-2 text-[9px] text-rose-300">The action could not be safely confirmed. Protected data was invalidated; refresh and verify assignment before retrying.</p>}
