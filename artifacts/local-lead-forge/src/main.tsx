@@ -4,7 +4,7 @@ import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
-import { consumeSupabaseAuthHash, getStoredAgentSession } from '@/lib/supabase-session';
+import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
 import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
 import DpaPage from '@/pages/dpa';
@@ -53,11 +53,10 @@ function DeviceTrustRequired({ status }: { status: 'PENDING' | 'REVOKED' }) {
 async function bootstrap() {
   const authResult = await consumeSupabaseAuthHash();
   if (authResult === 'consumed') {
-    // GitHub Pages does not provide SPA rewrite rules. Keep navigation client-side
-    // so the authenticated session is preserved and /agent-demo renders without
-    // issuing a network request that would otherwise return the static 404 page.
     history.replaceState({}, document.title, '/agent-demo');
   }
+
+  await reconcileStoredDeviceTrust();
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isOnboarding = normalizedPath === '/onboarding';
