@@ -2,43 +2,51 @@
 
 Date: 24 Aug 2026
 Controller: GitHub Issue #210
-Status: **DESIGN / PRE-LIVE SECURITY HOLD**
+Status: **OPTION A IMPLEMENTATION CANDIDATE IN DRAFT PR #211 / PRE-LIVE SECURITY HOLD**
 
-## Current architecture
+## Current protected-main architecture
 
-The Agent Console is currently a static SPA published through GitHub Pages at the protected `/agent-demo/` and `/agent-sign-in/` routes. Supabase authentication and `llf-agent-ops` provide the authoritative user/profile/device checks.
+Protected `main` at the time PR #211 was opened is `d5e6df0ec913ab98efb43191a1e7932e7577cae4` and still contains the installed-PWA persistence model documented by PR #209. That model stores the validated Agent session in browser `localStorage` and uses a JavaScript-readable `__Host-llf_agent_auth_bridge_v1` cookie for access/refresh continuity.
 
-After the iOS installed-PWA session-transfer defect, the current client persists:
-
-- the validated Agent session in browser `localStorage`;
-- access/refresh continuity in a JavaScript-set `__Host-llf_agent_auth_bridge_v1` Secure/SameSite=Strict cookie for up to 30 days;
-- refresh-token rotation through the Supabase publishable-key refresh endpoint.
-
-This solved the installed-PWA continuity problem and passed internal physical device QA, but the persistent token material remains JavaScript-readable. That is acceptable only under the current synthetic/internal posture, not as the final live-customer session architecture without further review.
+That design solved the observed iOS installed-PWA continuity defect and passed internal physical device QA, but the durable token material remains JavaScript-readable. It therefore stays internal/synthetic only under Issue #210.
 
 ## Option A — ephemeral Agent session for first live release
 
-**Recommended MVP path if LLF wants the lowest implementation risk before Client #1.**
+**Selected implementation candidate: DRAFT PR #211.**
 
-- Do not persist refresh tokens across app restarts.
-- Avoid long-lived access-token persistence in `localStorage` or other durable JavaScript-readable storage.
-- Keep the active access token only for the current browser/PWA session (prefer memory; `sessionStorage` only if reload continuity is required).
-- Require a fresh approved magic-link handoff at the start of a new operator session/shift.
-- Reuse the protected copied-link flow already built for installed iOS PWA handoff.
-- Preserve active-agent, trusted-device, Face ID/device-passkey, lock/sign-out, synthetic/live-data gates and backend authorization.
+PR #211 changes the Agent Console so that:
+
+- the validated Agent access-token session is kept only in `sessionStorage` for the current browser/PWA session;
+- the refresh token is not captured, retained or used for automatic refresh;
+- the legacy durable `localStorage` Agent-session record is actively removed;
+- the legacy JavaScript-readable auth-bridge cookie is actively expired and is no longer written with credentials;
+- the non-secret device-install identifier may remain in `localStorage` so trusted-device identity can continue to work;
+- a fresh approved magic-link handoff is required after the browser/PWA session ends or when the access token expires;
+- active-agent, trusted-device, Face ID/device-passkey, lock/sign-out, synthetic/live-data gates and backend authorization remain unchanged.
 
 ### Benefits
 
-- removes long-lived refresh credentials from durable browser storage;
-- avoids introducing a new production backend/session service before first customer;
-- easy to reason about and revoke by ending the session;
-- appropriate for the initial two-operator model where occasional re-authentication is tolerable.
+- removes long-lived refresh credentials from durable JavaScript-readable browser storage;
+- materially reduces the credential-persistence exposure tracked by Issue #210;
+- avoids introducing a new production backend/session service before Client #1;
+- keeps the first-customer architecture simple enough to audit and revoke by ending the session.
 
 ### Trade-offs
 
-- operators must sign in again after closing/restarting the app or at a defined short interval;
-- active bearer tokens remain JavaScript-readable while the SPA is running, so CSP/XSS defenses are still required;
-- physical regression QA is required after changing persistence behavior.
+- operators must sign in again after the session ends or the short-lived access token expires;
+- the active bearer access token remains JavaScript-readable while the SPA session is running, so CSP/XSS/dependency/output-safety defenses remain required;
+- physical iPhone/desktop regression QA is required because persistence behavior changed after PR #199.
+
+### Required acceptance before Issue #210 can close
+
+1. Exact-head Agent Console security workflow passes on PR #211.
+2. Typecheck and production build pass on the exact PR head.
+3. Confirm no durable Agent access/refresh token is written to `localStorage`, IndexedDB or a credential-bearing JavaScript cookie.
+4. Confirm the copied approved magic-link flow still authenticates on iPhone/PWA and desktop.
+5. Confirm trusted-device behavior remains fail closed for `PENDING`/`REVOKED` devices.
+6. Confirm Face ID/device-passkey lock, explicit lock and sign-out still work.
+7. Confirm closing/ending the Agent browser/PWA session requires a new magic-link sign-in rather than silently restoring from a refresh credential.
+8. Keep real customer data, real Send and real push blocked until their independent release gates are satisfied.
 
 ## Option B — same-origin/BFF server-managed session
 
@@ -65,7 +73,7 @@ The BFF should:
 
 ### Trade-offs
 
-- requires server-capable hosting/session state and more operational surface than current static GitHub Pages;
+- requires server-capable hosting/session state and more operational surface than current static deployment;
 - requires fresh threat-model, deployment, auth, device and regression QA;
 - should not be rushed solely to avoid an extra login during the first-customer phase.
 
@@ -73,7 +81,7 @@ The BFF should:
 
 The following can be defense-in-depth but should not be treated as equivalent to a server-managed HttpOnly session:
 
-- moving the same tokens from `localStorage` to IndexedDB;
+- moving the same refresh credentials from `localStorage` to IndexedDB;
 - Base64/obfuscation;
 - encrypting a token with a key that same-origin JavaScript can automatically use;
 - relying only on `__Host-`, Secure or SameSite attributes while JavaScript still reads the credential.
@@ -82,12 +90,12 @@ A successful same-origin script compromise can generally invoke the same browser
 
 ## Recommended sequence
 
-1. Keep current implementation synthetic/internal only.
-2. Before enabling real customer conversation data, choose Option A or B under Issue #210.
-3. For the fastest safe Client #1 path, implement Option A first and keep B as the scale-up target.
-4. Run focused physical PC/iPhone authentication, trusted-device, lock/unlock and restart/re-auth tests against the exact final session implementation.
-5. Only after that security gate passes may a separate release controller consider live customer data. Real Send, real push, payment, legal, outreach and production AI/voice remain independent gates.
+1. Keep protected `main` synthetic/internal only while PR #211 is DRAFT.
+2. Let PR #211 complete exact-head automated security/typecheck/build checks.
+3. Perform focused iPhone/PWA and desktop regression QA on the exact PR #211 implementation.
+4. If all acceptance criteria pass, separately authorize merge of PR #211 and close Issue #210 only after documenting the final evidence.
+5. Real customer conversation data, real Send, real push, payment, legal, outreach and production AI/voice remain independent gates.
 
 ## Non-goals
 
-This design does not authorize customer traffic, messaging, push, Auth/CORS changes, payment actions, legal release, outreach, credential rotation or production AI/voice activation.
+This design and PR #211 do not authorize customer traffic, messaging, push, Auth/CORS changes, payment actions, legal release, outreach, credential rotation or production AI/voice activation.
