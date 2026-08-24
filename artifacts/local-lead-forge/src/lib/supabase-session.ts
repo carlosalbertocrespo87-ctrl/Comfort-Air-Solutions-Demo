@@ -1,9 +1,7 @@
 const SUPABASE_URL = 'https://iogjlzizzegqarkfyzzx.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_F9KY7_PBrERwwQjvpoIv5A_bxk_mVXV';
 const SESSION_KEY = 'llf_agent_session_v1';
 const DEVICE_INSTALL_KEY = 'llf_device_install_id_v1';
-const AUTH_BRIDGE_COOKIE = '__Host-llf_agent_auth_bridge_v1';
-const AUTH_BRIDGE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const LEGACY_AUTH_BRIDGE_COOKIE = '__Host-llf_agent_auth_bridge_v1';
 export const AGENT_SESSION_CHANGED_EVENT = 'llf-agent-session-changed';
 
 export type DeviceTrustStatus = 'PENDING' | 'TRUSTED' | 'REVOKED';
@@ -18,18 +16,17 @@ export type LLFAgentSession = {
   deviceTrustStatus?: DeviceTrustStatus;
 };
 
-type AgentAuthBridge = {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt?: number;
-};
-
 function emitSessionChanged(): void {
   window.dispatchEvent(new Event(AGENT_SESSION_CHANGED_EVENT));
 }
 
 function parseHash(): URLSearchParams {
   return new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');
+}
+
+function purgeLegacyPersistentAuthArtifacts(): void {
+  window.localStorage.removeItem(SESSION_KEY);
+  document.cookie = `${LEGACY_AUTH_BRIDGE_COOKIE}=; Path=/; Max-Age=0; Secure; SameSite=Strict`;
 }
 
 function getOrCreateDeviceInstallId(): string {
@@ -72,64 +69,31 @@ function parseTokenExpiry(params: URLSearchParams): number | undefined {
 
 export function clearStoredAgentSession(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
-  window.localStorage.removeItem(SESSION_KEY);
-  document.cookie = `${AUTH_BRIDGE_COOKIE}=; Path=/; Max-Age=0; Secure; SameSite=Strict`;
+  purgeLegacyPersistentAuthArtifacts();
   emitSessionChanged();
 }
 
 function clearStoredSessionRecord(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
-  window.localStorage.removeItem(SESSION_KEY);
-}
-
-function encodeBridge(bridge: AgentAuthBridge): string {
-  const bytes = new TextEncoder().encode(JSON.stringify(bridge));
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
-}
-
-function decodeBridge(value: string): AgentAuthBridge | null {
-  try {
-    const padded = value.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - value.length % 4) % 4);
-    const binary = atob(padded);
-    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as AgentAuthBridge;
-    if (!parsed.accessToken || typeof parsed.accessToken !== 'string') return null;
-    if (parsed.refreshToken !== undefined && typeof parsed.refreshToken !== 'string') return null;
-    if (parsed.expiresAt !== undefined && (!Number.isFinite(parsed.expiresAt) || parsed.expiresAt <= 0)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeAuthBridge(bridge: AgentAuthBridge): void {
-  document.cookie = `${AUTH_BRIDGE_COOKIE}=${encodeBridge(bridge)}; Path=/; Max-Age=${AUTH_BRIDGE_MAX_AGE_SECONDS}; Secure; SameSite=Strict`;
-}
-
-function readAuthBridge(): AgentAuthBridge | null {
-  const prefix = `${AUTH_BRIDGE_COOKIE}=`;
-  const value = document.cookie.split('; ').find((part) => part.startsWith(prefix))?.slice(prefix.length);
-  return value ? decodeBridge(value) : null;
+  purgeLegacyPersistentAuthArtifacts();
 }
 
 function storeAgentSession(session: LLFAgentSession): void {
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  window.sessionStorage.removeItem(SESSION_KEY);
+  purgeLegacyPersistentAuthArtifacts();
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   emitSessionChanged();
 }
 
 export function getStoredAgentSession(): LLFAgentSession | null {
+  purgeLegacyPersistentAuthArtifacts();
   try {
-    const raw = window.localStorage.getItem(SESSION_KEY) ?? window.sessionStorage.getItem(SESSION_KEY);
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw) as LLFAgentSession;
     if (session.expiresAt !== undefined && (!Number.isFinite(session.expiresAt) || Date.now() >= session.expiresAt * 1000)) {
       clearStoredSessionRecord();
       return null;
     }
-    if (!window.localStorage.getItem(SESSION_KEY)) storeAgentSession(session);
     return session;
   } catch {
     clearStoredSessionRecord();
@@ -171,50 +135,15 @@ async function establishAgentSession(accessToken: string, expiresAt?: number): P
   return session;
 }
 
-async function refreshAuthBridge(bridge: AgentAuthBridge): Promise<AgentAuthBridge> {
-  if (!bridge.refreshToken) throw new Error('refresh_token_missing');
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-    method: 'POST',
-    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: bridge.refreshToken }),
-    cache: 'no-store',
-    credentials: 'omit',
-  });
-  if (!response.ok) throw new Error(`refresh_failed_${response.status}`);
-  const refreshed = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
-  if (!refreshed.access_token || !refreshed.refresh_token || !Number.isFinite(refreshed.expires_in) || Number(refreshed.expires_in) <= 0) {
-    throw new Error('invalid_refresh_response');
-  }
-  const next = {
-    accessToken: refreshed.access_token,
-    refreshToken: refreshed.refresh_token,
-    expiresAt: Math.floor(Date.now() / 1000) + Number(refreshed.expires_in),
-  } satisfies AgentAuthBridge;
-  writeAuthBridge(next);
-  return next;
-}
-
 export async function hydratePersistedAgentSession(): Promise<LLFAgentSession | null> {
-  const stored = getStoredAgentSession();
-  if (stored) return stored;
-  const bridge = readAuthBridge();
-  if (!bridge) return null;
-  try {
-    const activeBridge = bridge.expiresAt !== undefined && Date.now() >= bridge.expiresAt * 1000
-      ? await refreshAuthBridge(bridge)
-      : bridge;
-    return await establishAgentSession(activeBridge.accessToken, activeBridge.expiresAt);
-  } catch {
-    clearStoredAgentSession();
-    return null;
-  }
+  purgeLegacyPersistentAuthArtifacts();
+  return getStoredAgentSession();
 }
 
 export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | 'error'> {
   if (!window.location.hash) return 'none';
   const params = parseHash();
   const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token') ?? undefined;
   const authError = params.get('error') || params.get('error_description');
   history.replaceState({}, document.title, window.location.pathname + window.location.search);
   if (authError || !accessToken) {
@@ -223,7 +152,6 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
   }
   try {
     const expiresAt = parseTokenExpiry(params);
-    writeAuthBridge({ accessToken, refreshToken, expiresAt });
     await establishAgentSession(accessToken, expiresAt);
     return 'consumed';
   } catch {
