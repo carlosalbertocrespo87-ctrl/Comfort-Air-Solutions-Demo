@@ -1,3 +1,5 @@
+> **PROTOCOLO HISTÓRICO DE QA — reconciliado el 24 ago 2026.** Las secciones que todavía muestran `PENDING_PHYSICAL`, PR #94 o PR #148 describen la preparación original y ya no son la lista de acciones vigente. El QA físico sintético pasó posteriormente en PR #188; la seguridad local más reciente también quedó probada físicamente en PR #199 (Face ID en los iPhone de Carlos y María; passkey y apertura de consola en desktop de Carlos). Ver `docs/AGENT-CONSOLE-CURRENT-OPERATING-CONTROLLER.md`. No repetir el procedimiento viejo salvo una regresión nueva. **Mensajes reales, customer traffic, push real, pagos, outreach y activaciones de producción siguen bloqueados.**
+
 # Local Lead Forge — Protocolo operativo de María
 
 Estado: ENTRENAMIENTO / QA SINTÉTICO
@@ -70,7 +72,7 @@ No introducir contraseñas/passkeys, códigos de recuperación o autenticación,
 
 ## 10. Gate obligatorio antes de mensajes reales
 
-No marcar una comprobación humana como `PASS` hasta obtener evidencia real del dispositivo. Estado actual:
+No marcar una comprobación humana como `PASS` hasta obtener evidencia real del dispositivo. Estado histórico de este checkpoint:
 
 - Inicio de sesión desde el iPhone del QA: `PENDING_PHYSICAL`.
 - Dispositivo no confiable bloqueado: `AUTOMATED_PASS / PHYSICAL_RECOMMENDED`.
@@ -84,21 +86,23 @@ No marcar una comprobación humana como `PASS` hasta obtener evidencia real del 
 - Conversación real/no sintética inaccesible por la ruta QA: `AUTOMATED_PASS`.
 - Auditoría de la sesión física: `PENDING_PHYSICAL`.
 
+> Nota vigente: estos valores `PENDING_PHYSICAL` pertenecen al checkpoint previo. PR #188 y PR #199 proporcionan la evidencia física posterior; consultar el controller vigente antes de programar un nuevo test.
+
 ## 11. Preparación específica del QA físico
 
-El merge candidate es PR #148, pero el **QA carrier autorizado es PR #94 sincronizado**, head `72b028287b45ee19eb4d1188405bcee7b5741dd8`.
+El siguiente procedimiento es histórico. El merge candidate era PR #148 y el **QA carrier autorizado era PR #94 sincronizado**, head `72b028287b45ee19eb4d1188405bcee7b5741dd8`.
 
-Razón: PR #94 ya está 0 behind de `main`, sus checks frescos están verdes y el preview `https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app` ya forma parte de la allowlist del runtime v11. Los hashes ejecutables críticos coinciden con PR #148; la evidencia está en `docs/PR148-PHYSICAL-QA-EQUIVALENCE.md`.
+Razón histórica: PR #94 estaba 0 behind de `main`, sus checks frescos estaban verdes y el preview `https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app` formaba parte de la allowlist del runtime v11. Los hashes ejecutables críticos coincidían con PR #148; la evidencia está en `docs/PR148-PHYSICAL-QA-EQUIVALENCE.md`.
 
-Para la sesión:
+Para aquella sesión:
 
-1. Carlos y María abren el mismo preview protegido de PR #94.
-2. Verificar que ese preview corresponde al head sincronizado y que los checks permanecen verdes.
-3. Si Supabase Auth ya acepta el callback de ese origen, no modificar configuración. Si no lo acepta, detenerse: cualquier cambio de Auth requiere autorización separada.
-4. Cada persona se autentica por separado; no copiar JWT, fragmentos ni tokens.
+1. Carlos y María abrían el mismo preview protegido de PR #94.
+2. Verificaban que ese preview correspondiera al head sincronizado y que los checks permanecieran verdes.
+3. Si Supabase Auth ya aceptaba el callback de ese origen, no se modificaba configuración. Si no lo aceptaba, se detenía: cualquier cambio de Auth requería autorización separada.
+4. Cada persona se autenticaba por separado; no copiar JWT, fragmentos ni tokens.
 5. Aprobar únicamente los dispositivos temporales correctos.
 6. Ejecutar sincronización inicial, claim simultáneo y resolve.
 7. Capturar evidencia sin credenciales ni datos sensibles.
-8. Al finalizar, retirar únicamente accesos temporales que realmente se hayan creado y revocar dispositivos temporales si ya no son necesarios.
+8. Al finalizar, retirar únicamente accesos temporales que realmente se hubieran creado y revocar dispositivos temporales si ya no eran necesarios.
 
-No requiere desplegar una nueva variante de CORS para PR #148. Un fallo mantiene PR #148 en `HOLD` y PR #94 sigue siendo solo un carrier de QA, no un PR para merge.
+No usar este apartado para crear un nuevo blocker. El controller vigente decide si existe o no una regresión física pendiente.
