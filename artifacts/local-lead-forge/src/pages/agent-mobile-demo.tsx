@@ -228,7 +228,7 @@ export default function AgentMobileDemoPage() {
               rows={4}
               value={composerDraft}
               onChange={(event) => current && setComposerDrafts((value) => ({ ...value, [current.id]: event.target.value }))}
-              placeholder={canDraft ? (detectedLanguage === 'ES' ? 'Borrador interno para revisión…' : 'Internal draft for review…') : 'Claim this synthetic conversation to prepare a draft.'}
+              placeholder={canDraft ? (detectedLanguage === 'ES' ? 'Borrador interno para revisión…' : 'Internal draft for review…') : 'Real sending remains disabled during authenticated QA.'}
               className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] text-slate-300 outline-none disabled:cursor-not-allowed disabled:opacity-40"
             />
             <p className="mt-2 text-[9px] text-slate-500">Detected language: <b className="text-white">{detectedLanguage}</b> · Draft only · no automatic send</p>
