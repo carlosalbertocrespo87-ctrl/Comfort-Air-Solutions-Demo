@@ -7,6 +7,8 @@ const policy = await readFile(new URL('../src/lib/agent-notification-policy.ts',
 const model = await readFile(new URL('../src/lib/conversation-model.ts', import.meta.url), 'utf8');
 const session = await readFile(new URL('../src/lib/supabase-session.ts', import.meta.url), 'utf8');
 const realtime = await readFile(new URL('../src/lib/synthetic-realtime.ts', import.meta.url), 'utf8');
+const serviceWorker = await readFile(new URL('../public/llf-agent-sw.js', import.meta.url), 'utf8');
+const manifest = JSON.parse(await readFile(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
 const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOCOL-ES.md', import.meta.url), 'utf8');
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
@@ -59,6 +61,10 @@ const checks = [
 ['reply UI disabled', page.includes('Real sending remains disabled during authenticated QA.')],
 ['return-to-AI UI disabled', page.includes('Return to AI — blocked during QA')],
 ['live notification transport disabled', policy.includes('LIVE_NOTIFICATION_TRANSPORT_ENABLED = false')],
+['PWA opens only on protected Agent Console', manifest.id === '/agent-demo/' && manifest.start_url === '/agent-demo/' && manifest.display === 'standalone'],
+['service worker never caches protected conversation data', !/addEventListener\\(['\"]fetch['\"]/.test(serviceWorker) && !/caches\\.(open|match)|cache\\.put/.test(serviceWorker)],
+['push display is synthetic-QA only', serviceWorker.includes("payload.mode !== 'SYNTHETIC_QA'") && !serviceWorker.includes('payload.body') && !serviceWorker.includes('payload.title')],
+['notification deep links stay on protected Agent Console', serviceWorker.includes("deepLink.startsWith('/agent-demo')")],
 ['Maria protocol points to replacement PR148 and QA carrier PR94', mariaProtocol.includes('PR #148') && mariaProtocol.includes('PR #94')],
 ['physical QA is not falsely marked complete', mariaProtocol.includes('PENDING_PHYSICAL')],
 ['merge gate remains HOLD pending physical QA', mergeGate.includes('**HOLD') && mergeGate.includes('## Physical QA still required')],
