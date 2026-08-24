@@ -12,18 +12,20 @@ self.addEventListener('push', (event) => {
     payload = {};
   }
 
-  const title = typeof payload.title === 'string' ? payload.title : 'Local Lead Forge';
-  const body = typeof payload.body === 'string'
-    ? payload.body
-    : 'New activity needs your attention. Tap to open securely.';
-  const target = typeof payload.deepLink === 'string' && payload.deepLink.startsWith('/')
+  // Fail closed: this service worker is an internal synthetic-QA surface only.
+  // Production/customer push needs a separately approved transport and payload contract.
+  if (payload.mode !== 'SYNTHETIC_QA') return;
+
+  const title = '[QA] Local Lead Forge';
+  const body = 'Synthetic QA activity needs attention. Tap to open the protected console.';
+  const target = typeof payload.deepLink === 'string' && payload.deepLink.startsWith('/agent-demo')
     ? payload.deepLink
     : '/agent-demo/';
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      tag: typeof payload.dedupeKey === 'string' ? payload.dedupeKey : 'llf-agent-activity',
+      tag: 'llf-agent-synthetic-qa',
       renotify: false,
       data: { deepLink: target },
     }),

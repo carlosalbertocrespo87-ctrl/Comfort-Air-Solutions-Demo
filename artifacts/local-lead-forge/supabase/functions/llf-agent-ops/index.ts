@@ -1,4 +1,9 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { parseLearningWriteCommand } from './learning-write-contract.ts';
+
+const LEARNING_QUEUE_WRITE_ENABLED = false;
+const LEARNING_QUEUE_WRITE_ACTIONS = new Set(['queue_learning_signal', 'save_learning_draft', 'submit_learning_for_review']);
+const LEARNING_QUEUE_FORBIDDEN_ACTIONS = new Set(['approve_learning_answer', 'publish_learning_answer']);
 
 const ALLOWED_ORIGINS = new Set([
   'https://localleadforge.com',
@@ -6,6 +11,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://deploy-preview-94--symphonious-travesseiro-c9bae1.netlify.app',
   'https://6a8b9a2642822600081ab72a--llf-agent-qa.netlify.app',
   'https://deploy-preview-188--llf-agent-qa.netlify.app',
+  'https://deploy-preview-190--llf-agent-qa.netlify.app',
 ]);
 
 function corsHeaders(req: Request): Record<string, string> {
@@ -132,6 +138,14 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: 'trusted_device_required' }, 403);
   }
   await admin.from('llf_trusted_devices').update({ last_seen_at: new Date().toISOString() }).eq('id', trustedDevice.id);
+
+  if (LEARNING_QUEUE_FORBIDDEN_ACTIONS.has(action)) return json(req, { error: 'learning_approval_or_publication_blocked' }, 403);
+  if (LEARNING_QUEUE_WRITE_ACTIONS.has(action) && !LEARNING_QUEUE_WRITE_ENABLED) return json(req, { error: 'learning_queue_write_blocked' }, 403);
+  if (LEARNING_QUEUE_WRITE_ACTIONS.has(action)) {
+    const parsed = parseLearningWriteCommand(body);
+    if (!parsed.ok) return json(req, { error: parsed.error }, 400);
+    return json(req, { error: 'learning_queue_contract_not_activated' }, 503);
+  }
 
   if (action === 'set_availability') {
     const availability = String(body.availability ?? '');
