@@ -33,7 +33,7 @@ const SENSITIVE_PATTERNS = [
 export function normalizeLearningQuestion(value: string): string | null {
   const trimmed = value.replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
   if (trimmed.length < 4 || SENSITIVE_PATTERNS.some((pattern) => pattern.test(trimmed))) return null;
-  return trimmed.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9¿?¡!\s/_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  return trimmed.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s/_-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 export function buildLearningFingerprint(question: string, language: LearningLanguage): string | null {
