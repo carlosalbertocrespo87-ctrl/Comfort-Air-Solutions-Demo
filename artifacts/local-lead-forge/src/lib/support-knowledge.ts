@@ -51,7 +51,7 @@ export const supportKnowledge: KnowledgeEntry[] = [
       es: {
         keywords: ['precio', 'cuanto cuesta', 'costo', 'configuracion', 'mensual', 'mensualidad', '299', '199'],
         question: '¿Cuánto cuesta Local Lead Forge?',
-        answer: 'La oferta actual para clientes fundadores es de $299 por la configuración inicial y $199 al mes. El checkout para clientes sigue bloqueado hasta que LLF complete sus gates legales y de primera venta.',
+        answer: 'La oferta actual para clientes fundadores es de $299 por la configuración inicial y $199 al mes. El proceso de pago para clientes seguirá bloqueado hasta que LLF complete las validaciones legales y de primera venta.',
       },
     },
   },
@@ -97,9 +97,9 @@ export const supportKnowledge: KnowledgeEntry[] = [
         answer: 'When live onboarding is released and a purchase is verified, LLF will collect business facts and routing preferences, configure the system, perform desktop and mobile QA, request client validation, activate only after the required gates pass, and follow up after launch.',
       },
       es: {
-        keywords: ['onboarding', 'implementacion', 'activacion', 'tiempo', 'lanzamiento', 'configuracion del cliente'],
-        question: '¿Qué ocurre durante el onboarding?',
-        answer: 'Cuando el onboarding en vivo sea liberado y una compra esté verificada, LLF recopilará datos del negocio y preferencias de enrutamiento, configurará el sistema, hará QA en escritorio y móvil, solicitará validación del cliente y activará solo después de superar los gates requeridos.',
+        keywords: ['onboarding', 'incorporacion', 'implementacion', 'activacion', 'tiempo', 'lanzamiento', 'configuracion del cliente'],
+        question: '¿Qué ocurre durante la incorporación?',
+        answer: 'Cuando el proceso de incorporación esté habilitado y una compra esté verificada, LLF recopilará datos del negocio y preferencias de asignación, configurará el sistema, realizará controles de calidad en computadora y móvil, solicitará la validación del cliente y activará el servicio solo después de completar las verificaciones requeridas.',
       },
     },
   },
@@ -115,7 +115,7 @@ export const supportKnowledge: KnowledgeEntry[] = [
       es: {
         keywords: ['enrutamiento', 'entrega de leads', 'enviar leads', 'destino', 'cambiar correo', 'correo de leads'],
         question: '¿Cómo cambio dónde se envían los leads?',
-        answer: 'Un cambio de enrutamiento de leads requiere soporte autorizado de LLF. En la versión en vivo se verificará el destino, se actualizará la configuración, se ejecutará un lead de prueba y se confirmará la entrega antes de cerrar la solicitud.',
+        answer: 'Un cambio en el destino de los leads requiere soporte autorizado de LLF. En la versión en vivo se verificará el destino, se actualizará la configuración, se enviará un lead de prueba y se confirmará la entrega antes de cerrar la solicitud.',
       },
     },
   },
