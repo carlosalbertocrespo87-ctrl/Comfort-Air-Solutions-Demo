@@ -37,9 +37,10 @@
       const heading = results.querySelector("h2");
       heading?.insertAdjacentElement("afterend", notice);
     }
-    notice.textContent = document.documentElement.lang === "es"
+    const localizedText = document.documentElement.lang === "es"
       ? "Las cifras de interfaz mostradas aquí son ejemplos ilustrativos. No representan resultados reales de clientes, garantías ni afirmaciones de rendimiento de Local Lead Forge."
       : "Interface figures shown here are illustrative placeholders only. They are not Local Lead Forge performance claims, guarantees, or actual client results.";
+    if (notice.textContent !== localizedText) notice.textContent = localizedText;
   };
 
   const reconcile = () => {
