@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from './App';
@@ -18,6 +19,19 @@ import StartPage from '@/pages/start';
 import TermsPage from '@/pages/terms';
 
 import './index.css';
+
+type PreviewLang = 'en' | 'es';
+
+function HomePreviewRoute() {
+  const [lang, setLang] = useState<PreviewLang>('es');
+  return (
+    <>
+      <HomePreviewPage lang={lang} onLanguageChange={setLang} />
+      <PreviewSocialFooter locale={lang} />
+      <PreviewSupportChat locale={lang} onLocaleChange={setLang} />
+    </>
+  );
+}
 
 function AgentAuthRequired() {
   return (
@@ -63,7 +77,6 @@ async function bootstrap() {
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isOnboarding = normalizedPath === '/onboarding';
-  const isHomePreview = normalizedPath === '/home-preview';
   const agentSession = getStoredAgentSession();
 
   let AgentRoute: React.ComponentType = AgentAuthRequired;
@@ -78,7 +91,7 @@ async function bootstrap() {
   else if (agentSession?.deviceTrustStatus === 'REVOKED') AgentRoute = () => <DeviceTrustRequired status="REVOKED" />;
 
   const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
-    '/home-preview': { component: HomePreviewPage, title: 'LLF Home Preview | Local Lead Forge', description: 'Private review route for the Local Lead Forge HVAC conversion-focused home page.', private: true },
+    '/home-preview': { component: HomePreviewRoute, title: 'LLF Home Preview | Local Lead Forge', description: 'Private review route for the Local Lead Forge HVAC conversion-focused home page.', private: true },
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
     '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
@@ -107,8 +120,7 @@ async function bootstrap() {
     <ErrorBoundary>
       <>
         <CurrentPage />
-        {isHomePreview && <PreviewSocialFooter />}
-        {isHomePreview ? <PreviewSupportChat /> : supportAudience && <SupportChat audience={supportAudience} />}
+        {supportAudience && <SupportChat audience={supportAudience} />}
       </>
     </ErrorBoundary>,
   );
