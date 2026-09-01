@@ -35,7 +35,7 @@ export function PreviewSocialFooter() {
   if (activeSocialLinks.length === 0) return null;
 
   return (
-    <div className="border-t border-white/10 bg-[#020711] px-5 pb-10 sm:px-8 lg:px-12">
+    <div className="llf-preview-contact border-t border-white/10 bg-[#020711] px-5 pb-10 sm:px-8 lg:px-12">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4 border-t border-white/[0.06] pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Follow Local Lead Forge</div>
@@ -65,9 +65,9 @@ export function PreviewSupportChat() {
   const hasDirectContact = Boolean(contactLinks.whatsapp || contactLinks.sms);
 
   return (
-    <div className="fixed bottom-4 right-4 z-[70] sm:bottom-6 sm:right-6">
+    <div className="llf-preview-contact fixed bottom-4 right-4 z-[70] sm:bottom-6 sm:right-6">
       {open ? (
-        <div className="w-[min(410px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-orange-500/25 bg-[#06101d] shadow-[0_30px_90px_rgba(0,0,0,.6)]">
+        <div className="w-[min(430px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-orange-500/25 bg-[#06101d] shadow-[0_30px_90px_rgba(0,0,0,.6)]">
           <div className="flex items-center justify-between border-b border-white/10 bg-[#081421] px-4 py-3">
             <div className="text-xs font-black text-white">LLF Support + Direct Contact</div>
             <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-white" aria-label="Close contact panel"><X className="h-4 w-4" /></button>
