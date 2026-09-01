@@ -36,8 +36,41 @@ jobs:
 
       - name: Build Local Lead Forge
         env:
-          BASE_PATH: ./
+          BASE_PATH: /
+          VITE_LLF_WHATSAPP_URL: https://wa.me/15555550123
+          VITE_LLF_SMS_URL: sms:+15555550123
+          VITE_LLF_FACEBOOK_URL: https://example.com/facebook
+          VITE_LLF_INSTAGRAM_URL: https://example.com/instagram
+          VITE_LLF_LINKEDIN_URL: https://example.com/linkedin
+          VITE_LLF_YOUTUBE_URL: https://example.com/youtube
         run: pnpm --dir artifacts/local-lead-forge run build
+
+      - name: Verify Netlify form detector asset is built
+        run: test -f artifacts/local-lead-forge/dist/public/llf-form-blueprint.html
+
+      - name: Install Chromium for LLF home QA
+        timeout-minutes: 5
+        run: npx --yes playwright@1.55.0 install chromium
+
+      - name: Start Local Lead Forge built preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --dir artifacts/local-lead-forge exec vite preview --config vite.config.ts --host 127.0.0.1 --port 4174 > /tmp/llf-home-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4174/ >/dev/null; then
+              curl -fsS http://127.0.0.1:4174/llf-form-blueprint.html >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/llf-home-preview.log
+          exit 1
+
+      - name: LLF home bilingual conversion and mobile QA
+        env:
+          LLF_HOME_QA_BASE_URL: http://127.0.0.1:4174
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/llf-home-preview.spec.ts --workers=1 --reporter=line
 
   llf-main-gate:
     name: LLF main gate
