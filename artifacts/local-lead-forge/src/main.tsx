@@ -10,6 +10,7 @@ import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
 import DpaPage from '@/pages/dpa';
 import ExperienceDemoPage from '@/pages/experience-demo';
+import HomePreviewPage from '@/pages/home-preview';
 import OnboardingPage from '@/pages/onboarding';
 import PrivacyPage from '@/pages/privacy';
 import StartPage from '@/pages/start';
@@ -75,6 +76,7 @@ async function bootstrap() {
   else if (agentSession?.deviceTrustStatus === 'REVOKED') AgentRoute = () => <DeviceTrustRequired status="REVOKED" />;
 
   const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
+    '/home-preview': { component: HomePreviewPage, title: 'LLF Home Preview | Local Lead Forge', description: 'Private review route for the Local Lead Forge home page polish package.', private: true },
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
     '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
