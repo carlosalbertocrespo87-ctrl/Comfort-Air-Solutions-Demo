@@ -31,10 +31,10 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
   await expect(page.locator('a[href="#results"]')).toHaveCount(1);
   await expect(page.locator('a[href="#about"]')).toHaveCount(1);
 
-  await page.getByRole('button', { name: 'ES' }).click();
+  await page.getByRole('button', { name: 'Switch to English' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.getByRole('heading', { name: /Turn More HVAC Website Traffic Into Qualified Opportunities/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'EN' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cambiar a español' })).toBeVisible();
 
   await page.getByRole('button', { name: /Questions\? Ask LLF/i }).click();
   await expect(page.getByText('LLF support + direct contact', { exact: true })).toBeVisible();
@@ -78,7 +78,7 @@ test.describe('mobile candidate', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
 
-    await page.getByRole('button', { name: 'ES' }).click();
+    await page.getByRole('button', { name: 'Switch to English' }).click();
     await expect(page.getByRole('heading', { name: /Turn More HVAC Website Traffic Into Qualified Opportunities/i })).toBeVisible();
 
     await page.getByRole('button', { name: /Request a Demo/i }).first().click();
