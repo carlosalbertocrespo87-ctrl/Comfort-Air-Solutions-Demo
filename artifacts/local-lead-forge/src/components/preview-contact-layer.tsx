@@ -9,9 +9,26 @@ const contactLinks = {
   sms: import.meta.env.VITE_LLF_SMS_URL as string | undefined,
 };
 
+const temporarySmsLinks: Record<SupportLocale, string> = {
+  es: 'sms:+14703647684?body=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20los%20servicios%20de%20Local%20Lead%20Forge.',
+  en: 'sms:+14703647684?body=Hello%2C%20I%20would%20like%20information%20about%20Local%20Lead%20Forge%20services.',
+};
+
 const socialLinks = [
-  { label: 'Facebook', href: import.meta.env.VITE_LLF_FACEBOOK_URL as string | undefined, Icon: FaFacebookF },
-  { label: 'Instagram', href: import.meta.env.VITE_LLF_INSTAGRAM_URL as string | undefined, Icon: FaInstagram },
+  {
+    label: 'Facebook',
+    href:
+      (import.meta.env.VITE_LLF_FACEBOOK_URL as string | undefined) ??
+      'https://www.facebook.com/localleadforge',
+    Icon: FaFacebookF,
+  },
+  {
+    label: 'Instagram',
+    href:
+      (import.meta.env.VITE_LLF_INSTAGRAM_URL as string | undefined) ??
+      'https://www.instagram.com/localleadforgeagency/',
+    Icon: FaInstagram,
+  },
   { label: 'LinkedIn', href: import.meta.env.VITE_LLF_LINKEDIN_URL as string | undefined, Icon: FaLinkedinIn },
   { label: 'YouTube', href: import.meta.env.VITE_LLF_YOUTUBE_URL as string | undefined, Icon: FaYoutube },
 ] as const;
@@ -63,7 +80,8 @@ export function PreviewSocialFooter({ locale }: { locale: SupportLocale }) {
 
 export function PreviewSupportChat({ locale, onLocaleChange }: { locale: SupportLocale; onLocaleChange: (locale: SupportLocale) => void }) {
   const [open, setOpen] = useState(false);
-  const hasDirectContact = Boolean(contactLinks.whatsapp || contactLinks.sms);
+  const smsLink = contactLinks.sms ?? temporarySmsLinks[locale];
+  const hasDirectContact = Boolean(contactLinks.whatsapp || smsLink);
 
   return (
     <div className="llf-preview-contact fixed bottom-4 right-4 z-[70] sm:bottom-6 sm:right-6">
@@ -79,7 +97,7 @@ export function PreviewSupportChat({ locale, onLocaleChange }: { locale: Support
               <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{locale === 'es' ? 'Contacto directo' : 'Direct contact'}</div>
               <div className="flex flex-wrap gap-2">
                 <ActionLink href={contactLinks.whatsapp} label="WhatsApp" icon={<FaWhatsapp className="h-4 w-4" />} />
-                <ActionLink href={contactLinks.sms} label="SMS" icon={<MessageSquareText className="h-4 w-4" />} />
+                <ActionLink href={smsLink} label="SMS" icon={<MessageSquareText className="h-4 w-4" />} />
               </div>
             </div>
           )}
