@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from './App';
@@ -25,6 +25,11 @@ type PreviewLang = 'en' | 'es';
 
 function HomePreviewRoute() {
   const [lang, setLang] = useState<PreviewLang>('es');
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   return (
     <>
       <HomePreviewPage lang={lang} onLanguageChange={setLang} />
@@ -68,6 +73,11 @@ function DeviceTrustRequired({ status }: { status: 'PENDING' | 'REVOKED' }) {
   );
 }
 
+function setMetaContent(selector: string, content: string) {
+  const element = document.querySelector<HTMLMetaElement>(selector);
+  if (element) element.content = content;
+}
+
 async function bootstrap() {
   const authResult = await consumeSupabaseAuthHash();
   if (authResult === 'consumed') {
@@ -92,6 +102,11 @@ async function bootstrap() {
   else if (agentSession?.deviceTrustStatus === 'REVOKED') AgentRoute = () => <DeviceTrustRequired status="REVOKED" />;
 
   const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
+    '/': {
+      component: HomePreviewRoute,
+      title: 'Local Lead Forge | HVAC Lead Capture & Follow-Up',
+      description: 'Local Lead Forge helps HVAC companies capture, qualify, route, and follow up with website opportunities in English and Spanish.',
+    },
     '/home-preview': { component: HomePreviewRoute, title: 'LLF Home Preview | Local Lead Forge', description: 'Private review route for the Local Lead Forge HVAC conversion-focused home page.', private: true },
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
@@ -105,14 +120,18 @@ async function bootstrap() {
 
   const route = isOnboarding ? routes['/onboarding'] : routes[normalizedPath];
   const CurrentPage = route?.component ?? App;
-  const supportAudience = normalizedPath === '/experience-demo' ? 'client' : normalizedPath === '/' ? 'prospect' : null;
+  const supportAudience = normalizedPath === '/experience-demo' ? 'client' : null;
 
   if (route) {
     document.title = route.title;
-    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (description) description.content = route.description;
-    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
-    if (robots && route.private) robots.content = 'noindex, nofollow, noarchive';
+    setMetaContent('meta[name="description"]', route.description);
+    setMetaContent('meta[property="og:title"]', route.title);
+    setMetaContent('meta[property="og:description"]', route.description);
+    setMetaContent('meta[name="twitter:title"]', route.title);
+    setMetaContent('meta[name="twitter:description"]', route.description);
+
+    const isPreviewHost = window.location.hostname.endsWith('.netlify.app');
+    setMetaContent('meta[name="robots"]', route.private || isPreviewHost ? 'noindex, nofollow, noarchive' : 'index, follow');
   }
 
   createRoot(document.getElementById('root')!, {
