@@ -57,7 +57,7 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
   await dialog.getByLabel('Negocio').fill('LLF QA HVAC');
   await dialog.getByLabel('Correo').fill('qa@example.com');
   await dialog.getByLabel('Teléfono').fill('5555550123');
-  await dialog.getByLabel('¿Qué parte de tu flujo de oportunidades te gustaría mejorar?').fill('Seguimiento de oportunidades');
+  await dialog.getByLabel('¿Qué parte de tu proceso de captación y seguimiento te gustaría mejorar?').fill('Seguimiento de oportunidades');
   await dialog.getByRole('button', { name: 'Enviar Solicitud' }).click();
   await expect(dialog.getByText('Gracias — recibimos tu solicitud.', { exact: true })).toBeVisible();
 });
