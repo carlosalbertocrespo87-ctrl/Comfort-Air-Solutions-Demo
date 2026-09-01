@@ -11,7 +11,7 @@ import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
 import DpaPage from '@/pages/dpa';
 import ExperienceDemoPage from '@/pages/experience-demo';
-import HomePreviewPage from '@/pages/home-preview-v2';
+import HomePreviewPage from '@/pages/home-preview-v3';
 import OnboardingPage from '@/pages/onboarding';
 import PrivacyPage from '@/pages/privacy';
 import StartPage from '@/pages/start';
