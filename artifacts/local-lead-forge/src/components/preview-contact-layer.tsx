@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { MessageCircle, MessageSquareText, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube, FaWhatsapp } from 'react-icons/fa';
 import SupportChat from '@/components/support-chat';
@@ -38,8 +38,8 @@ export function PreviewSocialFooter() {
     <div className="llf-preview-contact border-t border-white/10 bg-[#020711] px-5 pb-10 sm:px-8 lg:px-12">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4 border-t border-white/[0.06] pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Follow Local Lead Forge</div>
-          <div className="mt-1 text-[12px] text-slate-600">Official LLF social profiles.</div>
+          <div className="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Sigue a Local Lead Forge</div>
+          <div className="mt-1 text-[12px] text-slate-600">Perfiles sociales oficiales de LLF.</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {activeSocialLinks.map(({ label, href, Icon }) => (
@@ -60,50 +60,22 @@ export function PreviewSocialFooter() {
   );
 }
 
-type PreviewLang = 'en' | 'es';
-
-const supportCopy = {
-  en: {
-    title: 'LLF Support + Direct Contact',
-    close: 'Close contact panel',
-    direct: 'Direct contact',
-    trigger: 'Questions? Ask LLF',
-  },
-  es: {
-    title: 'Soporte LLF + contacto directo',
-    close: 'Cerrar panel de contacto',
-    direct: 'Contacto directo',
-    trigger: '¿Preguntas? Consulta a LLF',
-  },
-} as const;
-
 export function PreviewSupportChat() {
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState<PreviewLang>(() => document.documentElement.lang === 'en' ? 'en' : 'es');
   const hasDirectContact = Boolean(contactLinks.whatsapp || contactLinks.sms);
-  const t = supportCopy[lang];
-
-  useEffect(() => {
-    const handleLanguageChange = (event: Event) => {
-      const next = (event as CustomEvent<PreviewLang>).detail;
-      if (next === 'en' || next === 'es') setLang(next);
-    };
-    window.addEventListener('llf-language-change', handleLanguageChange);
-    return () => window.removeEventListener('llf-language-change', handleLanguageChange);
-  }, []);
 
   return (
     <div className="llf-preview-contact fixed bottom-4 right-4 z-[70] sm:bottom-6 sm:right-6">
       {open ? (
         <div className="w-[min(430px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-orange-500/25 bg-[#06101d] shadow-[0_30px_90px_rgba(0,0,0,.6)]">
           <div className="flex items-center justify-between border-b border-white/10 bg-[#081421] px-4 py-3">
-            <div className="text-xs font-black text-white">{t.title}</div>
-            <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-white" aria-label={t.close}><X className="h-4 w-4" /></button>
+            <div className="text-xs font-black text-white">Soporte LLF + contacto directo</div>
+            <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-white" aria-label="Cerrar panel de contacto"><X className="h-4 w-4" /></button>
           </div>
           <SupportChat audience="prospect" embedded defaultOpen />
           {hasDirectContact && (
             <div className="border-t border-white/10 bg-[#050d19] p-3">
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{t.direct}</div>
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Contacto directo</div>
               <div className="flex flex-wrap gap-2">
                 <ActionLink href={contactLinks.whatsapp} label="WhatsApp" icon={<FaWhatsapp className="h-4 w-4" />} />
                 <ActionLink href={contactLinks.sms} label="SMS" icon={<MessageSquareText className="h-4 w-4" />} />
@@ -116,7 +88,7 @@ export function PreviewSupportChat() {
           onClick={() => setOpen(true)}
           className="flex items-center gap-3 rounded-full border border-orange-400/40 bg-orange-600 px-5 py-3 text-sm font-black text-white shadow-[0_18px_55px_rgba(255,106,0,.28)]"
         >
-          <MessageCircle className="h-5 w-5" /> {t.trigger}
+          <MessageCircle className="h-5 w-5" /> ¿Preguntas? Consulta a LLF
         </button>
       )}
     </div>
