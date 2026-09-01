@@ -33,10 +33,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/preview-mobile-fixes.css" />
     <style>
-      header a[aria-label="Local Lead Forge home"] { width: 440px; height: 82px; flex: 0 0 auto; gap: 0 !important; background: url("./llf-premium-logo.svg") left center / contain no-repeat; }
+      header a[aria-label="Local Lead Forge home"] {
+        width: 365px;
+        height: 74px;
+        flex: 0 0 auto;
+        gap: 0 !important;
+        background: url("./llf-official-horizontal.svg") left center / contain no-repeat;
+      }
       header a[aria-label="Local Lead Forge home"] > * { display: none !important; }
-      @media (min-width: 641px) { header > div { height: 96px !important; } }
-      @media (max-width: 640px) { header a[aria-label="Local Lead Forge home"] { width: 270px; height: 58px; } }
+      footer a[aria-label="Local Lead Forge home"] {
+        width: 58px;
+        height: 55px;
+        flex: 0 0 auto;
+        background: url("./llf-official-icon.svg") center / contain no-repeat;
+      }
+      footer a[aria-label="Local Lead Forge home"] > * { display: none !important; }
+      @media (min-width: 641px) { header > div { height: 92px !important; } }
+      @media (max-width: 640px) {
+        header a[aria-label="Local Lead Forge home"] { width: 230px; height: 48px; }
+        footer a[aria-label="Local Lead Forge home"] { width: 52px; height: 49px; }
+      }
     </style>
   </head>
   <body>
