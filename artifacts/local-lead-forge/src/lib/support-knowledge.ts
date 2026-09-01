@@ -46,12 +46,12 @@ export const supportKnowledge: KnowledgeEntry[] = [
       en: {
         keywords: ['price', 'pricing', 'cost', 'how much', 'setup fee', 'monthly', '299', '199'],
         question: 'How much does Local Lead Forge cost?',
-        answer: 'The current founding-client offer is $299 one-time setup plus $199 per month. Customer-ready checkout remains blocked until LLF completes its legal and first-sale release gates.',
+        answer: 'The current founding-client offer is $299 one-time setup plus $199 per month. Online payment is not enabled yet; request a demo so scope, timing, and next steps can be confirmed in writing.',
       },
       es: {
         keywords: ['precio', 'cuanto cuesta', 'costo', 'configuracion', 'mensual', 'mensualidad', '299', '199'],
         question: '¿Cuánto cuesta Local Lead Forge?',
-        answer: 'La oferta actual para clientes fundadores es de $299 por la configuración inicial y $199 al mes. El proceso de pago para clientes seguirá bloqueado hasta que LLF complete las validaciones legales y de primera venta.',
+        answer: 'La oferta actual para clientes fundadores es de $299 por la configuración inicial y $199 al mes. El pago en línea aún no está habilitado; solicita una demo para confirmar por escrito el alcance, los tiempos y los próximos pasos.',
       },
     },
   },
@@ -62,12 +62,12 @@ export const supportKnowledge: KnowledgeEntry[] = [
       en: {
         keywords: ['spanish', 'english', 'bilingual', 'language', 'languages'],
         question: 'Does the assistant support English and Spanish?',
-        answer: 'Yes. The LLF experience is designed for both English and Spanish. This knowledge demo answers from approved local content and does not call a live AI provider.',
+        answer: 'Yes. The LLF experience is designed for both English and Spanish. This automated assistant answers from approved LLF information and is not live human support.',
       },
       es: {
         keywords: ['espanol', 'ingles', 'bilingue', 'idioma', 'idiomas'],
         question: '¿El asistente funciona en inglés y español?',
-        answer: 'Sí. La experiencia de LLF está diseñada para inglés y español. Esta demo de conocimiento responde desde contenido local aprobado y no llama a un proveedor de IA en vivo.',
+        answer: 'Sí. La experiencia de LLF está diseñada para inglés y español. Este asistente automático responde con información aprobada de LLF y no es soporte humano en vivo.',
       },
     },
   },
@@ -78,12 +78,12 @@ export const supportKnowledge: KnowledgeEntry[] = [
       en: {
         keywords: ['human', 'agent', 'person', 'specialist', 'representative', 'carlos', 'maria', 'talk to someone'],
         question: 'Can I speak with a real person?',
-        answer: 'The demo can preview the future specialist handoff experience, but it does not notify a person or send a live message. The authenticated release is designed to preserve approved conversation context for an authorized LLF specialist.',
+        answer: 'Live-agent chat is not available on this website. Use “Request a Demo” to send your information securely so the LLF team can review and follow up.',
       },
       es: {
         keywords: ['humano', 'agente', 'persona', 'especialista', 'representante', 'carlos', 'maria', 'hablar con alguien'],
         question: '¿Puedo hablar con una persona?',
-        answer: 'La demo puede mostrar cómo será el futuro traspaso a un especialista, pero no notifica a ninguna persona ni envía mensajes en vivo. La versión autenticada está diseñada para conservar el contexto aprobado de la conversación para un especialista autorizado de LLF.',
+        answer: 'El chat con un agente en vivo no está disponible en este sitio. Usa “Solicitar Demo” para enviar tus datos de forma segura y permitir que el equipo de LLF revise tu solicitud y te contacte.',
       },
     },
   },

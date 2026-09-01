@@ -52,6 +52,10 @@ const copy = {
     error: 'We could not submit the request. Please try again.',
     close: 'Close',
     languageToggle: 'Cambiar a español',
+    privacy: 'Privacy Policy',
+    terms: 'Website Terms',
+    privacyNotice: 'By submitting, you agree that Local Lead Forge may use this information to respond to your request by email or phone.',
+    smsConsent: 'Optional: I agree to receive text messages from Local Lead Forge about this request. Message and data rates may apply. Reply STOP to opt out.',
   },
   es: {
     nav: ['Soluciones', 'Cómo Funciona', 'Modalidad', 'Qué Medimos', 'Nosotros'],
@@ -100,6 +104,10 @@ const copy = {
     error: 'No pudimos enviar la solicitud. Inténtalo de nuevo.',
     close: 'Cerrar',
     languageToggle: 'Switch to English',
+    privacy: 'Política de Privacidad',
+    terms: 'Términos del Sitio',
+    privacyNotice: 'Al enviar, aceptas que Local Lead Forge use esta información para responder a tu solicitud por correo electrónico o teléfono.',
+    smsConsent: 'Opcional: acepto recibir mensajes de texto de Local Lead Forge sobre esta solicitud. Pueden aplicarse tarifas de mensajes y datos. Responde STOP para cancelar.',
   },
 } as const;
 
@@ -177,6 +185,13 @@ function DemoModal({ lang, onClose }: { lang: Lang; onClose: () => void }) {
             <label className="text-sm font-semibold text-slate-200">{t.email}<input name="email" type="email" required className="mt-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-base" /></label>
             <label className="text-sm font-semibold text-slate-200">{t.phone}<input name="phone" type="tel" className="mt-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-base" /></label>
             <label className="text-sm font-semibold text-slate-200 sm:col-span-2">{t.need}<textarea name="need" rows={4} className="mt-2 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-base" /></label>
+            <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-4 text-xs leading-5 text-slate-300 sm:col-span-2">
+              <input name="sms-consent" type="checkbox" value="yes" className="mt-1 h-4 w-4 shrink-0 accent-orange-500" />
+              <span>{t.smsConsent}</span>
+            </label>
+            <p className="text-xs leading-5 text-slate-400 sm:col-span-2">
+              {t.privacyNotice} <a href="/privacy" className="font-bold text-orange-400 hover:text-orange-300">{t.privacy}</a>.
+            </p>
             {state === 'error' && <div className="sm:col-span-2 rounded-lg border border-red-500/25 bg-red-500/10 p-3 text-sm text-red-200">{t.error}</div>}
             <button disabled={state === 'sending'} className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-sm font-black hover:bg-orange-500 disabled:opacity-60 sm:col-span-2">
               {state === 'sending' ? t.sending : t.submit}<ArrowRight className="h-4 w-4" />
@@ -277,7 +292,13 @@ export default function HomePreviewV3Page({ lang, onLanguageChange }: { lang: La
       <footer className="border-t border-white/[0.07] px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Mark compact />
-          <div className="text-[13px] text-slate-500">{t.footer}</div>
+          <div className="flex flex-col gap-2 text-[13px] text-slate-500 sm:items-end">
+            <div>{t.footer}</div>
+            <div className="flex flex-wrap gap-4">
+              <a href="/privacy" className="hover:text-orange-300">{t.privacy}</a>
+              <a href="/terms" className="hover:text-orange-300">{t.terms}</a>
+            </div>
+          </div>
         </div>
       </footer>
     </main>

@@ -52,6 +52,8 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
 
   await expect(page.getByRole('link', { name: 'Abrir Local Lead Forge en Facebook' })).toHaveAttribute('href', 'https://example.com/facebook');
   await expect(page.getByRole('link', { name: 'Abrir Local Lead Forge en Instagram' })).toHaveAttribute('href', 'https://example.com/instagram');
+  await expect(page.getByRole('link', { name: 'Política de Privacidad' })).toHaveAttribute('href', '/privacy');
+  await expect(page.getByRole('link', { name: 'Términos del Sitio' })).toHaveAttribute('href', '/terms');
 
   await interceptDemoSubmission(page);
   await page.getByRole('button', { name: 'Solicitar Demo' }).first().click();

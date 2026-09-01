@@ -15,7 +15,7 @@ export function runSupportKnowledgeContractTests() {
   assert.equal(spanishPricing?.locale, 'es');
   assert.match(spanishPricing?.answer ?? '', /\$299/);
   assert.match(spanishPricing?.answer ?? '', /\$199/);
-  assert.match(spanishPricing?.answer ?? '', /proceso de pago.*bloqueado/i);
+  assert.match(spanishPricing?.answer ?? '', /pago en l[ií]nea.*no est[aá] habilitado/i);
 
   const englishPricing = findKnowledgeAnswer('What is the price and monthly cost?', 'prospect');
   assert.equal(englishPricing?.id, 'pricing');
@@ -36,8 +36,8 @@ export function runSupportKnowledgeContractTests() {
   const handoff = findKnowledgeAnswer('quiero hablar con una persona especialista', 'prospect');
   assert.equal(handoff?.id, 'human-support');
   assert.equal(handoff?.locale, 'es');
-  assert.match(handoff?.answer ?? '', /no notifica a ninguna persona/i);
-  assert.match(handoff?.answer ?? '', /ni env[ií]a mensajes en vivo/i);
+  assert.match(handoff?.answer ?? '', /agente en vivo.*no est[aá] disponible/i);
+  assert.match(handoff?.answer ?? '', /solicitar demo/i);
 
   assert.equal(findKnowledgeAnswer('zebra quantum warranty question', 'prospect', 'en'), null);
   assert.ok(supportKnowledge.every((entry) => entry.localized.en.answer && entry.localized.es.answer));

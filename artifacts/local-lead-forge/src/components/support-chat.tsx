@@ -82,12 +82,12 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
       : {
           id: nextId + 1,
           role: 'assistant',
-          text: getUnknownAnswerDisclosure(answerLocale),
+          text: getUnknownAnswerDisclosure(answerLocale, audience),
         };
     updateLocale(answerLocale);
     setMessages((current) => [...current, userMessage, reply]);
     setInput('');
-    if (!answer) setHandoff(true);
+    if (!answer && audience === 'client') setHandoff(true);
   };
 
   const requestHuman = () => {
@@ -143,7 +143,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
         ))}
       </div>
 
-      {handoff && (
+      {audience === 'client' && handoff && (
         <div className="mx-4 mb-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3">
           <div className="flex items-center gap-2 text-xs font-black text-sky-300"><UserRound className="h-4 w-4" /> {runtime.handoffTitle}</div>
           <p className="mt-1 text-[10px] leading-4 text-slate-500">{runtime.handoffMessage}</p>
@@ -151,9 +151,11 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
       )}
 
       <div className="border-t border-white/10 p-3">
-        <button onClick={requestHuman} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-xs font-extrabold text-sky-300">
-          <Headphones className="h-4 w-4" /> {runtime.handoffActionLabel}
-        </button>
+        {audience === 'client' && (
+          <button onClick={requestHuman} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-xs font-extrabold text-sky-300">
+            <Headphones className="h-4 w-4" /> {runtime.handoffActionLabel}
+          </button>
+        )}
         <div className="flex gap-2">
           <input
             value={input}

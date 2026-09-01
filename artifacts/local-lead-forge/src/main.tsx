@@ -112,8 +112,8 @@ async function bootstrap() {
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
     '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
     '/agent-sign-in': { component: AgentSignInPage, title: 'LLF Agent QA Sign-in | Local Lead Forge', description: 'QA-only passwordless sign-in entry for approved Local Lead Forge pilot operators.', private: true },
-    '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'Local Lead Forge privacy information.', private: !LEGAL_RELEASED },
-    '/terms': { component: TermsPage, title: 'Service Terms | Local Lead Forge', description: 'Local Lead Forge service terms.', private: !LEGAL_RELEASED },
+    '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'How Local Lead Forge handles information submitted through its public website.' },
+    '/terms': { component: TermsPage, title: 'Website Terms | Local Lead Forge', description: 'Terms governing use of the Local Lead Forge public website.' },
     '/dpa': { component: DpaPage, title: 'Data Processing Addendum | Local Lead Forge', description: 'Local Lead Forge data processing information.', private: !LEGAL_RELEASED },
     '/start': { component: StartPage, title: 'Review & Accept | Local Lead Forge', description: 'Review customer-ready Local Lead Forge terms before secure checkout.', private: !LEGAL_RELEASED },
   };

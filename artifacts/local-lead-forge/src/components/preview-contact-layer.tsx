@@ -9,10 +9,6 @@ const contactLinks = {
   sms: import.meta.env.VITE_LLF_SMS_URL as string | undefined,
 };
 
-const temporarySmsLinks: Record<SupportLocale, string> = {
-  es: 'sms:+14703647684?body=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20los%20servicios%20de%20Local%20Lead%20Forge.',
-  en: 'sms:+14703647684?body=Hello%2C%20I%20would%20like%20information%20about%20Local%20Lead%20Forge%20services.',
-};
 
 const socialLinks = [
   {
@@ -80,7 +76,7 @@ export function PreviewSocialFooter({ locale }: { locale: SupportLocale }) {
 
 export function PreviewSupportChat({ locale, onLocaleChange }: { locale: SupportLocale; onLocaleChange: (locale: SupportLocale) => void }) {
   const [open, setOpen] = useState(false);
-  const smsLink = contactLinks.sms ?? temporarySmsLinks[locale];
+  const smsLink = contactLinks.sms;
   const hasDirectContact = Boolean(contactLinks.whatsapp || smsLink);
 
   return (
