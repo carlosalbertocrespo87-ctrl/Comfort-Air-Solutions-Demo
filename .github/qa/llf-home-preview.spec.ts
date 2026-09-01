@@ -38,7 +38,7 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
 
   await page.getByRole('button', { name: /Questions\? Ask LLF/i }).click();
   await expect(page.getByText('LLF support + direct contact', { exact: true })).toBeVisible();
-  await expect(page.getByText('LLF Support Assistant', { exact: true })).toBeVisible();
+  await expect(page.getByText('LLF Information Assistant', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', 'https://wa.me/15555550123');
 
   await page.getByPlaceholder('Ask about LLF…').fill('Does the assistant support English and Spanish?');
@@ -48,7 +48,7 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
   await page.getByRole('button', { name: 'Usar español' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.getByRole('heading', { name: /Convierte Más Tráfico Web de HVAC en Oportunidades Calificadas/i })).toBeVisible();
-  await expect(page.getByText('Asistente de Soporte LLF', { exact: true })).toBeVisible();
+  await expect(page.getByText('Asistente Informativo LLF', { exact: true })).toBeVisible();
 
   await expect(page.getByRole('link', { name: 'Abrir Local Lead Forge en Facebook' })).toHaveAttribute('href', 'https://example.com/facebook');
   await expect(page.getByRole('link', { name: 'Abrir Local Lead Forge en Instagram' })).toHaveAttribute('href', 'https://example.com/instagram');
