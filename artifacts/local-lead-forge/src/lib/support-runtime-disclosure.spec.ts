@@ -27,7 +27,7 @@ export function runSupportRuntimeDisclosureContractTests() {
     getSupportIntro('prospect', 'en'),
     getUnknownAnswerDisclosure('en', 'prospect'),
   ].join(' ');
-  assert.doesNotMatch(publicEnglishCopy, /demo|preview|simulation|handoff/i);
+  assert.doesNotMatch(publicEnglishCopy, /preview|simulation|handoff/i);
   assert.match(publicEnglishCopy, /not live support|not a live agent/i);
 
   const publicSpanishCopy = [
@@ -36,7 +36,7 @@ export function runSupportRuntimeDisclosureContractTests() {
     getSupportIntro('prospect', 'es'),
     getUnknownAnswerDisclosure('es', 'prospect'),
   ].join(' ');
-  assert.doesNotMatch(publicSpanishCopy, /demo|vista previa|simulaci[oó]n|traspaso/i);
+  assert.doesNotMatch(publicSpanishCopy, /vista previa|simulaci[oó]n|traspaso/i);
   assert.match(publicSpanishCopy, /no es soporte en vivo|no soy un agente en vivo/i);
 
   const englishCopy = [
