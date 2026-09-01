@@ -1,0 +1,55 @@
+name: LLF Netlify Live Preview Smoke
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  live-preview-smoke:
+    if: github.event.pull_request.number == 213
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        timeout-minutes: 5
+        run: npx --yes playwright@1.55.0 install chromium
+
+      - name: Wait for LLF Netlify deploy preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-213--symphonious-travesseiro-c9bae1.netlify.app/home-preview"
+          for i in {1..36}; do
+            if curl -fsS "$url" >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Netlify preview did not become reachable" >&2
+          exit 1
+
+      - name: Run live preview contact + form smoke QA
+        env:
+          LLF_NETLIFY_PREVIEW_URL: https://deploy-preview-213--symphonious-travesseiro-c9bae1.netlify.app
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/llf-netlify-live-preview.spec.ts --workers=1 --reporter=line
