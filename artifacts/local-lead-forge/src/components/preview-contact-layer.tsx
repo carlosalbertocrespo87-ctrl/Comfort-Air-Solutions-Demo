@@ -16,17 +16,7 @@ const socialLinks = [
 ] as const;
 
 function ActionLink({ href, label, icon }: { href?: string; label: string; icon: ReactNode }) {
-  if (!href) {
-    return (
-      <span
-        aria-disabled="true"
-        title={`${label} link pending configuration`}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-black text-slate-600"
-      >
-        {icon}{label}
-      </span>
-    );
-  }
+  if (!href) return null;
 
   return (
     <a
@@ -41,36 +31,28 @@ function ActionLink({ href, label, icon }: { href?: string; label: string; icon:
 }
 
 export function PreviewSocialFooter() {
+  const activeSocialLinks = socialLinks.filter(({ href }) => Boolean(href));
+  if (activeSocialLinks.length === 0) return null;
+
   return (
     <div className="border-t border-white/10 bg-[#020711] px-5 pb-10 sm:px-8 lg:px-12">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4 border-t border-white/[0.06] pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-[12px] font-black uppercase tracking-[0.15em] text-slate-400">Follow Local Lead Forge</div>
-          <div className="mt-1 text-[12px] text-slate-600">Social icons open the official LLF profile in a new tab.</div>
+          <div className="mt-1 text-[12px] text-slate-600">Official LLF social profiles.</div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {socialLinks.map(({ label, href, Icon }) => (
-            href ? (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Open Local Lead Forge on ${label}`}
-                className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-300 transition hover:border-orange-500/40 hover:bg-orange-500/[0.08] hover:text-orange-300"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ) : (
-              <span
-                key={label}
-                aria-disabled="true"
-                title={`${label} link pending configuration`}
-                className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.02] text-slate-700"
-              >
-                <Icon className="h-4 w-4" />
-              </span>
-            )
+          {activeSocialLinks.map(({ label, href, Icon }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Open Local Lead Forge on ${label}`}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-300 transition hover:border-orange-500/40 hover:bg-orange-500/[0.08] hover:text-orange-300"
+            >
+              <Icon className="h-4 w-4" />
+            </a>
           ))}
         </div>
       </div>
@@ -80,6 +62,7 @@ export function PreviewSocialFooter() {
 
 export function PreviewSupportChat() {
   const [open, setOpen] = useState(false);
+  const hasDirectContact = Boolean(contactLinks.whatsapp || contactLinks.sms);
 
   return (
     <div className="fixed bottom-4 right-4 z-[70] sm:bottom-6 sm:right-6">
@@ -90,13 +73,15 @@ export function PreviewSupportChat() {
             <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-white" aria-label="Close contact panel"><X className="h-4 w-4" /></button>
           </div>
           <SupportChat audience="prospect" embedded defaultOpen />
-          <div className="border-t border-white/10 bg-[#050d19] p-3">
-            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Direct contact</div>
-            <div className="flex flex-wrap gap-2">
-              <ActionLink href={contactLinks.whatsapp} label="WhatsApp" icon={<FaWhatsapp className="h-4 w-4" />} />
-              <ActionLink href={contactLinks.sms} label="SMS" icon={<MessageSquareText className="h-4 w-4" />} />
+          {hasDirectContact && (
+            <div className="border-t border-white/10 bg-[#050d19] p-3">
+              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Direct contact</div>
+              <div className="flex flex-wrap gap-2">
+                <ActionLink href={contactLinks.whatsapp} label="WhatsApp" icon={<FaWhatsapp className="h-4 w-4" />} />
+                <ActionLink href={contactLinks.sms} label="SMS" icon={<MessageSquareText className="h-4 w-4" />} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <button
