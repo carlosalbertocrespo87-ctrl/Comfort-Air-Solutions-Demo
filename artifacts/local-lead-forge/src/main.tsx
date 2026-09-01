@@ -19,6 +19,7 @@ import StartPage from '@/pages/start';
 import TermsPage from '@/pages/terms';
 
 import './index.css';
+import './preview-mobile-fixes.css';
 
 type PreviewLang = 'en' | 'es';
 
