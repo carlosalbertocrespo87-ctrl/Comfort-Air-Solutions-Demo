@@ -41,6 +41,10 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
   await expect(page.getByText('LLF Support Assistant', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', 'https://wa.me/15555550123');
 
+  await page.getByPlaceholder('Ask about LLF…').fill('Does the assistant support English and Spanish?');
+  await page.getByRole('button', { name: 'Send question' }).click();
+  await expect(page.getByText(/Yes\. The LLF experience is designed for both English and Spanish\./i)).toBeVisible();
+
   await page.getByRole('button', { name: 'Usar español' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.getByRole('heading', { name: /Convierte Más Tráfico Web de HVAC en Oportunidades Calificadas/i })).toBeVisible();
