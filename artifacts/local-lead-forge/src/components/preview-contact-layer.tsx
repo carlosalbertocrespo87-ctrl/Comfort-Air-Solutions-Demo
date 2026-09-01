@@ -68,8 +68,8 @@ export function PreviewSupportChat({ locale, onLocaleChange }: { locale: Support
   return (
     <div className="llf-preview-contact fixed bottom-4 right-4 z-[70] sm:bottom-6 sm:right-6">
       {open ? (
-        <div className="w-[min(430px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-orange-500/25 bg-[#06101d] shadow-[0_30px_90px_rgba(0,0,0,.6)]">
-          <div className="flex items-center justify-between border-b border-white/10 bg-[#081421] px-4 py-3">
+        <div className="max-h-[calc(100dvh-7rem)] w-[min(430px,calc(100vw-24px))] overflow-y-auto rounded-2xl border border-orange-500/25 bg-[#06101d] shadow-[0_30px_90px_rgba(0,0,0,.6)] overscroll-contain">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#081421] px-4 py-3">
             <div className="text-xs font-black text-white">{locale === 'es' ? 'Soporte LLF + contacto directo' : 'LLF support + direct contact'}</div>
             <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-white" aria-label={locale === 'es' ? 'Cerrar panel de contacto' : 'Close contact panel'}><X className="h-4 w-4" /></button>
           </div>
