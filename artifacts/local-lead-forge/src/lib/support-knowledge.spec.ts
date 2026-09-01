@@ -15,7 +15,7 @@ export function runSupportKnowledgeContractTests() {
   assert.equal(spanishPricing?.locale, 'es');
   assert.match(spanishPricing?.answer ?? '', /\$299/);
   assert.match(spanishPricing?.answer ?? '', /\$199/);
-  assert.match(spanishPricing?.answer ?? '', /checkout.*bloqueado/i);
+  assert.match(spanishPricing?.answer ?? '', /proceso de pago.*bloqueado/i);
 
   const englishPricing = findKnowledgeAnswer('What is the price and monthly cost?', 'prospect');
   assert.equal(englishPricing?.id, 'pricing');
