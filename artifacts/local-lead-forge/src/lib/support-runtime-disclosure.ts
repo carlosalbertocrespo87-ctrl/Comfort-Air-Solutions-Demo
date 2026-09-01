@@ -38,8 +38,8 @@ export function getSupportRuntimeDisclosure(locale: SupportLocale = 'en') {
 export function getSupportIntro(audience: 'prospect' | 'client', locale: SupportLocale = 'en') {
   if (locale === 'es') {
     return audience === 'prospect'
-      ? 'Hola — soy el Asistente de Soporte LLF en modo demo. Puedo responder preguntas aprobadas sobre Local Lead Forge, precios, soporte bilingüe y cómo funciona el sistema. El traspaso humano es una simulación hasta que se libere el backend seguro de soporte.'
-      : 'Hola — soy el Asistente de Soporte LLF en modo demo. Puedo responder preguntas aprobadas sobre onboarding, implementación, reportes, soporte y temas comunes de la cuenta. El traspaso humano es una simulación hasta que se libere el backend seguro de soporte.';
+      ? 'Hola — soy el Asistente de Soporte LLF en modo demo. Puedo responder preguntas aprobadas sobre Local Lead Forge, precios, soporte bilingüe y cómo funciona el sistema. El traspaso humano es una simulación hasta que se habilite el sistema seguro de soporte.'
+      : 'Hola — soy el Asistente de Soporte LLF en modo demo. Puedo responder preguntas aprobadas sobre incorporación, implementación, reportes, soporte y temas comunes de la cuenta. El traspaso humano es una simulación hasta que se habilite el sistema seguro de soporte.';
   }
   return audience === 'prospect'
     ? 'Hi — I’m the LLF Support Assistant in demo mode. I can answer approved questions about Local Lead Forge, pricing, bilingual support, and how the system works. Human handoff is simulated until the secure live support backend is released.'
