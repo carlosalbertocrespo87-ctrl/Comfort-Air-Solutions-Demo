@@ -10,7 +10,7 @@ import {
 
 export function runSupportRuntimeDisclosureContractTests() {
   for (const disclosure of [SUPPORT_RUNTIME_DISCLOSURE, SUPPORT_RUNTIME_DISCLOSURE_ES]) {
-    assert.equal(disclosure.mode, 'SIMULATION');
+    assert.equal(disclosure.mode, 'INFORMATIONAL');
     assert.equal(disclosure.liveAiProvider, false);
     assert.equal(disclosure.liveCustomerMessaging, false);
     assert.equal(disclosure.liveHumanHandoff, false);
@@ -20,6 +20,24 @@ export function runSupportRuntimeDisclosureContractTests() {
   assert.equal(getSupportRuntimeDisclosure('es'), SUPPORT_RUNTIME_DISCLOSURE_ES);
   assert.match(SUPPORT_RUNTIME_DISCLOSURE.handoffActionLabel, /preview|simulation/i);
   assert.match(SUPPORT_RUNTIME_DISCLOSURE_ES.handoffActionLabel, /vista previa|simulaci[oó]n/i);
+
+  const publicEnglishCopy = [
+    SUPPORT_RUNTIME_DISCLOSURE.statusLabel,
+    SUPPORT_RUNTIME_DISCLOSURE.footerLabel,
+    getSupportIntro('prospect', 'en'),
+    getUnknownAnswerDisclosure('en', 'prospect'),
+  ].join(' ');
+  assert.doesNotMatch(publicEnglishCopy, /demo|preview|simulation|handoff/i);
+  assert.match(publicEnglishCopy, /not live support|not a live agent/i);
+
+  const publicSpanishCopy = [
+    SUPPORT_RUNTIME_DISCLOSURE_ES.statusLabel,
+    SUPPORT_RUNTIME_DISCLOSURE_ES.footerLabel,
+    getSupportIntro('prospect', 'es'),
+    getUnknownAnswerDisclosure('es', 'prospect'),
+  ].join(' ');
+  assert.doesNotMatch(publicSpanishCopy, /demo|vista previa|simulaci[oó]n|traspaso/i);
+  assert.match(publicSpanishCopy, /no es soporte en vivo|no soy un agente en vivo/i);
 
   const englishCopy = [
     SUPPORT_RUNTIME_DISCLOSURE.statusLabel,
