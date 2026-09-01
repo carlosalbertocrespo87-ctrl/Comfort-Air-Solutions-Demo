@@ -1,4 +1,4 @@
-/* Preview-only mobile dialog hardening for the LLF commercial review route. */
+/* Preview-only mobile dialog hardening and readability tuning for the LLF commercial review route. */
 [role="dialog"][aria-modal="true"] {
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -11,6 +11,26 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Readability: keep the premium hierarchy while removing undersized copy. */
+main#top [class*="text-[12px]"] { font-size: 14px !important; line-height: 1.5 !important; }
+main#top [class*="text-[13px]"] { font-size: 15px !important; line-height: 1.55 !important; }
+main#top [class*="text-[14px]"] { font-size: 15.5px !important; line-height: 1.55 !important; }
+main#top .text-sm { font-size: 15.5px !important; line-height: 1.55 !important; }
+main#top [class*="text-slate-500"],
+main#top [class*="text-slate-600"] { color: #94a3b8 !important; }
+
+[role="dialog"][aria-modal="true"] .text-sm { font-size: 16px !important; line-height: 1.6 !important; }
+[role="dialog"][aria-modal="true"] [class*="text-[12px]"] { font-size: 14px !important; }
+[role="dialog"][aria-modal="true"] [class*="text-[13px]"] { font-size: 15px !important; }
+
+.llf-preview-contact .text-sm { font-size: 15.5px !important; line-height: 1.55 !important; }
+.llf-preview-contact .text-xs { font-size: 14px !important; line-height: 1.5 !important; }
+.llf-preview-contact [class*="text-[10px]"] { font-size: 13px !important; line-height: 1.45 !important; }
+.llf-preview-contact [class*="text-[9px]"] { font-size: 12px !important; line-height: 1.4 !important; }
+.llf-preview-contact [class*="text-slate-500"],
+.llf-preview-contact [class*="text-slate-600"],
+.llf-preview-contact [class*="text-slate-700"] { color: #94a3b8 !important; }
 
 @media (max-width: 640px) {
   [role="dialog"][aria-modal="true"] {
@@ -26,4 +46,8 @@
     max-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
     margin: 0 auto;
   }
+
+  main#top [class*="text-[12px]"] { font-size: 13.5px !important; }
+  main#top [class*="text-[13px]"] { font-size: 14.5px !important; }
+  main#top [class*="text-[14px]"] { font-size: 15px !important; }
 }
