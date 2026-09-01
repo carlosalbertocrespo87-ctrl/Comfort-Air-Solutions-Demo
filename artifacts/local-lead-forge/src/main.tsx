@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AgentBiometricGate } from '@/components/agent-biometric-gate';
+import { PreviewSocialFooter, PreviewSupportChat } from '@/components/preview-contact-layer';
 import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
 import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
@@ -62,6 +63,7 @@ async function bootstrap() {
 
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isOnboarding = normalizedPath === '/onboarding';
+  const isHomePreview = normalizedPath === '/home-preview';
   const agentSession = getStoredAgentSession();
 
   let AgentRoute: React.ComponentType = AgentAuthRequired;
@@ -105,7 +107,8 @@ async function bootstrap() {
     <ErrorBoundary>
       <>
         <CurrentPage />
-        {supportAudience && <SupportChat audience={supportAudience} />}
+        {isHomePreview && <PreviewSocialFooter />}
+        {isHomePreview ? <PreviewSupportChat /> : supportAudience && <SupportChat audience={supportAudience} />}
       </>
     </ErrorBoundary>,
   );
