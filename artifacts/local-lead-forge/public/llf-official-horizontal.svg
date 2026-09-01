@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 150" role="img" aria-labelledby="title desc">
+  <title id="title">Local Lead Forge</title>
+  <desc id="desc">Official-style Local Lead Forge horizontal lockup.</desc>
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#f2f2f2"/>
+      <stop offset="1" stop-color="#b7b7b7"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8a00"/>
+      <stop offset="0.55" stop-color="#ff6200"/>
+      <stop offset="1" stop-color="#ef3e00"/>
+    </linearGradient>
+  </defs>
+
+  <g>
+    <!-- LLF mark -->
+    <path d="M18 18h44L48 88h47l-7 26H8z" fill="url(#silver)"/>
+    <path d="M68 18h42L98 76h39l-7 24H60z" fill="url(#silver)"/>
+    <path d="M118 18h95l-8 26h-52l-6 22h47l-8 25h-46l-6 24-28 23 8-39H91l8-27h26z" fill="url(#orange)"/>
+
+    <!-- divider -->
+    <path d="M235 12L214 138" stroke="#efefef" stroke-width="3" stroke-linecap="round" opacity="0.95"/>
+
+    <!-- wordmark -->
+    <text x="260" y="70" fill="#f7f7f7" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Narrow', Arial, sans-serif" font-size="48" font-style="italic" letter-spacing="1" textLength="135" lengthAdjust="spacingAndGlyphs">LOCAL</text>
+    <text x="405" y="70" fill="#ff6500" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Narrow', Arial, sans-serif" font-size="48" font-style="italic" letter-spacing="1" textLength="115" lengthAdjust="spacingAndGlyphs">LEAD</text>
+    <text x="530" y="70" fill="#f7f7f7" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Narrow', Arial, sans-serif" font-size="48" font-style="italic" letter-spacing="1" textLength="150" lengthAdjust="spacingAndGlyphs">FORGE</text>
+
+    <path d="M260 82h420" stroke="#ff6500" stroke-width="3"/>
+    <text x="260" y="113" fill="#bfc3c8" font-family="'Arial Narrow', Arial, sans-serif" font-size="18" font-style="italic" font-weight="700" letter-spacing="0.8" textLength="420" lengthAdjust="spacingAndGlyphs">TURN MORE VISITORS INTO BOOKED JOBS.</text>
+  </g>
+</svg>

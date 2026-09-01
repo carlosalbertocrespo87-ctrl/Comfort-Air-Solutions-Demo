@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bot, Headphones, MessageCircle, Send, UserRound, X } from 'lucide-react';
 import {
   detectSupportLocale,
@@ -22,20 +22,38 @@ type Props = {
   audience: SupportAudience;
   embedded?: boolean;
   defaultOpen?: boolean;
+  locale?: SupportLocale;
+  onLocaleChange?: (locale: SupportLocale) => void;
 };
 
-export default function SupportChat({ audience, embedded = false, defaultOpen = false }: Props) {
+export default function SupportChat({ audience, embedded = false, defaultOpen = false, locale: controlledLocale, onLocaleChange }: Props) {
   const [open, setOpen] = useState(defaultOpen || embedded);
   const [input, setInput] = useState('');
   const [handoff, setHandoff] = useState(false);
-  const [locale, setLocale] = useState<SupportLocale>('en');
+  const [uncontrolledLocale, setUncontrolledLocale] = useState<SupportLocale>('es');
+  const locale = controlledLocale ?? uncontrolledLocale;
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       role: 'assistant',
-      text: getSupportIntro(audience, 'en'),
+      text: getSupportIntro(audience, controlledLocale ?? 'es'),
     },
   ]);
+
+  useEffect(() => {
+    const intro = getSupportIntro(audience, locale);
+    setMessages((current) => {
+      if (current.length === 1 && current[0]?.id === 1 && current[0]?.role === 'assistant') {
+        return current[0].text === intro ? current : [{ ...current[0], text: intro }];
+      }
+      return current;
+    });
+  }, [audience, locale]);
+
+  const updateLocale = (nextLocale: SupportLocale) => {
+    if (onLocaleChange) onLocaleChange(nextLocale);
+    else setUncontrolledLocale(nextLocale);
+  };
 
   const runtime = getSupportRuntimeDisclosure(locale);
   const contextLabel = audience === 'prospect'
@@ -44,7 +62,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
   const nextId = useMemo(() => messages.length + 1, [messages.length]);
 
   const switchLocale = (nextLocale: SupportLocale) => {
-    setLocale(nextLocale);
+    updateLocale(nextLocale);
     setMessages((current) => {
       if (current.length === 1 && current[0]?.id === 1 && current[0]?.role === 'assistant') {
         return [{ ...current[0], text: getSupportIntro(audience, nextLocale) }];
@@ -64,12 +82,12 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
       : {
           id: nextId + 1,
           role: 'assistant',
-          text: getUnknownAnswerDisclosure(answerLocale),
+          text: getUnknownAnswerDisclosure(answerLocale, audience),
         };
-    setLocale(answerLocale);
+    updateLocale(answerLocale);
     setMessages((current) => [...current, userMessage, reply]);
     setInput('');
-    if (!answer) setHandoff(true);
+    if (!answer && audience === 'client') setHandoff(true);
   };
 
   const requestHuman = () => {
@@ -125,7 +143,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
         ))}
       </div>
 
-      {handoff && (
+      {audience === 'client' && handoff && (
         <div className="mx-4 mb-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3">
           <div className="flex items-center gap-2 text-xs font-black text-sky-300"><UserRound className="h-4 w-4" /> {runtime.handoffTitle}</div>
           <p className="mt-1 text-[10px] leading-4 text-slate-500">{runtime.handoffMessage}</p>
@@ -133,9 +151,11 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
       )}
 
       <div className="border-t border-white/10 p-3">
-        <button onClick={requestHuman} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-xs font-extrabold text-sky-300">
-          <Headphones className="h-4 w-4" /> {runtime.handoffActionLabel}
-        </button>
+        {audience === 'client' && (
+          <button onClick={requestHuman} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/[0.06] px-3 py-2.5 text-xs font-extrabold text-sky-300">
+            <Headphones className="h-4 w-4" /> {runtime.handoffActionLabel}
+          </button>
+        )}
         <div className="flex gap-2">
           <input
             value={input}

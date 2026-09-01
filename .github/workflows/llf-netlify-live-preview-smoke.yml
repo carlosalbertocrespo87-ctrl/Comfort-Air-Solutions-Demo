@@ -1,0 +1,72 @@
+name: LLF Netlify Preview Verification Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  live-preview-verification:
+    if: github.event.pull_request.number == 213
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        timeout-minutes: 5
+        run: npx --yes playwright@1.55.0 install chromium
+
+      - name: Probe LLF Netlify deploy preview access
+        id: preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-213--symphonious-travesseiro-c9bae1.netlify.app/home-preview"
+          status="$(curl -sS -o /dev/null -w '%{http_code}' "$url" || true)"
+          echo "http_status=$status" >> "$GITHUB_OUTPUT"
+
+          if [ "$status" = "200" ]; then
+            echo "accessible=true" >> "$GITHUB_OUTPUT"
+            echo "LIVE_PREVIEW_ACCESS=PASS_HTTP_200"
+            exit 0
+          fi
+
+          if [ "$status" = "401" ]; then
+            echo "accessible=false" >> "$GITHUB_OUTPUT"
+            echo "LIVE_PREVIEW_ACCESS=HOLD_AUTH_PROTECTED_HTTP_401"
+            echo "### LLF live-preview verification" >> "$GITHUB_STEP_SUMMARY"
+            echo "Netlify returned HTTP 401. The deploy preview is authentication-protected, so external live contact/form smoke QA is intentionally held rather than misclassified as an application failure." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "Unexpected Netlify preview HTTP status: $status" >&2
+          exit 1
+
+      - name: Run live preview contact + form smoke QA
+        if: steps.preview.outputs.accessible == 'true'
+        env:
+          LLF_NETLIFY_PREVIEW_URL: https://deploy-preview-213--symphonious-travesseiro-c9bae1.netlify.app
+        run: pnpm dlx @playwright/test@1.55.0 test .github/qa/llf-netlify-live-preview.spec.ts --workers=1 --reporter=line
+
+      - name: Record authentication-protected verification hold
+        if: steps.preview.outputs.accessible != 'true'
+        run: echo "LIVE_PREVIEW_SMOKE=HOLD_NETLIFY_AUTH_PROTECTED"

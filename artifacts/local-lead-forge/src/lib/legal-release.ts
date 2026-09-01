@@ -4,6 +4,9 @@ export const LEGAL_RELEASED = false;
 export const LEGAL_VERSION = "DRAFT-2026-08-20";
 export const LEGAL_EFFECTIVE_DATE = "Pending final legal/entity approval";
 
+export const PUBLIC_LEGAL_VERSION = "2026-09-01";
+export const PUBLIC_LEGAL_EFFECTIVE_DATE = "September 1, 2026";
+
 export const LEGAL_CONTACT_EMAIL = "info@localleadforge.com";
 
 export const LEGAL_PATHS = {

@@ -1,0 +1,9 @@
+# LLF preview config — root build target for Netlify deploy previews
+[build]
+  command = "pnpm --filter @workspace/comfortair-solutions build"
+  publish = "artifacts/local-lead-forge/dist/public"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

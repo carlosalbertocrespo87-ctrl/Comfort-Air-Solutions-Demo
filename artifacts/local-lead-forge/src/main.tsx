@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AgentBiometricGate } from '@/components/agent-biometric-gate';
+import { PreviewSocialFooter, PreviewSupportChat } from '@/components/preview-contact-layer';
 import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
 import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
@@ -10,12 +12,32 @@ import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
 import DpaPage from '@/pages/dpa';
 import ExperienceDemoPage from '@/pages/experience-demo';
+import HomePreviewPage from '@/pages/home-preview-v3';
 import OnboardingPage from '@/pages/onboarding';
 import PrivacyPage from '@/pages/privacy';
 import StartPage from '@/pages/start';
 import TermsPage from '@/pages/terms';
 
 import './index.css';
+import './preview-mobile-fixes.css';
+
+type PreviewLang = 'en' | 'es';
+
+function HomePreviewRoute() {
+  const [lang, setLang] = useState<PreviewLang>('es');
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  return (
+    <>
+      <HomePreviewPage lang={lang} onLanguageChange={setLang} />
+      <PreviewSocialFooter locale={lang} />
+      <PreviewSupportChat locale={lang} onLocaleChange={setLang} />
+    </>
+  );
+}
 
 function AgentAuthRequired() {
   return (
@@ -51,6 +73,11 @@ function DeviceTrustRequired({ status }: { status: 'PENDING' | 'REVOKED' }) {
   );
 }
 
+function setMetaContent(selector: string, content: string) {
+  const element = document.querySelector<HTMLMetaElement>(selector);
+  if (element) element.content = content;
+}
+
 async function bootstrap() {
   const authResult = await consumeSupabaseAuthHash();
   if (authResult === 'consumed') {
@@ -75,26 +102,36 @@ async function bootstrap() {
   else if (agentSession?.deviceTrustStatus === 'REVOKED') AgentRoute = () => <DeviceTrustRequired status="REVOKED" />;
 
   const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
+    '/': {
+      component: HomePreviewRoute,
+      title: 'Local Lead Forge | HVAC Lead Capture & Follow-Up',
+      description: 'Local Lead Forge helps HVAC companies capture, qualify, route, and follow up with website opportunities in English and Spanish.',
+    },
+    '/home-preview': { component: HomePreviewRoute, title: 'LLF Home Preview | Local Lead Forge', description: 'Private review route for the Local Lead Forge HVAC conversion-focused home page.', private: true },
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
     '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
     '/agent-sign-in': { component: AgentSignInPage, title: 'LLF Agent QA Sign-in | Local Lead Forge', description: 'QA-only passwordless sign-in entry for approved Local Lead Forge pilot operators.', private: true },
-    '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'Local Lead Forge privacy information.', private: !LEGAL_RELEASED },
-    '/terms': { component: TermsPage, title: 'Service Terms | Local Lead Forge', description: 'Local Lead Forge service terms.', private: !LEGAL_RELEASED },
+    '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'How Local Lead Forge handles information submitted through its public website.' },
+    '/terms': { component: TermsPage, title: 'Website Terms | Local Lead Forge', description: 'Terms governing use of the Local Lead Forge public website.' },
     '/dpa': { component: DpaPage, title: 'Data Processing Addendum | Local Lead Forge', description: 'Local Lead Forge data processing information.', private: !LEGAL_RELEASED },
     '/start': { component: StartPage, title: 'Review & Accept | Local Lead Forge', description: 'Review customer-ready Local Lead Forge terms before secure checkout.', private: !LEGAL_RELEASED },
   };
 
   const route = isOnboarding ? routes['/onboarding'] : routes[normalizedPath];
   const CurrentPage = route?.component ?? App;
-  const supportAudience = normalizedPath === '/experience-demo' ? 'client' : normalizedPath === '/' ? 'prospect' : null;
+  const supportAudience = normalizedPath === '/experience-demo' ? 'client' : null;
 
   if (route) {
     document.title = route.title;
-    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (description) description.content = route.description;
-    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
-    if (robots && route.private) robots.content = 'noindex, nofollow, noarchive';
+    setMetaContent('meta[name="description"]', route.description);
+    setMetaContent('meta[property="og:title"]', route.title);
+    setMetaContent('meta[property="og:description"]', route.description);
+    setMetaContent('meta[name="twitter:title"]', route.title);
+    setMetaContent('meta[name="twitter:description"]', route.description);
+
+    const isPreviewHost = window.location.hostname.endsWith('.netlify.app');
+    setMetaContent('meta[name="robots"]', route.private || isPreviewHost ? 'noindex, nofollow, noarchive' : 'index, follow');
   }
 
   createRoot(document.getElementById('root')!, {

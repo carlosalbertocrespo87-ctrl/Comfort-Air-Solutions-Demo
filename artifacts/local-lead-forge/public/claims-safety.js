@@ -42,7 +42,7 @@
     const root = document.getElementById("root");
     if (!root) return;
     replaceTextNodes(root);
-    addIllustrativeNotice();
+    // The React page already renders a bilingual safety disclaimer.
   };
 
   reconcile();
