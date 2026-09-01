@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bot, Headphones, MessageCircle, Send, UserRound, X } from 'lucide-react';
 import {
   detectSupportLocale,
@@ -22,20 +22,38 @@ type Props = {
   audience: SupportAudience;
   embedded?: boolean;
   defaultOpen?: boolean;
+  locale?: SupportLocale;
+  onLocaleChange?: (locale: SupportLocale) => void;
 };
 
-export default function SupportChat({ audience, embedded = false, defaultOpen = false }: Props) {
+export default function SupportChat({ audience, embedded = false, defaultOpen = false, locale: controlledLocale, onLocaleChange }: Props) {
   const [open, setOpen] = useState(defaultOpen || embedded);
   const [input, setInput] = useState('');
   const [handoff, setHandoff] = useState(false);
-  const [locale, setLocale] = useState<SupportLocale>('es');
+  const [uncontrolledLocale, setUncontrolledLocale] = useState<SupportLocale>('es');
+  const locale = controlledLocale ?? uncontrolledLocale;
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       role: 'assistant',
-      text: getSupportIntro(audience, 'es'),
+      text: getSupportIntro(audience, controlledLocale ?? 'es'),
     },
   ]);
+
+  useEffect(() => {
+    const intro = getSupportIntro(audience, locale);
+    setMessages((current) => {
+      if (current.length === 1 && current[0]?.id === 1 && current[0]?.role === 'assistant') {
+        return current[0].text === intro ? current : [{ ...current[0], text: intro }];
+      }
+      return current;
+    });
+  }, [audience, locale]);
+
+  const updateLocale = (nextLocale: SupportLocale) => {
+    if (onLocaleChange) onLocaleChange(nextLocale);
+    else setUncontrolledLocale(nextLocale);
+  };
 
   const runtime = getSupportRuntimeDisclosure(locale);
   const contextLabel = audience === 'prospect'
@@ -44,7 +62,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
   const nextId = useMemo(() => messages.length + 1, [messages.length]);
 
   const switchLocale = (nextLocale: SupportLocale) => {
-    setLocale(nextLocale);
+    updateLocale(nextLocale);
     setMessages((current) => {
       if (current.length === 1 && current[0]?.id === 1 && current[0]?.role === 'assistant') {
         return [{ ...current[0], text: getSupportIntro(audience, nextLocale) }];
@@ -66,7 +84,7 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
           role: 'assistant',
           text: getUnknownAnswerDisclosure(answerLocale),
         };
-    setLocale(answerLocale);
+    updateLocale(answerLocale);
     setMessages((current) => [...current, userMessage, reply]);
     setInput('');
     if (!answer) setHandoff(true);
