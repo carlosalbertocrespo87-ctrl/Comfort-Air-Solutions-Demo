@@ -28,14 +28,18 @@
 
   const addIllustrativeNotice = () => {
     const results = document.getElementById("results");
-    if (results && !results.querySelector("[data-llf-illustrative-notice]")) {
-      const notice = document.createElement("p");
+    if (!results) return;
+    let notice = results.querySelector("[data-llf-illustrative-notice]");
+    if (!notice) {
+      notice = document.createElement("p");
       notice.dataset.llfIllustrativeNotice = "true";
       notice.className = "mt-4 rounded-lg border border-orange-500/20 bg-orange-500/[0.04] px-4 py-3 text-[9px] leading-5 text-slate-500";
-      notice.textContent = "Interface figures shown here are illustrative placeholders only. They are not Local Lead Forge performance claims, guarantees, or actual client results.";
       const heading = results.querySelector("h2");
       heading?.insertAdjacentElement("afterend", notice);
     }
+    notice.textContent = document.documentElement.lang === "es"
+      ? "Las cifras de interfaz mostradas aquí son ejemplos ilustrativos. No representan resultados reales de clientes, garantías ni afirmaciones de rendimiento de Local Lead Forge."
+      : "Interface figures shown here are illustrative placeholders only. They are not Local Lead Forge performance claims, guarantees, or actual client results.";
   };
 
   const reconcile = () => {
@@ -49,4 +53,5 @@
   const observer = new MutationObserver(reconcile);
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener("load", reconcile, { once: true });
+  window.addEventListener("llf-language-change", reconcile);
 })();
