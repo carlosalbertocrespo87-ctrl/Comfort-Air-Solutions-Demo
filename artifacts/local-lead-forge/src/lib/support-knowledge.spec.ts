@@ -27,7 +27,7 @@ export function runSupportKnowledgeContractTests() {
   const spanishOnboarding = findKnowledgeAnswer('¿Cómo funciona la implementación y activación del onboarding?', 'client');
   assert.equal(spanishOnboarding?.id, 'onboarding');
   assert.equal(spanishOnboarding?.locale, 'es');
-  assert.match(spanishOnboarding?.answer ?? '', /solo despu[eé]s de superar los gates/i);
+  assert.match(spanishOnboarding?.answer ?? '', /solo despu[eé]s de completar las verificaciones requeridas/i);
 
   // Client-only operational guidance must not be exposed to a public prospect.
   assert.equal(findKnowledgeAnswer('implementación activación onboarding', 'prospect', 'es'), null);
