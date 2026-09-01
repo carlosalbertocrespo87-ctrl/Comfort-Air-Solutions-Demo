@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { MessageCircle, MessageSquareText, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube, FaWhatsapp } from 'react-icons/fa';
 import SupportChat from '@/components/support-chat';
@@ -15,7 +15,7 @@ const socialLinks = [
   { label: 'YouTube', href: import.meta.env.VITE_LLF_YOUTUBE_URL as string | undefined, Icon: FaYoutube },
 ] as const;
 
-function ActionLink({ href, label, icon }: { href?: string; label: string; icon: React.ReactNode }) {
+function ActionLink({ href, label, icon }: { href?: string; label: string; icon: ReactNode }) {
   if (!href) {
     return (
       <span
