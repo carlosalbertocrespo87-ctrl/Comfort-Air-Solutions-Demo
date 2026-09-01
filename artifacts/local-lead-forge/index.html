@@ -32,30 +32,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      header a[aria-label="Local Lead Forge home"] {
-        width: 390px;
-        height: 86px;
-        flex: 0 0 auto;
-        gap: 0 !important;
-        background: url("./llf-premium-logo.svg") left center / contain no-repeat;
-      }
-      header a[aria-label="Local Lead Forge home"] > * {
-        display: none !important;
-      }
-      @media (min-width: 641px) {
-        header > div {
-          height: 96px !important;
-        }
-      }
-      @media (max-width: 640px) {
-        header a[aria-label="Local Lead Forge home"] {
-          width: 245px;
-          height: 62px;
-        }
-      }
+      header a[aria-label="Local Lead Forge home"] { width: 390px; height: 86px; flex: 0 0 auto; gap: 0 !important; background: url("./llf-premium-logo.svg") left center / contain no-repeat; }
+      header a[aria-label="Local Lead Forge home"] > * { display: none !important; }
+      @media (min-width: 641px) { header > div { height: 96px !important; } }
+      @media (max-width: 640px) { header a[aria-label="Local Lead Forge home"] { width: 245px; height: 62px; } }
     </style>
   </head>
   <body>
+    <!-- Static detector form for Netlify Forms. The interactive React form posts to this schema. -->
+    <form name="llf-demo-request" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="llf-demo-request" />
+      <input name="bot-field" />
+      <input name="source" />
+      <input name="name" />
+      <input name="business" />
+      <input name="email" type="email" />
+      <input name="phone" />
+      <textarea name="need"></textarea>
+    </form>
     <div id="root"></div>
     <script src="/claims-safety.js" defer></script>
     <script type="module" src="/src/main.tsx"></script>
