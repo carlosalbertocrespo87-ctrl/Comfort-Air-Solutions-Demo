@@ -28,12 +28,12 @@ export default function SupportChat({ audience, embedded = false, defaultOpen = 
   const [open, setOpen] = useState(defaultOpen || embedded);
   const [input, setInput] = useState('');
   const [handoff, setHandoff] = useState(false);
-  const [locale, setLocale] = useState<SupportLocale>('en');
+  const [locale, setLocale] = useState<SupportLocale>('es');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       role: 'assistant',
-      text: getSupportIntro(audience, 'en'),
+      text: getSupportIntro(audience, 'es'),
     },
   ]);
 
