@@ -50,6 +50,13 @@ test('LLF approved home candidate is bilingual and functional on desktop', async
   await expect(page.getByRole('heading', { name: /Convierte Más Tráfico Web de HVAC en Oportunidades Calificadas/i })).toBeVisible();
   await expect(page.getByText('Asistente Informativo LLF', { exact: true })).toBeVisible();
 
+  // Regression: a normal top-of-funnel question must receive useful approved information,
+  // not the unknown-answer fallback that was observed in production on 2026-09-01.
+  await page.getByPlaceholder('Pregunta sobre LLF…').fill('hola me gustaria saber mas informacion');
+  await page.getByRole('button', { name: 'Enviar pregunta' }).click();
+  await expect(page.getByText(/Claro\. Local Lead Forge está diseñado para negocios HVAC y otros servicios locales/i)).toBeVisible();
+  await expect(page.getByText(/No tengo suficiente información aprobada/i)).toHaveCount(0);
+
   await expect(page.getByRole('link', { name: 'Abrir Local Lead Forge en Facebook' })).toHaveAttribute('href', 'https://example.com/facebook');
   await expect(page.getByRole('link', { name: 'Abrir Local Lead Forge en Instagram' })).toHaveAttribute('href', 'https://example.com/instagram');
   await expect(page.getByRole('link', { name: 'Política de Privacidad' })).toHaveAttribute('href', '/privacy');
