@@ -21,10 +21,11 @@ const mariaProtocol = await readFile(new URL('../docs/MARIA-AGENT-CONSOLE-PROTOC
 const mergeGate = await readFile(new URL('../../../docs/PR148-SECURITY-MERGE-GATE.md', import.meta.url), 'utf8');
 const qaRunbook = await readFile(new URL('../../../docs/LLF-SYNTHETIC-REALTIME-QA.md', import.meta.url), 'utf8');
 const equivalence = await readFile(new URL('../../../docs/PR148-PHYSICAL-QA-EQUIVALENCE.md', import.meta.url), 'utf8');
-const qaPreviewOrigin = 'https://deploy-preview-190--llf-agent-qa.netlify.app';
+const qaPreviewOrigin = 'https://deploy-preview-221--symphonious-travesseiro-c9bae1.netlify.app';
 const checks = [
 ['allowed production origins', edge.includes("'https://localleadforge.com'") && edge.includes("'https://www.localleadforge.com'")],
-['current dedicated QA preview origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+['current Carlos-only QA preview origin remains allowlisted', edge.includes(`'${qaPreviewOrigin}'`)],
+['factory route is restricted to Carlos', bootstrap.includes("resolvePilotAgentId(agentSession.agentUserId) === 'CARLOS'") && bootstrap.includes('FactoryAccessRestricted')],
 ['PR148-only preview origin is not unnecessarily widened', !edge.includes('deploy-preview-148--symphonious-travesseiro-c9bae1.netlify.app')],
 ['CORS wildcard remains absent', !edge.includes("'Access-Control-Allow-Origin': '*'")],
 ['active agent required', edge.includes(".eq('is_active', true)")],
