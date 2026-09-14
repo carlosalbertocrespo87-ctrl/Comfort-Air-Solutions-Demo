@@ -10,6 +10,7 @@ import { LEGAL_RELEASED } from '@/lib/legal-release';
 import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
 import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
+import QuickFixFactoryPage from '@/pages/quick-fix-factory';
 import DpaPage from '@/pages/dpa';
 import ExperienceDemoPage from '@/pages/experience-demo';
 import HomePreviewPage from '@/pages/home-preview-v3';
@@ -111,6 +112,7 @@ async function bootstrap() {
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
     '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
+    '/agent-factory': { component: agentSession?.deviceTrustStatus === 'TRUSTED' ? () => <AgentBiometricGate session={agentSession}><QuickFixFactoryPage /></AgentBiometricGate> : AgentRoute, title: 'LLF Quick-Fix Factory | Local Lead Forge', description: 'Private read-only Quick-Fix factory view for authorized LLF operators on trusted devices.', private: true },
     '/agent-sign-in': { component: AgentSignInPage, title: 'LLF Agent QA Sign-in | Local Lead Forge', description: 'QA-only passwordless sign-in entry for approved Local Lead Forge pilot operators.', private: true },
     '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'How Local Lead Forge handles information submitted through its public website.' },
     '/terms': { component: TermsPage, title: 'Website Terms | Local Lead Forge', description: 'Terms governing use of the Local Lead Forge public website.' },
