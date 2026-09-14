@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Bot, ChevronLeft, LockKeyhole, LogOut, MessageCircle, ShieldCheck, Users } from 'lucide-react';
+import { Bell, Bot, ChevronLeft, Factory, LockKeyhole, LogOut, MessageCircle, ShieldCheck, Users } from 'lucide-react';
 import { requestAgentLock } from '@/components/agent-biometric-gate';
 import { AgentMacroDrawer } from '@/components/agent-macro-drawer';
 import { ControlledLearningPanel } from '@/components/controlled-learning-panel';
@@ -246,6 +246,9 @@ export default function AgentMobileDemoPage() {
             {(['AVAILABLE','BUSY','OFFLINE'] as const).map((state) => <button key={state} disabled={!me || availabilityState === 'saving'} onClick={() => void updateAvailability(state)} className={`rounded-lg border px-2 py-2 text-[9px] font-black ${me && availability[me] === state ? 'border-orange-500/40 bg-orange-500/10 text-orange-300' : 'border-white/10 bg-white/[0.03] text-slate-400'} disabled:cursor-not-allowed disabled:opacity-30`}>{state}</button>)}
           </div>
           {availabilityState === 'error' && <p className="mt-2 text-[9px] text-rose-300">Availability update could not be safely confirmed.</p>}
+          <a href="/agent-factory" className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-orange-500/25 bg-orange-500/[0.07] px-3 py-3 text-[10px] font-black text-orange-200">
+            <Factory className="h-4 w-4" /> Abrir Fábrica Quick‑Fix
+          </a>
         </section>
 
         <section className="px-4 py-4">
