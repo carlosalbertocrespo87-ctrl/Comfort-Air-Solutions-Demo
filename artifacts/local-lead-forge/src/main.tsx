@@ -6,9 +6,10 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { AgentBiometricGate } from '@/components/agent-biometric-gate';
 import { PreviewSocialFooter, PreviewSupportChat } from '@/components/preview-contact-layer';
 import SupportChat from '@/components/support-chat';
+import { captureRefreshTokenFromAuthHash, hydratePersistentCarlosSession, persistCarlosRefreshToken } from '@/lib/agent-persistent-auth';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
 import { resolvePilotAgentId } from '@/lib/conversation-model';
-import { consumeSupabaseAuthHash, getStoredAgentSession, hydratePersistedAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
+import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
 import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
 import QuickFixFactoryPage from '@/pages/quick-fix-factory';
@@ -94,11 +95,14 @@ function setMetaContent(selector: string, content: string) {
 }
 
 async function bootstrap() {
+  const refreshTokenFromLink = captureRefreshTokenFromAuthHash();
   const authResult = await consumeSupabaseAuthHash();
   if (authResult === 'consumed') {
+    const activatedSession = getStoredAgentSession();
+    persistCarlosRefreshToken(refreshTokenFromLink, activatedSession?.agentUserId);
     history.replaceState({}, document.title, '/agent-demo');
   } else {
-    await hydratePersistedAgentSession();
+    await hydratePersistentCarlosSession();
   }
 
   await reconcileStoredDeviceTrust();
