@@ -82,7 +82,13 @@ export default function AgentSignInPage() {
               className="w-full resize-none rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none focus:border-orange-500/50"
               placeholder="https://iogjlzizzegqarkfyzzx.supabase.co/auth/v1/verify?..."
             />
-            <button type="button" disabled={!copiedLink.trim()} onClick={openCopiedLink} className="w-full rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-200 disabled:opacity-40">
+            <button
+              type="button"
+              aria-label="Open approved link in LLF Agent"
+              disabled={!copiedLink.trim()}
+              onClick={openCopiedLink}
+              className="w-full rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-200 disabled:opacity-40"
+            >
               Finish one-time activation
             </button>
             {linkError && <p className="text-xs leading-5 text-rose-300">That is not the newest approved LLF activation link. Copy the complete newest link and try again.</p>}
