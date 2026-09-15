@@ -63,13 +63,16 @@ export default function QuickFixFactoryPage() {
   return (
     <main className="min-h-screen bg-[#030913] text-white">
       <div className="mx-auto min-h-screen max-w-md border-x border-white/10 bg-[#050d18] shadow-2xl">
-        <header className="sticky top-0 z-10 border-b border-white/10 bg-[#050d18]/95 px-4 py-3 backdrop-blur">
+        <header
+          className="sticky top-0 z-10 border-b border-white/10 bg-[#050d18]/95 px-4 py-3 backdrop-blur"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
+        >
           <div className="flex items-center justify-between gap-3">
             <a href="/agent-demo" className="flex items-center gap-2 text-slate-300">
               <ArrowLeft className="h-4 w-4" />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">Local Lead Forge</p>
-                <p className="text-xs font-black text-white">Fábrica Quick‑Fix · QA</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">CLARISPRINT DIGITAL</p>
+                <p className="text-xs font-black text-white">ClariSprint Factory · QA</p>
               </div>
             </a>
             <button type="button" onClick={requestAgentLock} className="flex items-center gap-1 rounded-lg border border-white/10 px-2 py-2 text-[9px] font-bold text-slate-300">

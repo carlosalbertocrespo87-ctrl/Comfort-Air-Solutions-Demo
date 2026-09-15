@@ -1,8 +1,21 @@
+import { createClient } from '@supabase/supabase-js';
+
 const SUPABASE_URL = 'https://iogjlzizzegqarkfyzzx.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_F9KY7_PBrERwwQjvpoIv5A_bxk_mVXV';
 const SESSION_KEY = 'llf_agent_session_v1';
 const DEVICE_INSTALL_KEY = 'llf_device_install_id_v1';
 const LEGACY_AUTH_BRIDGE_COOKIE = '__Host-llf_agent_auth_bridge_v1';
+const PERSISTENT_AUTH_STORAGE_KEY = 'llf_agent_auth_v2';
 export const AGENT_SESSION_CHANGED_EVENT = 'llf-agent-session-changed';
+
+const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storageKey: PERSISTENT_AUTH_STORAGE_KEY,
+  },
+});
 
 export type DeviceTrustStatus = 'PENDING' | 'TRUSTED' | 'REVOKED';
 
@@ -70,6 +83,7 @@ function parseTokenExpiry(params: URLSearchParams): number | undefined {
 export function clearStoredAgentSession(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
   purgeLegacyPersistentAuthArtifacts();
+  void supabaseAuth.auth.signOut({ scope: 'local' });
   emitSessionChanged();
 }
 
@@ -113,6 +127,15 @@ async function callWithToken<T>(accessToken: string, body: Record<string, unknow
   return (await response.json()) as T;
 }
 
+async function getPersistentAuthSession(): Promise<{ accessToken: string; expiresAt?: number } | null> {
+  const { data, error } = await supabaseAuth.auth.getSession();
+  if (error || !data.session) return null;
+  return {
+    accessToken: data.session.access_token,
+    expiresAt: data.session.expires_at,
+  };
+}
+
 async function establishAgentSession(accessToken: string, expiresAt?: number): Promise<LLFAgentSession> {
   const sessionInfo = await callWithToken<{ ok: boolean; agent?: { user_id: string; display_name: string; availability: 'AVAILABLE' | 'BUSY' | 'OFFLINE' } }>(accessToken, { action: 'session_info' });
   if (!sessionInfo.ok || !sessionInfo.agent) throw new Error('invalid_agent_session');
@@ -137,13 +160,35 @@ async function establishAgentSession(accessToken: string, expiresAt?: number): P
 
 export async function hydratePersistedAgentSession(): Promise<LLFAgentSession | null> {
   purgeLegacyPersistentAuthArtifacts();
-  return getStoredAgentSession();
+  const existing = getStoredAgentSession();
+  if (existing) return existing;
+
+  try {
+    const persisted = await getPersistentAuthSession();
+    if (!persisted) return null;
+    return await establishAgentSession(persisted.accessToken, persisted.expiresAt);
+  } catch {
+    clearStoredSessionRecord();
+    return null;
+  }
+}
+
+export async function requestPersistentAgentSignIn(email: string, redirectTo: string): Promise<void> {
+  const { error } = await supabaseAuth.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: redirectTo,
+    },
+  });
+  if (error) throw error;
 }
 
 export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | 'error'> {
   if (!window.location.hash) return 'none';
   const params = parseHash();
   const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
   const authError = params.get('error') || params.get('error_description');
   history.replaceState({}, document.title, window.location.pathname + window.location.search);
   if (authError || !accessToken) {
@@ -151,8 +196,20 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
     return authError ? 'error' : 'none';
   }
   try {
-    const expiresAt = parseTokenExpiry(params);
-    await establishAgentSession(accessToken, expiresAt);
+    let activeAccessToken = accessToken;
+    let expiresAt = parseTokenExpiry(params);
+
+    if (refreshToken) {
+      const { data, error } = await supabaseAuth.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (error || !data.session) throw error ?? new Error('persistent_session_setup_failed');
+      activeAccessToken = data.session.access_token;
+      expiresAt = data.session.expires_at;
+    }
+
+    await establishAgentSession(activeAccessToken, expiresAt);
     return 'consumed';
   } catch {
     clearStoredAgentSession();
@@ -161,9 +218,18 @@ export async function consumeSupabaseAuthHash(): Promise<'consumed' | 'none' | '
 }
 
 export async function reconcileStoredDeviceTrust(): Promise<LLFAgentSession | null> {
-  const session = getStoredAgentSession();
-  if (!session || session.deviceTrustStatus === 'TRUSTED' || session.deviceTrustStatus === 'REVOKED') return session;
+  let session = getStoredAgentSession();
+  if (!session) return null;
+
   try {
+    const persisted = await getPersistentAuthSession();
+    if (persisted && persisted.accessToken !== session.accessToken) {
+      session = { ...session, accessToken: persisted.accessToken, expiresAt: persisted.expiresAt };
+      storeAgentSession(session);
+    }
+
+    if (session.deviceTrustStatus === 'REVOKED') return session;
+
     const deviceHash = await getCurrentDeviceHash();
     const result = await callWithToken<{ ok: boolean; device?: { id: string; trust_status: DeviceTrustStatus } | null }>(session.accessToken, {
       action: 'device_status',
@@ -176,7 +242,6 @@ export async function reconcileStoredDeviceTrust(): Promise<LLFAgentSession | nu
       deviceTrustStatus: result.device.trust_status,
     };
     storeAgentSession(updated);
-    if (updated.deviceTrustStatus !== session.deviceTrustStatus) emitSessionChanged();
     return updated;
   } catch (error) {
     if (error instanceof Error && (error.message.endsWith('_401') || error.message.endsWith('_403'))) clearStoredAgentSession();
@@ -185,10 +250,15 @@ export async function reconcileStoredDeviceTrust(): Promise<LLFAgentSession | nu
 }
 
 export async function callAgentOps<T = unknown>(body: Record<string, unknown>): Promise<T> {
-  const session = getStoredAgentSession();
+  let session = getStoredAgentSession();
   if (!session) throw new Error('authentication_required');
   if (session.deviceTrustStatus !== 'TRUSTED') throw new Error('trusted_device_required');
   try {
+    const persisted = await getPersistentAuthSession();
+    if (persisted && persisted.accessToken !== session.accessToken) {
+      session = { ...session, accessToken: persisted.accessToken, expiresAt: persisted.expiresAt };
+      storeAgentSession(session);
+    }
     const deviceHash = await getCurrentDeviceHash();
     return await callWithToken<T>(session.accessToken, { ...body, device_hash: deviceHash });
   } catch (error) {

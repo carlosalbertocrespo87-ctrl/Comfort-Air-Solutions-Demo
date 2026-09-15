@@ -57,11 +57,11 @@ export function AgentBiometricGate({ session, children }: { session: LLFAgentSes
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-300">
           <ScanFace className="h-9 w-9" />
         </div>
-        <div className="mt-4 text-sm font-black text-orange-400">LLF Agent Console</div>
+        <div className="mt-4 text-sm font-black text-orange-400">ClariSprint Factory</div>
         <h1 className="mt-2 text-2xl font-black">{configured ? `Unlock with ${securityName}` : `Protect with ${securityName}`}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">
           {configured
-            ? `Confirm that you are ${session.displayName} to open the protected Agent Console.`
+            ? `Confirm that you are ${session.displayName} to open the protected ClariSprint Factory.`
             : isIPhone
               ? 'Set up Face ID once on this trusted iPhone. Your email sign-in and device approval remain unchanged.'
               : 'Set up a passkey once on this trusted computer. Windows Hello, Touch ID, or the device PIN may be used.'}
@@ -73,8 +73,8 @@ export function AgentBiometricGate({ session, children }: { session: LLFAgentSes
         {error && <p className="mt-3 text-xs text-rose-300">{securityName} verification was not completed. Try again to enter.</p>}
         <p className="mt-4 text-[11px] leading-5 text-slate-500">
           {isIPhone
-            ? 'Face ID is handled by your iPhone. Local Lead Forge does not receive or store your face.'
-            : 'Your passkey and device verification are handled by this computer. Local Lead Forge does not receive or store your biometrics or device PIN.'}
+            ? 'Face ID is handled by your iPhone. ClariSprint does not receive or store your face.'
+            : 'Your passkey and device verification are handled by this computer. ClariSprint does not receive or store your biometrics or device PIN.'}
         </p>
       </div>
     </main>

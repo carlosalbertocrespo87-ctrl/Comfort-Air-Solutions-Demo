@@ -1,7 +1,7 @@
 {
   "id": "/agent-demo/",
-  "name": "Local Lead Forge Agent Console",
-  "short_name": "LLF Agent",
+  "name": "ClariSprint Factory",
+  "short_name": "ClariSprint Factory",
   "description": "Secure internal Local Lead Forge agent-console shell. Customer messaging and push transport remain gated until authenticated security controls are verified.",
   "start_url": "/agent-demo/",
   "scope": "/",
@@ -12,22 +12,10 @@
   "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "/agent-icon-180.png",
-      "sizes": "180x180",
+      "src": "https://clarisprint.com/favicon.png",
+      "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/agent-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/agent-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
     }
   ]
 }
