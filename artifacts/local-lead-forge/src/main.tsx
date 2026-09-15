@@ -7,9 +7,11 @@ import { AgentBiometricGate } from '@/components/agent-biometric-gate';
 import { PreviewSocialFooter, PreviewSupportChat } from '@/components/preview-contact-layer';
 import SupportChat from '@/components/support-chat';
 import { LEGAL_RELEASED } from '@/lib/legal-release';
+import { resolvePilotAgentId } from '@/lib/conversation-model';
 import { consumeSupabaseAuthHash, getStoredAgentSession, reconcileStoredDeviceTrust } from '@/lib/supabase-session';
 import AgentMobileDemoPage from '@/pages/agent-mobile-demo';
 import AgentSignInPage from '@/pages/agent-sign-in';
+import QuickFixFactoryPage from '@/pages/quick-fix-factory';
 import DpaPage from '@/pages/dpa';
 import ExperienceDemoPage from '@/pages/experience-demo';
 import HomePreviewPage from '@/pages/home-preview-v3';
@@ -73,6 +75,19 @@ function DeviceTrustRequired({ status }: { status: 'PENDING' | 'REVOKED' }) {
   );
 }
 
+function FactoryAccessRestricted() {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#020711] px-6 text-white">
+      <div className="max-w-md rounded-2xl border border-orange-500/20 bg-[#07111f] p-6 text-center">
+        <div className="text-sm font-black text-orange-400">LLF Quick-Fix Factory</div>
+        <h1 className="mt-3 text-2xl font-black">Carlos-only QA</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-400">This temporary factory preview is authorized only for Carlos on his trusted iPhone.</p>
+        <a href="/agent-demo" className="mt-5 inline-block rounded-xl bg-orange-600 px-4 py-3 text-sm font-black">Return to Agent Console</a>
+      </div>
+    </main>
+  );
+}
+
 function setMetaContent(selector: string, content: string) {
   const element = document.querySelector<HTMLMetaElement>(selector);
   if (element) element.content = content;
@@ -101,6 +116,13 @@ async function bootstrap() {
   else if (agentSession?.deviceTrustStatus === 'PENDING') AgentRoute = () => <DeviceTrustRequired status="PENDING" />;
   else if (agentSession?.deviceTrustStatus === 'REVOKED') AgentRoute = () => <DeviceTrustRequired status="REVOKED" />;
 
+  let FactoryRoute: React.ComponentType = AgentRoute;
+  if (agentSession?.deviceTrustStatus === 'TRUSTED') {
+    FactoryRoute = resolvePilotAgentId(agentSession.agentUserId) === 'CARLOS'
+      ? () => <AgentBiometricGate session={agentSession}><QuickFixFactoryPage /></AgentBiometricGate>
+      : FactoryAccessRestricted;
+  }
+
   const routes: Record<string, { component: React.ComponentType; title: string; description: string; private?: boolean }> = {
     '/': {
       component: HomePreviewRoute,
@@ -111,6 +133,7 @@ async function bootstrap() {
     '/onboarding': { component: OnboardingPage, title: 'Client Onboarding | Local Lead Forge', description: 'Secure Local Lead Forge client onboarding for business facts, lead routing, website access coordination, and assistant guardrails.', private: true },
     '/experience-demo': { component: ExperienceDemoPage, title: 'Client Experience Lab | Local Lead Forge', description: 'Private Local Lead Forge simulation of the client portal, agent console, and knowledge center.', private: true },
     '/agent-demo': { component: AgentRoute, title: 'LLF Agent Console | Local Lead Forge', description: 'Private mobile-first Local Lead Forge agent console for authorized specialists on trusted devices.', private: true },
+    '/agent-factory': { component: FactoryRoute, title: 'LLF Quick-Fix Factory | Local Lead Forge', description: 'Private read-only Quick-Fix factory view authorized only for Carlos on his trusted iPhone.', private: true },
     '/agent-sign-in': { component: AgentSignInPage, title: 'LLF Agent QA Sign-in | Local Lead Forge', description: 'QA-only passwordless sign-in entry for approved Local Lead Forge pilot operators.', private: true },
     '/privacy': { component: PrivacyPage, title: 'Privacy Policy | Local Lead Forge', description: 'How Local Lead Forge handles information submitted through its public website.' },
     '/terms': { component: TermsPage, title: 'Website Terms | Local Lead Forge', description: 'Terms governing use of the Local Lead Forge public website.' },
